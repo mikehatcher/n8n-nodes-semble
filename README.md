@@ -49,15 +49,17 @@ This node supports the following operations:
 
 This node requires Semble API credentials. You'll need:
 
-- **API Key**: Your Semble API key (JWT token)
-- **Base URL**: The base URL for the Semble API (usually `https://api.semble.io`)
+- **API Token**: Your Semble API token (x-token header)
+- **GraphQL Endpoint**: The GraphQL endpoint for the Semble API (default: `https://open.semble.io/graphql`)
 
 ### How to obtain credentials:
 
 1. Log in to your Semble account
-2. Navigate to Settings > API
-3. Generate a new API key
-4. Copy the API key for use in n8n
+2. Navigate to Settings > API / Integrations
+3. Generate a new API token
+4. Copy the API token for use in n8n
+
+**Note**: This node uses Semble's GraphQL API for all operations, providing more efficient and flexible data querying.
 
 ## Usage
 
@@ -119,8 +121,9 @@ This node is maintained by Mike Hatcher. Issues and feature requests can be subm
 ## Version History
 
 ### 1.0.0
-- Initial release
+- Initial release with GraphQL API support
 - Support for Appointments, Patients, and Staff resources
 - Full CRUD operations for appointments and patients
 - Read operations for staff
 - Comprehensive filtering and pagination support
+- Uses Semble's GraphQL API for efficient data operations

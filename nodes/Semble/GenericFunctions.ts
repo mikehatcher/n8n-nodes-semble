@@ -9,36 +9,37 @@ import { IDataObject, NodeApiError, IHttpRequestOptions, IHttpRequestMethods } f
 
 export async function sembleApiRequest(
 	this: IHookFunctions | IExecuteFunctions | IExecuteSingleFunctions | ILoadOptionsFunctions,
-	method: IHttpRequestMethods,
-	resource: string,
-	body: any = {},
-	qs: IDataObject = {},
-	uri?: string,
-	option: IDataObject = {},
+	query: string,
+	variables: IDataObject = {},
 ): Promise<any> {
 	const credentials = await this.getCredentials('sembleApi');
 
-	let options: IHttpRequestOptions = {
+	const options: IHttpRequestOptions = {
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
-			'Authorization': `Bearer ${credentials.apiKey}`,
+			'x-token': credentials.apiToken as string,
 		},
-		method,
-		qs,
-		body,
-		url: uri || `${credentials.baseUrl}${resource}`,
+		method: 'POST',
+		body: {
+			query,
+			variables,
+		},
+		url: credentials.baseUrl as string,
 		json: true,
 	};
 
-	options = Object.assign({}, options, option);
-
-	if (Object.keys(body).length === 0) {
-		delete options.body;
-	}
-
 	try {
-		return await this.helpers.httpRequest(options);
+		const response = await this.helpers.httpRequest(options);
+		
+		if (response.errors) {
+			throw new NodeApiError(this.getNode(), { 
+				message: `GraphQL Error: ${response.errors[0].message}`,
+				description: response.errors.map((err: any) => err.message).join(', ')
+			});
+		}
+		
+		return response.data;
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as any);
 	}
@@ -46,35 +47,10 @@ export async function sembleApiRequest(
 
 export async function sembleApiRequestAllItems(
 	this: IExecuteFunctions | ILoadOptionsFunctions,
-	propertyName: string,
-	method: IHttpRequestMethods,
-	endpoint: string,
-	body: any = {},
-	query: IDataObject = {},
+	query: string,
+	variables: IDataObject = {},
 ): Promise<any> {
-	const returnData: IDataObject[] = [];
-
-	let responseData;
-	query.page = 1;
-	query.per_page = 100;
-
-	do {
-		responseData = await sembleApiRequest.call(this, method, endpoint, body, query);
-		
-		if (responseData[propertyName]) {
-			returnData.push.apply(returnData, responseData[propertyName]);
-		} else if (Array.isArray(responseData)) {
-			returnData.push.apply(returnData, responseData);
-		} else {
-			returnData.push(responseData);
-		}
-
-		query.page++;
-	} while (
-		responseData.meta &&
-		responseData.meta.pagination &&
-		responseData.meta.pagination.current_page < responseData.meta.pagination.total_pages
-	);
-
-	return returnData;
+	// For GraphQL, we'll need to implement cursor-based pagination
+	// This is a simplified version - actual implementation depends on Semble's schema
+	return await sembleApiRequest.call(this, query, variables);
 }

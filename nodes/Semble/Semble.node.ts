@@ -11,7 +11,7 @@ import {
 	NodeConnectionType,
 } from 'n8n-workflow';
 
-import { sembleApiRequest, sembleApiRequestAllItems } from './GenericFunctions';
+import { sembleApiRequest } from './GenericFunctions';
 
 import { appointmentOperations, appointmentFields } from './descriptions/AppointmentDescription';
 import { patientOperations, patientFields } from './descriptions/PatientDescription';
@@ -79,7 +79,19 @@ export class Semble implements INodeType {
 			// Load staff members for appointment assignments
 			async getStaff(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const returnData: INodePropertyOptions[] = [];
-				const staff = await sembleApiRequest.call(this, 'GET', '/api/staff');
+				
+				const query = `
+					query GetStaff {
+						staff {
+							id
+							firstName
+							lastName
+						}
+					}
+				`;
+				
+				const response = await sembleApiRequest.call(this, query);
+				const staff = response.data.staff || [];
 				
 				for (const member of staff) {
 					returnData.push({
@@ -94,7 +106,18 @@ export class Semble implements INodeType {
 			// Load appointment types
 			async getAppointmentTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const returnData: INodePropertyOptions[] = [];
-				const types = await sembleApiRequest.call(this, 'GET', '/api/appointment-types');
+				
+				const query = `
+					query GetAppointmentTypes {
+						appointmentTypes {
+							id
+							name
+						}
+					}
+				`;
+				
+				const response = await sembleApiRequest.call(this, query);
+				const types = response.data.appointmentTypes || [];
 				
 				for (const type of types) {
 					returnData.push({
@@ -112,7 +135,6 @@ export class Semble implements INodeType {
 		const items = this.getInputData();
 		const returnData: IDataObject[] = [];
 		const length = items.length;
-		const qs: IDataObject = {};
 		let responseData;
 
 		const resource = this.getNodeParameter('resource', 0) as string;
@@ -123,88 +145,315 @@ export class Semble implements INodeType {
 				if (resource === 'appointment') {
 					// Appointment operations
 					if (operation === 'create') {
-						const body: IDataObject = {};
-						body.patientId = this.getNodeParameter('patientId', i) as string;
-						body.staffId = this.getNodeParameter('staffId', i) as string;
-						body.appointmentTypeId = this.getNodeParameter('appointmentTypeId', i) as string;
-						body.startTime = this.getNodeParameter('startTime', i) as string;
-						body.endTime = this.getNodeParameter('endTime', i) as string;
-						
+						const patientId = this.getNodeParameter('patientId', i) as string;
+						const staffId = this.getNodeParameter('staffId', i) as string;
+						const appointmentTypeId = this.getNodeParameter('appointmentTypeId', i) as string;
+						const startTime = this.getNodeParameter('startTime', i) as string;
+						const endTime = this.getNodeParameter('endTime', i) as string;
 						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
-						Object.assign(body, additionalFields);
 
-						responseData = await sembleApiRequest.call(this, 'POST', '/api/appointments', body);
+						const mutation = `
+							mutation CreateAppointment($input: CreateAppointmentInput!) {
+								createAppointment(input: $input) {
+									id
+									patientId
+									staffId
+									appointmentTypeId
+									startTime
+									endTime
+									status
+									notes
+								}
+							}
+						`;
+
+						const variables = {
+							input: {
+								patientId,
+								staffId,
+								appointmentTypeId,
+								startTime,
+								endTime,
+								...additionalFields,
+							},
+						};
+
+						const response = await sembleApiRequest.call(this, mutation, variables);
+						responseData = response.data.createAppointment;
 					}
 
 					if (operation === 'get') {
 						const appointmentId = this.getNodeParameter('appointmentId', i) as string;
-						responseData = await sembleApiRequest.call(this, 'GET', `/api/appointments/${appointmentId}`);
+						
+						const query = `
+							query GetAppointment($id: ID!) {
+								appointment(id: $id) {
+									id
+									patientId
+									staffId
+									appointmentTypeId
+									startTime
+									endTime
+									status
+									notes
+									patient {
+										id
+										firstName
+										lastName
+										email
+									}
+									staff {
+										id
+										firstName
+										lastName
+									}
+								}
+							}
+						`;
+
+						const variables = { id: appointmentId };
+						const response = await sembleApiRequest.call(this, query, variables);
+						responseData = response.data.appointment;
 					}
 
 					if (operation === 'getAll') {
 						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
 						const filters = this.getNodeParameter('filters', i) as IDataObject;
-						Object.assign(qs, filters);
+						
+						let query = `
+							query GetAppointments($limit: Int, $offset: Int) {
+								appointments(limit: $limit, offset: $offset) {
+									id
+									patientId
+									staffId
+									appointmentTypeId
+									startTime
+									endTime
+									status
+									notes
+									patient {
+										id
+										firstName
+										lastName
+										email
+									}
+									staff {
+										id
+										firstName
+										lastName
+									}
+								}
+							}
+						`;
 
-						if (returnAll) {
-							responseData = await sembleApiRequestAllItems.call(this, 'appointments', 'GET', '/api/appointments', {}, qs);
-						} else {
-							qs.limit = this.getNodeParameter('limit', i) as number;
-							responseData = await sembleApiRequest.call(this, 'GET', '/api/appointments', {}, qs);
+						const variables: IDataObject = {};
+						if (!returnAll) {
+							variables.limit = this.getNodeParameter('limit', i) as number;
 						}
+
+						// Apply filters if provided
+						Object.assign(variables, filters);
+
+						const response = await sembleApiRequest.call(this, query, variables);
+						responseData = response.data.appointments;
 					}
 
 					if (operation === 'update') {
 						const appointmentId = this.getNodeParameter('appointmentId', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
 						
-						responseData = await sembleApiRequest.call(this, 'PUT', `/api/appointments/${appointmentId}`, updateFields);
+						const mutation = `
+							mutation UpdateAppointment($id: ID!, $input: UpdateAppointmentInput!) {
+								updateAppointment(id: $id, input: $input) {
+									id
+									patientId
+									staffId
+									appointmentTypeId
+									startTime
+									endTime
+									status
+									notes
+								}
+							}
+						`;
+
+						const variables = {
+							id: appointmentId,
+							input: updateFields,
+						};
+
+						const response = await sembleApiRequest.call(this, mutation, variables);
+						responseData = response.data.updateAppointment;
 					}
 
 					if (operation === 'delete') {
 						const appointmentId = this.getNodeParameter('appointmentId', i) as string;
-						responseData = await sembleApiRequest.call(this, 'DELETE', `/api/appointments/${appointmentId}`);
-						responseData = { success: true };
+						
+						const mutation = `
+							mutation DeleteAppointment($id: ID!) {
+								deleteAppointment(id: $id) {
+									success
+									message
+								}
+							}
+						`;
+
+						const variables = { id: appointmentId };
+						const response = await sembleApiRequest.call(this, mutation, variables);
+						responseData = response.data.deleteAppointment;
 					}
 				}
 
 				if (resource === 'patient') {
 					// Patient operations
 					if (operation === 'create') {
-						const body: IDataObject = {};
-						body.firstName = this.getNodeParameter('firstName', i) as string;
-						body.lastName = this.getNodeParameter('lastName', i) as string;
-						body.email = this.getNodeParameter('email', i) as string;
-						
+						const firstName = this.getNodeParameter('firstName', i) as string;
+						const lastName = this.getNodeParameter('lastName', i) as string;
+						const email = this.getNodeParameter('email', i) as string;
 						const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
-						Object.assign(body, additionalFields);
 
-						responseData = await sembleApiRequest.call(this, 'POST', '/api/patients', body);
+						const mutation = `
+							mutation CreatePatient($input: CreatePatientInput!) {
+								createPatient(input: $input) {
+									id
+									firstName
+									lastName
+									email
+									phone
+									dateOfBirth
+									address {
+										street
+										city
+										state
+										postcode
+										country
+									}
+									emergencyContact {
+										name
+										phone
+									}
+								}
+							}
+						`;
+
+						const variables = {
+							input: {
+								firstName,
+								lastName,
+								email,
+								...additionalFields,
+							},
+						};
+
+						const response = await sembleApiRequest.call(this, mutation, variables);
+						responseData = response.data.createPatient;
 					}
 
 					if (operation === 'get') {
 						const patientId = this.getNodeParameter('patientId', i) as string;
-						responseData = await sembleApiRequest.call(this, 'GET', `/api/patients/${patientId}`);
+						
+						const query = `
+							query GetPatient($id: ID!) {
+								patient(id: $id) {
+									id
+									firstName
+									lastName
+									email
+									phone
+									dateOfBirth
+									address {
+										street
+										city
+										state
+										postcode
+										country
+									}
+									emergencyContact {
+										name
+										phone
+									}
+									appointments {
+										id
+										startTime
+										endTime
+										status
+									}
+								}
+							}
+						`;
+
+						const variables = { id: patientId };
+						const response = await sembleApiRequest.call(this, query, variables);
+						responseData = response.data.patient;
 					}
 
 					if (operation === 'getAll') {
 						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
 						const filters = this.getNodeParameter('filters', i) as IDataObject;
-						Object.assign(qs, filters);
+						
+						const query = `
+							query GetPatients($limit: Int, $offset: Int) {
+								patients(limit: $limit, offset: $offset) {
+									id
+									firstName
+									lastName
+									email
+									phone
+									dateOfBirth
+									address {
+										street
+										city
+										state
+										postcode
+										country
+									}
+								}
+							}
+						`;
 
-						if (returnAll) {
-							responseData = await sembleApiRequestAllItems.call(this, 'patients', 'GET', '/api/patients', {}, qs);
-						} else {
-							qs.limit = this.getNodeParameter('limit', i) as number;
-							responseData = await sembleApiRequest.call(this, 'GET', '/api/patients', {}, qs);
+						const variables: IDataObject = {};
+						if (!returnAll) {
+							variables.limit = this.getNodeParameter('limit', i) as number;
 						}
+
+						// Apply filters if provided
+						Object.assign(variables, filters);
+
+						const response = await sembleApiRequest.call(this, query, variables);
+						responseData = response.data.patients;
 					}
 
 					if (operation === 'update') {
 						const patientId = this.getNodeParameter('patientId', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
 						
-						responseData = await sembleApiRequest.call(this, 'PUT', `/api/patients/${patientId}`, updateFields);
+						const mutation = `
+							mutation UpdatePatient($id: ID!, $input: UpdatePatientInput!) {
+								updatePatient(id: $id, input: $input) {
+									id
+									firstName
+									lastName
+									email
+									phone
+									dateOfBirth
+									address {
+										street
+										city
+										state
+										postcode
+										country
+									}
+								}
+							}
+						`;
+
+						const variables = {
+							id: patientId,
+							input: updateFields,
+						};
+
+						const response = await sembleApiRequest.call(this, mutation, variables);
+						responseData = response.data.updatePatient;
 					}
 				}
 
@@ -212,18 +461,53 @@ export class Semble implements INodeType {
 					// Staff operations
 					if (operation === 'get') {
 						const staffId = this.getNodeParameter('staffId', i) as string;
-						responseData = await sembleApiRequest.call(this, 'GET', `/api/staff/${staffId}`);
+						
+						const query = `
+							query GetStaff($id: ID!) {
+								staff(id: $id) {
+									id
+									firstName
+									lastName
+									email
+									role
+									specialties
+									schedule {
+										dayOfWeek
+										startTime
+										endTime
+									}
+								}
+							}
+						`;
+
+						const variables = { id: staffId };
+						const response = await sembleApiRequest.call(this, query, variables);
+						responseData = response.data.staff;
 					}
 
 					if (operation === 'getAll') {
 						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
+						
+						const query = `
+							query GetAllStaff($limit: Int, $offset: Int) {
+								staff(limit: $limit, offset: $offset) {
+									id
+									firstName
+									lastName
+									email
+									role
+									specialties
+								}
+							}
+						`;
 
-						if (returnAll) {
-							responseData = await sembleApiRequestAllItems.call(this, 'staff', 'GET', '/api/staff');
-						} else {
-							qs.limit = this.getNodeParameter('limit', i) as number;
-							responseData = await sembleApiRequest.call(this, 'GET', '/api/staff', {}, qs);
+						const variables: IDataObject = {};
+						if (!returnAll) {
+							variables.limit = this.getNodeParameter('limit', i) as number;
 						}
+
+						const response = await sembleApiRequest.call(this, query, variables);
+						responseData = response.data.staff;
 					}
 				}
 

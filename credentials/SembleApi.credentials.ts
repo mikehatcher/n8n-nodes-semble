@@ -11,40 +11,44 @@ export class SembleApi implements ICredentialType {
 	documentationUrl = 'https://docs.semble.io/';
 	properties: INodeProperties[] = [
 		{
-			displayName: 'API Key',
-			name: 'apiKey',
+			displayName: 'API Token',
+			name: 'apiToken',
 			type: 'string',
 			typeOptions: { password: true },
 			default: '',
-			description: 'The API key for your Semble account',
+			description: 'The API token for your Semble account (JWT token from Semble app settings)',
 			required: true,
 		},
 		{
-			displayName: 'Base URL',
+			displayName: 'GraphQL Endpoint',
 			name: 'baseUrl',
 			type: 'string',
-			default: 'https://api.semble.io',
-			description: 'The base URL for the Semble API (usually https://api.semble.io)',
+			default: 'https://open.semble.io/graphql',
+			description: 'The GraphQL endpoint for the Semble API',
 			required: true,
 		},
 	];
 
-	// Use generic authentication
+	// Use generic authentication with x-token header
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
 		properties: {
 			headers: {
-				Authorization: '=Bearer {{$credentials.apiKey}}',
+				'x-token': '={{$credentials.apiToken}}',
+				'Content-Type': 'application/json',
 			},
 		},
 	};
 
-	// Test the connection
+	// Test the connection with GraphQL introspection
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}',
-			url: '/api/health',
-			method: 'GET',
+			url: '',
+			method: 'POST',
+			body: {
+				query: 'query { __schema { types { name } } }',
+			},
 		},
 	};
 }
