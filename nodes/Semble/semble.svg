@@ -1,0 +1,20 @@
+<svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Semble-inspired design with medical cross and modern styling -->
+  <rect width="60" height="60" rx="12" fill="#1e40af"/>
+  
+  <!-- Main cross/plus symbol (medical symbol) -->
+  <rect x="26" y="15" width="8" height="30" rx="2" fill="white"/>
+  <rect x="15" y="26" width="30" height="8" rx="2" fill="white"/>
+  
+  <!-- Modern accent dots for tech/digital aspect -->
+  <circle cx="20" cy="20" r="2" fill="#60a5fa"/>
+  <circle cx="40" cy="20" r="2" fill="#60a5fa"/>
+  <circle cx="20" cy="40" r="2" fill="#60a5fa"/>
+  <circle cx="40" cy="40" r="2" fill="#60a5fa"/>
+  
+  <!-- Small connecting elements to suggest connectivity -->
+  <rect x="18" y="29" width="4" height="2" rx="1" fill="#93c5fd"/>
+  <rect x="38" y="29" width="4" height="2" rx="1" fill="#93c5fd"/>
+  <rect x="29" y="18" width="2" height="4" rx="1" fill="#93c5fd"/>
+  <rect x="29" y="38" width="2" height="4" rx="1" fill="#93c5fd"/>
+</svg>
