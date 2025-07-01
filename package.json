@@ -1,0 +1,67 @@
+{
+  "name": "n8n-nodes-semble",
+  "version": "1.0.0",
+  "description": "n8n community node for Semble practice management system",
+  "keywords": [
+    "n8n-community-node-package",
+    "semble",
+    "healthcare",
+    "practice-management"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/mikehatcher/n8n-nodes-semble",
+  "author": {
+    "name": "Mike Hatcher",
+    "email": "mike.hatcher@progenious.com",
+    "url": "https://progenious.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikehatcher/n8n-nodes-semble.git"
+  },
+  "engines": {
+    "node": ">=18.10",
+    "pnpm": ">=7.18"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "pack:local": "npm run build && npm pack --pack-destination=../n8n-local-test",
+    "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
+    "update:node": "npm run pack:local && npm run install:node",
+    "setup:test-env": "./scripts/setup-n8n-test-env.sh",
+    "start:n8n": "cd ../n8n-local-test && docker compose up -d",
+    "stop:n8n": "cd ../n8n-local-test && docker compose down",
+    "restart:n8n": "cd ../n8n-local-test && docker compose restart",
+    "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
+    "setup:owner": "cd ../n8n-local-test && ./setup-owner-account.sh",
+    "test:env": "./scripts/test-setup.sh",
+    "dev:full": "npm run pack:local && npm run install:node && npm run restart:n8n",
+    "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/SembleApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Semble/Semble.node.js",
+      "dist/nodes/Semble/SembleTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "gulp": "^4.0.2",
+    "n8n-workflow": "^1.82.0",
+    "prettier": "^2.8.8",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}
