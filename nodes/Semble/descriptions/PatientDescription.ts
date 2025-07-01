@@ -1,5 +1,19 @@
+/**
+ * @fileoverview Patient resource descriptions for Semble node
+ * @description This module defines the UI properties and operations for patient management
+ * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @website https://progenious.com
+ * @version 1.0
+ * @namespace N8nNodesSemble.Descriptions
+ */
+
 import { INodeProperties } from 'n8n-workflow';
 
+/**
+ * Operation definitions for patient resource
+ * @const {INodeProperties[]} patientOperations
+ * @description Defines available CRUD operations for patients (Create, Read, Update)
+ */
 export const patientOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
@@ -41,6 +55,12 @@ export const patientOperations: INodeProperties[] = [
 	},
 ];
 
+/**
+ * Field definitions for patient operations
+ * @const {INodeProperties[]} patientFields
+ * @description Defines input fields and parameters for all patient operations
+ * @description Includes personal information, contact details, and medical notes
+ */
 export const patientFields: INodeProperties[] = [
 	/* -------------------------------------------------------------------------- */
 	/*                                patient:create                             */

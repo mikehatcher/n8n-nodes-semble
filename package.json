@@ -12,7 +12,8 @@
   "homepage": "https://github.com/mikehatcher/n8n-nodes-semble",
   "author": {
     "name": "Mike Hatcher",
-    "email": "mike.hatcher@progenious.com"
+    "email": "mike.hatcher@progenious.com",
+    "url": "https://progenious.com"
   },
   "repository": {
     "type": "git",
@@ -26,18 +27,20 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build": "tsc && gulp build:icons",
-    "build:local": "tsc && gulp build:complete",
     "dev": "tsc --watch",
-    "dev:setup": "./scripts/setup-dev-env.sh",
-    "dev:install": "cd test-environment && ./install-node.sh",
-    "dev:start": "cd test-environment && docker compose up -d && ./setup-owner.sh",
-    "dev:stop": "cd test-environment && docker compose down",
-    "dev:logs": "cd test-environment && docker compose logs -f",
-    "dev:reset": "cd test-environment && docker compose down -v",
-    "format": "prettier nodes credentials --write",
-    "lint": "eslint nodes credentials package.json",
-    "lintfix": "eslint nodes credentials package.json --fix",
-    "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.js nodes credentials package.json"
+    "pack:local": "npm run build && npm pack --pack-destination=../n8n-local-test",
+    "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
+    "update:node": "npm run pack:local && npm run install:node",
+    "setup:test-env": "./scripts/setup-n8n-test-env.sh",
+    "start:n8n": "cd ../n8n-local-test && docker compose up -d",
+    "stop:n8n": "cd ../n8n-local-test && docker compose down",
+    "restart:n8n": "cd ../n8n-local-test && docker compose restart",
+    "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
+    "setup:owner": "cd ../n8n-local-test && ./setup-owner-account.sh",
+    "test:env": "./scripts/test-setup.sh",
+    "dev:full": "npm run pack:local && npm run install:node && npm run restart:n8n",
+    "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "dist"
@@ -48,13 +51,11 @@
       "dist/credentials/SembleApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Semble/Semble.node.js"
+      "dist/nodes/Semble/Semble.node.js",
+      "dist/nodes/Semble/SembleTrigger.node.js"
     ]
   },
   "devDependencies": {
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.1",
-    "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^4.0.2",
     "n8n-workflow": "^1.82.0",
     "prettier": "^2.8.8",

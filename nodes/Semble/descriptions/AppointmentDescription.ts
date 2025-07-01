@@ -1,5 +1,19 @@
+/**
+ * @fileoverview Appointment resource descriptions for Semble node
+ * @description This module defines the UI properties and operations for appointment management
+ * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @website https://progenious.com
+ * @version 1.0
+ * @namespace N8nNodesSemble.Descriptions
+ */
+
 import { INodeProperties } from 'n8n-workflow';
 
+/**
+ * Operation definitions for appointment resource
+ * @const {INodeProperties[]} appointmentOperations
+ * @description Defines available CRUD operations for appointments (Create, Read, Update, Delete)
+ */
 export const appointmentOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
@@ -47,6 +61,12 @@ export const appointmentOperations: INodeProperties[] = [
 	},
 ];
 
+/**
+ * Field definitions for appointment operations
+ * @const {INodeProperties[]} appointmentFields
+ * @description Defines input fields and parameters for all appointment operations
+ * @description Organized by operation type (create, read, update, delete) with conditional display logic
+ */
 export const appointmentFields: INodeProperties[] = [
 	/* -------------------------------------------------------------------------- */
 	/*                                appointment:create                         */

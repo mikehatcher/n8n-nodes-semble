@@ -1,5 +1,19 @@
+/**
+ * @fileoverview Staff resource descriptions for Semble node
+ * @description This module defines the UI properties and operations for staff management
+ * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @website https://progenious.com
+ * @version 1.0
+ * @namespace N8nNodesSemble.Descriptions
+ */
+
 import { INodeProperties } from 'n8n-workflow';
 
+/**
+ * Operation definitions for staff resource
+ * @const {INodeProperties[]} staffOperations
+ * @description Defines available read operations for staff (Get, Get Many)
+ */
 export const staffOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
@@ -29,6 +43,12 @@ export const staffOperations: INodeProperties[] = [
 	},
 ];
 
+/**
+ * Field definitions for staff operations
+ * @const {INodeProperties[]} staffFields
+ * @description Defines input fields and parameters for staff operations
+ * @description Read-only operations for retrieving staff member information
+ */
 export const staffFields: INodeProperties[] = [
 	/* -------------------------------------------------------------------------- */
 	/*                                staff:get                                  */
