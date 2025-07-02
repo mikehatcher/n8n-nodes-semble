@@ -57,19 +57,19 @@ export class SembleTrigger implements INodeType {
         type: "options",
         options: [
           {
+            name: "New Appointment",
+            value: "newAppointment",
+            description: "Trigger when a new appointment is created",
+          },
+          {
             name: "New Patient",
             value: "newPatient",
             description: "Trigger when a new patient is created",
           },
           {
-            name: "Updated Patient",
-            value: "updatedPatient",
-            description: "Trigger when a patient is updated",
-          },
-          {
-            name: "New Appointment",
-            value: "newAppointment",
-            description: "Trigger when a new appointment is created",
+            name: "New Product",
+            value: "newProduct",
+            description: "Trigger when a new product is created",
           },
           {
             name: "Updated Appointment",
@@ -77,9 +77,9 @@ export class SembleTrigger implements INodeType {
             description: "Trigger when an appointment is updated",
           },
           {
-            name: "New Product",
-            value: "newProduct",
-            description: "Trigger when a new product is created",
+            name: "Updated Patient",
+            value: "updatedPatient",
+            description: "Trigger when a patient is updated",
           },
           {
             name: "Updated Product",
