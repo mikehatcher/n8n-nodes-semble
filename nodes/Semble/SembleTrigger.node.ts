@@ -3,7 +3,7 @@
  * @description This module provides polling triggers for Semble API events
  * @author Mike Hatcher <mike.hatcher@progenious.com>
  * @website https://progenious.com
- * @version 1.0
+ * @version 1.1
  * @namespace N8nNodesSemble.Triggers
  */
 
