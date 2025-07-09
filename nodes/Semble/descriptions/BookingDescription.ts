@@ -1,7 +1,7 @@
 /**
  * @fileoverview Booking resource descriptions for Semble node
  * @description This module defines the UI properties and operations for booking management
- * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Descriptions
  */

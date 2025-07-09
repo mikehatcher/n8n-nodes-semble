@@ -1,7 +1,7 @@
 /**
  * @fileoverview Main Semble node implementation for n8n
  * @description This module provides CRUD operations for Semble practice management system
- * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Nodes
  */

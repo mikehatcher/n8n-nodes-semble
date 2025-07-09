@@ -1,7 +1,7 @@
 /**
  * @fileoverview Shared field helpers and constants for Semble node descriptions
  * @description DRY utilities for creating consistent field definitions across resources
- * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Descriptions.Shared
  */

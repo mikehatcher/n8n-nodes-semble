@@ -1,21 +1,8 @@
 /**
  * @fileoverview Semble trigger node implementation for n8n
  * @description This module provides scheduled polling triggers for Semble practice management system
- * @author Mike Hatcher <mike.hatcher@progenious.com>
- *     try {
-      // Execute the query without variables (like getBookingTypes)
-      const variables: IDataObject = {};
-
-      if (debugMode && this.logger) {
-        this.logger.info(`[SEMBLE-TRIGGER-DEBUG] Query variables:`, variables);
-      }
-
-      // Execute the query
-      const response = await sembleApiRequest.call(
-        this,
-        resourceConfig.query,
-        variables,
-        3,progenious.com
+ * @author Mike Hatcher
+ * @website https://progenious.com
  * @namespace N8nNodesSemble.Triggers
  */
 
