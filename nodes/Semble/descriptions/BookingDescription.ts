@@ -39,35 +39,36 @@ export const bookingOperations: INodeProperties[] = [
 			{
 				name: 'Create',
 				value: 'create',
-				description: 'Create a new booking',
+				description: 'Create a new booking appointment',
 				action: 'Create a booking',
 			},
 			{
 				name: 'Get',
 				value: 'get',
-				description: 'Get a booking',
+				description: 'Retrieve a specific booking by ID',
 				action: 'Get a booking',
 			},
 			{
 				name: 'Get Many',
 				value: 'getAll',
-				description: 'Get many bookings',
+				description: 'Retrieve multiple bookings with optional filtering',
 				action: 'Get many bookings',
 			},
 			{
 				name: 'Update',
 				value: 'update',
-				description: 'Update a booking',
+				description: 'Modify an existing booking appointment',
 				action: 'Update a booking',
 			},
 			{
 				name: 'Delete',
 				value: 'delete',
-				description: 'Delete a booking',
+				description: 'Remove a booking appointment permanently',
 				action: 'Delete a booking',
 			},
 		],
 		default: 'create',
+		description: 'Choose what action to perform on the booking data',
 	},
 	
 	// Debug mode setting

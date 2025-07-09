@@ -186,3 +186,47 @@ export function createLimitField(resource: string): INodeProperties {
 		description: 'Max number of results to return',
 	};
 }
+
+/**
+ * Creates a standardised string field
+ */
+export function createStringField(
+	displayName: string,
+	name: string,
+	resource: string,
+	operations: string[],
+	required: boolean = false,
+	description?: string
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		displayOptions: createDisplayOptions(resource, operations),
+		default: '',
+		description: description || displayName,
+	};
+}
+
+/**
+ * Creates a collection field with specified options
+ */
+export function createCollectionField(
+	displayName: string,
+	name: string,
+	resource: string,
+	operations: string[],
+	options: INodeProperties[],
+	placeholder?: string
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'collection',
+		placeholder: placeholder || 'Add Field',
+		default: {},
+		displayOptions: createDisplayOptions(resource, operations),
+		options,
+	};
+}

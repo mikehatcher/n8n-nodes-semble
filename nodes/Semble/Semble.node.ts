@@ -67,9 +67,11 @@ export class Semble implements INodeType {
           {
             name: "Booking",
             value: "booking",
+            description: "Manage appointments and bookings in your practice",
           },
         ],
         default: "booking",
+        description: "The type of data you want to work with in Semble",
       },
 
       // Booking operations
@@ -107,7 +109,7 @@ export class Semble implements INodeType {
 					}
 				`;
 
-        const response = await sembleApiRequest.call(this, query);
+        const response = await sembleApiRequest.call(this, query, {}, 3, false);
         const types = response.data.bookingTypes || [];
 
         for (const type of types) {
@@ -140,6 +142,13 @@ export class Semble implements INodeType {
 
     const resource = this.getNodeParameter("resource", 0) as string;
     const operation = this.getNodeParameter("operation", 0) as string;
+    
+    // Get debug mode setting (defaults to false if not set)
+    const debugMode = this.getNodeParameter("debugMode", 0, false) as boolean;
+
+    if (debugMode && this.logger) {
+      this.logger.info(`[SEMBLE-DEBUG] Debug mode enabled for ${resource}:${operation} operation`);
+    }
 
     for (let i = 0; i < length; i++) {
       try {
@@ -188,7 +197,9 @@ export class Semble implements INodeType {
             const response = await sembleApiRequest.call(
               this,
               mutation,
-              variables
+              variables,
+              3,
+              debugMode
             );
             responseData = response.data.createBooking;
           }
@@ -229,7 +240,9 @@ export class Semble implements INodeType {
             const response = await sembleApiRequest.call(
               this,
               query,
-              variables
+              variables,
+              3,
+              debugMode
             );
             responseData = response.data.booking;
           }
@@ -275,7 +288,9 @@ export class Semble implements INodeType {
             const response = await sembleApiRequest.call(
               this,
               query,
-              variables
+              variables,
+              3,
+              debugMode
             );
             responseData = response.data.bookings;
           }
@@ -313,7 +328,9 @@ export class Semble implements INodeType {
             const response = await sembleApiRequest.call(
               this,
               mutation,
-              variables
+              variables,
+              3,
+              debugMode
             );
             responseData = response.data.updateBooking;
           }
@@ -337,7 +354,9 @@ export class Semble implements INodeType {
             const response = await sembleApiRequest.call(
               this,
               mutation,
-              variables
+              variables,
+              3,
+              debugMode
             );
             responseData = response.data.deleteBooking;
           }

@@ -39,4 +39,4 @@
 // Re-export all node types and credentials
 export { SembleApi } from "./credentials/SembleApi.credentials";
 export { Semble } from "./nodes/Semble/Semble.node";
-export { SembleTrigger } from "./nodes/Semble/SembleTrigger.node";
+export { default as SembleTrigger } from "./nodes/Semble/SembleTrigger.node";
