@@ -7,6 +7,17 @@
  */
 
 import { INodeProperties } from 'n8n-workflow';
+import {
+	createIdField,
+	createDateTimeField,
+	createStatusField,
+	createNotesField,
+	createOptionsField,
+	createBooleanField,
+	createLimitField,
+	createDisplayOptions,
+	BOOKING_STATUS_OPTIONS,
+} from './shared/FieldHelpers';
 
 /**
  * Operation definitions for booking resource
@@ -58,6 +69,16 @@ export const bookingOperations: INodeProperties[] = [
 		],
 		default: 'create',
 	},
+	
+	// Debug mode setting
+	createBooleanField(
+		'Debug Mode',
+		'debugMode',
+		'booking',
+		['create', 'get', 'getAll', 'update', 'delete'],
+		false,
+		'Enable detailed logging for troubleshooting API requests and responses'
+	),
 ];
 
 /**
@@ -75,89 +96,49 @@ export const bookingFields: INodeProperties[] = [
 		name: 'patientId',
 		type: 'string',
 		required: true,
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['create'],
-			},
-		},
+		displayOptions: createDisplayOptions('booking', ['create']),
 		default: '',
 		description: 'The ID of the patient for this booking',
 	},
-	{
-		displayName: 'Staff',
-		name: 'staffId',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getStaff',
-		},
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['create'],
-			},
-		},
-		default: '',
-		description: 'The staff member for this booking',
-	},
-	{
-		displayName: 'Booking Type',
-		name: 'bookingTypeId',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getBookingTypes',
-		},
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['create'],
-			},
-		},
-		default: '',
-		description: 'The type of booking',
-	},
-	{
-		displayName: 'Start Time',
-		name: 'startTime',
-		type: 'dateTime',
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['create'],
-			},
-		},
-		default: '',
-		description: 'The start time of the booking',
-	},
-	{
-		displayName: 'End Time',
-		name: 'endTime',
-		type: 'dateTime',
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['create'],
-			},
-		},
-		default: '',
-		description: 'The end time of the booking',
-	},
+	createOptionsField(
+		'Staff',
+		'staffId',
+		'booking',
+		['create'],
+		'getStaff',
+		'The staff member for this booking'
+	),
+	createOptionsField(
+		'Booking Type',
+		'bookingTypeId',
+		'booking',
+		['create'],
+		'getBookingTypes',
+		'The type of booking'
+	),
+	createDateTimeField(
+		'Start Time',
+		'startTime',
+		'booking',
+		['create'],
+		true,
+		'The start time of the booking'
+	),
+	createDateTimeField(
+		'End Time',
+		'endTime',
+		'booking',
+		['create'],
+		true,
+		'The end time of the booking'
+	),
 	{
 		displayName: 'Additional Fields',
 		name: 'additionalFields',
 		type: 'collection',
 		placeholder: 'Add Field',
 		default: {},
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['create'],
-			},
-		},
+		displayOptions: createDisplayOptions('booking', ['create']),
 		options: [
 			{
 				displayName: 'Notes',
@@ -173,20 +154,7 @@ export const bookingFields: INodeProperties[] = [
 				displayName: 'Status',
 				name: 'status',
 				type: 'options',
-				options: [
-					{
-						name: 'Scheduled',
-						value: 'scheduled',
-					},
-					{
-						name: 'Confirmed',
-						value: 'confirmed',
-					},
-					{
-						name: 'Cancelled',
-						value: 'cancelled',
-					},
-				],
+				options: BOOKING_STATUS_OPTIONS,
 				default: 'scheduled',
 				description: 'The status of the booking',
 			},
@@ -196,67 +164,33 @@ export const bookingFields: INodeProperties[] = [
 	/* -------------------------------------------------------------------------- */
 	/*                                booking:get                            */
 	/* -------------------------------------------------------------------------- */
-	{
-		displayName: 'Booking ID',
-		name: 'bookingId',
-		type: 'string',
-		required: true,
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['get', 'update', 'delete'],
-			},
-		},
-		default: '',
-		description: 'The ID of the booking to retrieve',
-	},
+	createIdField(
+		'Booking ID',
+		'bookingId',
+		'booking',
+		['get', 'update', 'delete'],
+		'The ID of the booking to retrieve'
+	),
 
 	/* -------------------------------------------------------------------------- */
 	/*                                booking:getAll                         */
 	/* -------------------------------------------------------------------------- */
-	{
-		displayName: 'Return All',
-		name: 'returnAll',
-		type: 'boolean',
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['getAll'],
-			},
-		},
-		default: false,
-		description: 'Whether to return all results or only up to a given limit',
-	},
-	{
-		displayName: 'Limit',
-		name: 'limit',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['getAll'],
-				returnAll: [false],
-			},
-		},
-		typeOptions: {
-			minValue: 1,
-			maxValue: 100,
-		},
-		default: 50,
-		description: 'Max number of results to return',
-	},
+	createBooleanField(
+		'Return All',
+		'returnAll',
+		'booking',
+		['getAll'],
+		false,
+		'Whether to return all results or only up to a given limit'
+	),
+	createLimitField('booking'),
 	{
 		displayName: 'Filters',
 		name: 'filters',
 		type: 'collection',
 		placeholder: 'Add Filter',
 		default: {},
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['getAll'],
-			},
-		},
+		displayOptions: createDisplayOptions('booking', ['getAll']),
 		options: [
 			{
 				displayName: 'Staff ID',
@@ -290,24 +224,7 @@ export const bookingFields: INodeProperties[] = [
 				displayName: 'Status',
 				name: 'status',
 				type: 'options',
-				options: [
-					{
-						name: 'Scheduled',
-						value: 'scheduled',
-					},
-					{
-						name: 'Confirmed',
-						value: 'confirmed',
-					},
-					{
-						name: 'Cancelled',
-						value: 'cancelled',
-					},
-					{
-						name: 'Completed',
-						value: 'completed',
-					},
-				],
+				options: BOOKING_STATUS_OPTIONS,
 				default: '',
 				description: 'Filter by booking status',
 			},
@@ -323,12 +240,7 @@ export const bookingFields: INodeProperties[] = [
 		type: 'collection',
 		placeholder: 'Add Field',
 		default: {},
-		displayOptions: {
-			show: {
-				resource: ['booking'],
-				operation: ['update'],
-			},
-		},
+		displayOptions: createDisplayOptions('booking', ['update']),
 		options: [
 			{
 				displayName: 'Start Time',
@@ -358,24 +270,7 @@ export const bookingFields: INodeProperties[] = [
 				displayName: 'Status',
 				name: 'status',
 				type: 'options',
-				options: [
-					{
-						name: 'Scheduled',
-						value: 'scheduled',
-					},
-					{
-						name: 'Confirmed',
-						value: 'confirmed',
-					},
-					{
-						name: 'Cancelled',
-						value: 'cancelled',
-					},
-					{
-						name: 'Completed',
-						value: 'completed',
-					},
-				],
+				options: BOOKING_STATUS_OPTIONS,
 				default: '',
 				description: 'The status of the booking',
 			},
