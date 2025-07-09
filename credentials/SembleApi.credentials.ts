@@ -3,7 +3,6 @@
  * @description This module defines the credential type for authenticating with the Semble API
  * @author Mike Hatcher <mike.hatcher@progenious.com>
  * @website https://progenious.com
- * @version 1.0
  * @namespace N8nNodesSemble.Credentials
  */
 

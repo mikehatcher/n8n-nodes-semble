@@ -3,7 +3,6 @@
  * @description This module defines the UI properties and operations for appointment management
  * @author Mike Hatcher <mike.hatcher@progenious.com>
  * @website https://progenious.com
- * @version 1.1
  * @namespace N8nNodesSemble.Descriptions
  */
 

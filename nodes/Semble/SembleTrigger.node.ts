@@ -3,7 +3,6 @@
  * @description This module provides polling triggers for Semble API events
  * @author Mike Hatcher <mike.hatcher@progenious.com>
  * @website https://progenious.com
- * @version 1.1
  * @namespace N8nNodesSemble.Triggers
  */
 
@@ -57,37 +56,17 @@ export class SembleTrigger implements INodeType {
         type: "options",
         options: [
           {
-            name: "New Appointment",
-            value: "newAppointment",
-            description: "Trigger when a new appointment is created",
+            name: "New Booking",
+            value: "newBooking",
+            description: "Trigger when a new booking is created",
           },
           {
-            name: "New Patient",
-            value: "newPatient",
-            description: "Trigger when a new patient is created",
-          },
-          {
-            name: "New Product",
-            value: "newProduct",
-            description: "Trigger when a new product is created",
-          },
-          {
-            name: "Updated Appointment",
-            value: "updatedAppointment",
-            description: "Trigger when an appointment is updated",
-          },
-          {
-            name: "Updated Patient",
-            value: "updatedPatient",
-            description: "Trigger when a patient is updated",
-          },
-          {
-            name: "Updated Product",
-            value: "updatedProduct",
-            description: "Trigger when a product is updated",
+            name: "Updated Booking",
+            value: "updatedBooking",
+            description: "Trigger when a booking is updated",
           },
         ],
-        default: "newPatient",
+        default: "newBooking",
         noDataExpression: true,
       },
       {
@@ -127,34 +106,8 @@ export class SembleTrigger implements INodeType {
 
     // Build the GraphQL query based on event type
     switch (event) {
-      case "newPatient":
-      case "updatedPatient":
-        query = `
-						query GetPatients($options: QueryOptions) {
-							patients(options: $options) {
-								data {
-									id
-									firstName
-									lastName
-									email
-									dob
-									createdAt
-									updatedAt
-								}
-							}
-						}
-					`;
-        if (lastPoll) {
-          variables.options = {
-            updatedAt: {
-              start: lastPoll,
-            },
-          };
-        }
-        break;
-
-      case "newAppointment":
-      case "updatedAppointment":
+      case "newBooking":
+      case "updatedBooking":
         query = `
 						query GetBookings($options: QueryOptions) {
 							bookings(options: $options) {
@@ -170,33 +123,6 @@ export class SembleTrigger implements INodeType {
 									location {
 										name
 									}
-									createdAt
-									updatedAt
-								}
-							}
-						}
-					`;
-        if (lastPoll) {
-          variables.options = {
-            updatedAt: {
-              start: lastPoll,
-            },
-          };
-        }
-        break;
-
-      case "newProduct":
-      case "updatedProduct":
-        query = `
-						query GetProducts($options: QueryOptions) {
-							products(options: $options) {
-								data {
-									id
-									name
-									itemCode
-									price
-									stockLevel
-									status
 									createdAt
 									updatedAt
 								}
@@ -245,23 +171,7 @@ export class SembleTrigger implements INodeType {
       let items: any[] = [];
 
       switch (event) {
-        case "newPatient":
-          items =
-            response.data.patients?.data?.filter(
-              (patient: any) =>
-                !lastPoll || new Date(patient.createdAt) > new Date(lastPoll)
-            ) || [];
-          break;
-
-        case "updatedPatient":
-          items =
-            response.data.patients?.data?.filter(
-              (patient: any) =>
-                !lastPoll || new Date(patient.updatedAt) > new Date(lastPoll)
-            ) || [];
-          break;
-
-        case "newAppointment":
+        case "newBooking":
           items =
             response.data.bookings?.data?.filter(
               (booking: any) =>
@@ -269,27 +179,11 @@ export class SembleTrigger implements INodeType {
             ) || [];
           break;
 
-        case "updatedAppointment":
+        case "updatedBooking":
           items =
             response.data.bookings?.data?.filter(
               (booking: any) =>
                 !lastPoll || new Date(booking.updatedAt) > new Date(lastPoll)
-            ) || [];
-          break;
-
-        case "newProduct":
-          items =
-            response.data.products?.data?.filter(
-              (product: any) =>
-                !lastPoll || new Date(product.createdAt) > new Date(lastPoll)
-            ) || [];
-          break;
-
-        case "updatedProduct":
-          items =
-            response.data.products?.data?.filter(
-              (product: any) =>
-                !lastPoll || new Date(product.updatedAt) > new Date(lastPoll)
             ) || [];
           break;
       }

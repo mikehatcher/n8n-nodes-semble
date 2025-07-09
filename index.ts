@@ -3,7 +3,6 @@
  * @description This module exports all node types and credentials for the Semble n8n integration
  * @author Mike Hatcher <mike.hatcher@progenious.com>
  * @website https://progenious.com
- * @version 1.0
  * @namespace N8nNodesSemble
  */
 

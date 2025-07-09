@@ -1,9 +1,9 @@
-/**
- * @fileoverview Generic utility functions for Semble API integration
+/** * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @website https://progenious.com
+ * @namespace N8nNodesSemble.Utils@fileoverview Generic utility functions for Semble API integration
  * @description This module provides rate limiting, API request handling, and utility functions
  * @author Mike Hatcher <mike.hatcher@progenious.com>
  * @website https://progenious.com
- * @version 1.1
  * @namespace N8nNodesSemble.Utils
  */
 
