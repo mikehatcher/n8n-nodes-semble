@@ -1,12 +1,41 @@
 # Copilot Custom Instruction
 
+## 🚀 QUICK REFERENCE - CRITICAL GUIDELINES
+
+**Essential Rules:**
+- **Testing**: NEVER create new workflows - always use "Automated test - Don't delete"
+- **API**: ALWAYS verify Semble API documentation at https://docs.semble.io/ before coding
+- **Rate Limiting**: Use `sembleApiRequest` helper - max 120 requests/minute, min 30s polling
+- **Language**: Use British English (optimise, colour, customise)
+- **Errors**: Use NodeApiError/NodeOperationError with user-friendly messages
+- **Types**: TypeScript strict mode with comprehensive annotations
+- **Git**: Feature branches with conventional commits (feat:, fix:, docs:)
+- **Files**: Check if files exist before creating, update all references when moving
+
+---
+
+## PROJECT BASICS
+
 ## Project Overview
-XXXX
+This project is an n8n community node package that provides integration with the Semble practice management system. It allows n8n workflows to interact with Semble's GraphQL API for booking management, enabling automation of appointment scheduling, patient data synchronisation, and healthcare workflow orchestration. The package includes both action nodes for CRUD operations and trigger nodes for real-time event monitoring.
 
 ## Technology Stack
-XXXX
+- **Node.js** (v18.10+): Runtime environment for the n8n community node
+- **TypeScript**: Primary development language with strict type checking
+- **n8n-workflow**: Core n8n framework for node development and workflow integration
+- **GraphQL**: API communication protocol for Semble integration
+- **Gulp**: Build automation for icon processing and asset compilation
+- **ESLint**: Code linting with n8n-specific rules and TypeScript integration
+- **Prettier**: Code formatting and style consistency
+- **PNPM**: Package manager for dependency management and workspace handling
+- **Jest**: Testing framework for unit and integration tests
+- **Docker**: Containerised n8n environment for local development and testing
 
-## Collaboration Guidelines
+---
+
+## DETAILED GUIDELINES
+
+### Collaboration Guidelines
 - When receiving corrections or feedback, ask if they should be incorporated into these custom instructions
 - Continuously improve code quality based on review feedback
 - Share knowledge and best practices with the team
@@ -32,7 +61,7 @@ XXXX
   - Consider using code comments to mark sections that have been significantly modified
   - Document any dependencies between changes that might complicate rollbacks
 
-## Documentation and Knowledge Management
+### Documentation and Knowledge Management
 - Project documentation is located in `./docs/` directory
 - When making significant code changes, update the relevant documentation
 - Before implementing new features, check existing documentation first
@@ -44,7 +73,7 @@ XXXX
 - Link to external resources when relevant rather than duplicating information
 - When documenting processes, use step-by-step instructions with clear headings
 
-## API Integration Guidelines
+### API Integration Guidelines
 - **ALWAYS verify API documentation before making assumptions about data models**
 - For Semble API integration, refer to the official documentation: https://docs.semble.io/
 - Never assume field names, resource types, or API structure without checking the actual API schema
@@ -53,11 +82,21 @@ XXXX
 - Test API endpoints with tools like curl or GraphQL playground before implementing in code
 - Document any API quirks or special requirements discovered during development
 
-## Development Standards
+### Development Standards
+- Follow n8n community node development guidelines and conventions
+- Use TypeScript strict mode with comprehensive type annotations
+- Implement proper error handling with NodeApiError and NodeOperationError
+- Follow the n8n naming conventions for node properties and operations
+- Use semantic versioning (semver) for all releases and version management
+- Implement rate limiting to respect Semble API constraints (120 requests/minute)
+- Use GraphQL best practices with proper query optimisation and field selection
+- Implement polling triggers with configurable intervals and efficient data filtering
+- Follow healthcare data handling best practices and privacy considerations
+- Use JSDoc format for comprehensive code documentation
+- Implement proper credential validation and security measures
+- Use consistent error messages and user-friendly descriptions
 
-XXXX
-
-## Documentation Guidelines
+### Documentation Guidelines
 - Use PHPDocumentor 3.x compatible syntax for all PHP documentation
 - Run PHPDocumentor periodically to generate and update documentation
 - Include example usage for complex functions
@@ -74,22 +113,45 @@ XXXX
 - Use meaningful variable and function names to make code self-documenting
 - Comment any workarounds, browser-specific hacks, or unusual patterns
 
-## Best Practices
-XXXX
+### Best Practices
+- Always use the sembleApiRequest helper function for API calls to ensure rate limiting
+- Implement comprehensive input validation for all node parameters
+- Use dynamic option loading for dropdowns (appointment types, staff, etc.)
+- Provide meaningful default values and clear parameter descriptions
+- Handle API errors gracefully with user-friendly error messages
+- Use polling intervals of at least 30 seconds to respect API rate limits
+- Implement proper credential management with environment-specific settings
+- Use TypeScript interfaces for consistent data structures across the codebase
+- Follow n8n's property naming conventions (camelCase for internal, display names for UI)
+- Implement proper pagination handling for large data sets
+- Use consistent GraphQL query patterns and field selection
+- Implement debug logging for troubleshooting and development
+- Provide clear examples and documentation for each node operation
+- Handle edge cases such as deleted records, API timeouts, and network failures
 
-## Debugging Guidelines
-XXXX
+### Debugging Guidelines
+- Enable debug mode in node settings to capture detailed API request/response logging
+- Use the enhanced error logging in GenericFunctions.ts for API troubleshooting
+- Check n8n execution logs for detailed error information and stack traces
+- Verify Semble API credentials and base URL configuration in credential settings
+- Test GraphQL queries independently using tools like GraphQL Playground or Postman
+- Monitor API rate limiting and implement appropriate backoff strategies
+- Use the safety mode settings to prevent accidental data modifications during development
+- Implement comprehensive logging for polling triggers to track data synchronisation
+- Check network connectivity and API endpoint availability when troubleshooting
+- Use browser developer tools to inspect n8n UI interactions and parameter validation
+- Implement proper error boundaries to prevent node crashes from affecting workflows
+- Document common error scenarios and their resolutions in the project documentation
 
-## n8n Testing Guidelines
-- When using the n8n API for automated testing, **DO NOT create a new workflow each time**
-- Use the existing workflow called "Automated test - Don't delete" for all testing purposes
-- Only create this workflow if it doesn't exist or if you are specifically testing workflow creation functionality
-- When testing n8n nodes, enable debug mode in the node settings to capture detailed logging
-- Use the enhanced error logging to identify API issues and troubleshoot problems
-- Test nodes with valid credentials and realistic data to ensure proper functionality
-- Document any testing procedures or requirements for future reference
+### n8n Testing Guidelines
+- **DO NOT create new workflows for testing** - Always use the existing "Automated test - Don't delete" workflow
+- Only create this workflow if it doesn't exist or when specifically testing workflow creation functionality
+- Enable debug mode in node settings to capture detailed logging during testing
+- Use enhanced error logging to identify and troubleshoot API issues
+- Test with valid credentials and realistic data to ensure proper functionality
+- Document testing procedures and requirements for future reference
 
-## Content and Language Standards
+### Content and Language Standards
 - Use British English spelling and grammar for all documentation and comments
 - Preferred spellings: "optimise" (not "optimize"), "colour" (not "color"), etc.
 - Use "-ise" suffix rather than "-ize" (e.g., "customise" not "customize")
@@ -97,17 +159,30 @@ XXXX
 - Maintain consistent terminology throughout codebase and documentation
 - Use proper medical terminology following UK medical standards
 
-## Markdown Generation Guidelines
+### Markdown Generation Guidelines
 - Provide complete markdown files with properly escaped nested code blocks
 - Use triple backticks (```) for inner code blocks
 - Use four backticks (````) to wrap the entire markdown content
 - This ensures nested code blocks don't terminate the outer block prematurely
 - Test markdown validity before delivering final content
 
-## Code Style Guidelines
-XXXX
+### Code Style Guidelines
+- Use TypeScript strict mode with explicit type annotations for all functions and variables
+- Follow n8n naming conventions: camelCase for properties, PascalCase for classes
+- Use meaningful variable and function names that clearly describe their purpose
+- Implement proper JSDoc documentation for all public methods and classes
+- Use consistent indentation (2 spaces) and follow Prettier formatting rules
+- Group imports logically: n8n imports first, then local imports, then external libraries
+- Use const for immutable values, let for mutable variables, avoid var entirely
+- Implement proper error handling with try-catch blocks and meaningful error messages
+- Use template literals for string interpolation and multi-line strings
+- Follow GraphQL query formatting with proper indentation and field organisation
+- Use destructuring for object and array assignments where appropriate
+- Implement consistent parameter validation patterns across all node operations
+- Use arrow functions for callbacks and short function expressions
+- Follow async/await patterns consistently rather than mixing with Promise chains
 
-## Workflow Tips
+### Workflow Tips
 - Use git feature branches for new functionality
 - Create descriptive branch names using format `feature/feature-name` or `fix/issue-description`
 - Commit to your feature branch often with clear commit messages
@@ -116,10 +191,23 @@ XXXX
 - Squash commits before merging to maintain a clean commit history
 - Follow conventional commits pattern (`feat:`, `fix:`, `docs:`, etc.)
 
-## Performance Requirements
-XXXX
+### Performance Requirements
+- Maintain API request rates below 120 requests per minute to respect Semble API limits
+- Implement efficient polling with minimum 30-second intervals for trigger nodes
+- Use GraphQL field selection to minimise data transfer and improve response times
+- Implement proper pagination for large datasets to avoid memory issues
+- Use connection pooling and request batching where appropriate
+- Cache dynamic option data (appointment types, staff lists) to reduce API calls
+- Implement exponential backoff for failed requests with jitter to prevent thundering herd
+- Monitor memory usage during large data processing operations
+- Use streaming or chunked processing for large result sets
+- Implement proper cleanup of resources and event listeners
+- Optimise GraphQL queries to avoid N+1 query problems
+- Use efficient data structures and avoid unnecessary object copying
+- Implement timeout handling for long-running API requests
+- Monitor and log performance metrics for continuous optimisation
 
-## File Management Instructions
+### File Management Instructions
 
 When renaming or moving files:
 
