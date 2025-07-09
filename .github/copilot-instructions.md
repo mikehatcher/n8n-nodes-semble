@@ -4,7 +4,8 @@
 
 **Essential Rules:**
 - **Testing**: NEVER create new workflows - always use "Automated test - Don't delete"
-- **API**: ALWAYS verify Semble API documentation at https://docs.semble.io/ before coding
+- **API Docs**: ALWAYS verify Semble API documentation at https://docs.semble.io/ before coding
+- **API Endpoint**: https://open.semble.io/graphql
 - **Rate Limiting**: Use `sembleApiRequest` helper - max 120 requests/minute, min 30s polling
 - **Language**: Use British English (optimise, colour, customise)
 - **Errors**: Use NodeApiError/NodeOperationError with user-friendly messages
