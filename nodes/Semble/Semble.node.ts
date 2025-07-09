@@ -22,15 +22,15 @@ import {
 import { sembleApiRequest } from "./GenericFunctions";
 
 import {
-  appointmentOperations,
-  appointmentFields,
-} from "./descriptions/AppointmentDescription";
+  bookingOperations,
+  bookingFields,
+} from "./descriptions/BookingDescription";
 
 /**
  * Main Semble node class for n8n
  * @class Semble
  * @implements {INodeType}
- * @description Provides appointment management access to Semble API
+ * @description Provides booking management access to Semble API
  */
 export class Semble implements INodeType {
   /**
@@ -65,42 +65,42 @@ export class Semble implements INodeType {
         noDataExpression: true,
         options: [
           {
-            name: "Appointment",
-            value: "appointment",
+            name: "Booking",
+            value: "booking",
           },
         ],
-        default: "appointment",
+        default: "booking",
       },
 
-      // Appointment operations
-      ...appointmentOperations,
-      ...appointmentFields,
+      // Booking operations
+      ...bookingOperations,
+      ...bookingFields,
     ],
   };
 
   /**
    * Dynamic option loading methods  
    * @type {Object}
-   * @description Provides dynamic dropdown options for appointments
+   * @description Provides dynamic dropdown options for bookings
    */
   methods = {
     loadOptions: {
       /**
-       * Loads appointment types for appointment creation dropdowns
+       * Loads booking types for booking creation dropdowns
        * @async
-       * @method getAppointmentTypes
+       * @method getBookingTypes
        * @param {ILoadOptionsFunctions} this - n8n load options context
-       * @returns {Promise<INodePropertyOptions[]>} Array of appointment type options
+       * @returns {Promise<INodePropertyOptions[]>} Array of booking type options
        */
-      // Load appointment types
-      async getAppointmentTypes(
+      // Load booking types
+      async getBookingTypes(
         this: ILoadOptionsFunctions
       ): Promise<INodePropertyOptions[]> {
         const returnData: INodePropertyOptions[] = [];
 
         const query = `
-					query GetAppointmentTypes {
-						appointmentTypes {
+					query GetBookingTypes {
+						bookingTypes {
 							id
 							name
 						}
@@ -108,7 +108,7 @@ export class Semble implements INodeType {
 				`;
 
         const response = await sembleApiRequest.call(this, query);
-        const types = response.data.appointmentTypes || [];
+        const types = response.data.bookingTypes || [];
 
         for (const type of types) {
           returnData.push({
@@ -143,13 +143,13 @@ export class Semble implements INodeType {
 
     for (let i = 0; i < length; i++) {
       try {
-        if (resource === "appointment") {
-          // Appointment operations
+        if (resource === "booking") {
+          // Booking operations
           if (operation === "create") {
             const patientId = this.getNodeParameter("patientId", i) as string;
             const staffId = this.getNodeParameter("staffId", i) as string;
-            const appointmentTypeId = this.getNodeParameter(
-              "appointmentTypeId",
+            const bookingTypeId = this.getNodeParameter(
+              "bookingTypeId",
               i
             ) as string;
             const startTime = this.getNodeParameter("startTime", i) as string;
@@ -160,12 +160,12 @@ export class Semble implements INodeType {
             ) as IDataObject;
 
             const mutation = `
-							mutation CreateAppointment($input: CreateAppointmentInput!) {
-								createAppointment(input: $input) {
+							mutation CreateBooking($input: CreateBookingInput!) {
+								createBooking(input: $input) {
 									id
 									patientId
 									staffId
-									appointmentTypeId
+									bookingTypeId
 									startTime
 									endTime
 									status
@@ -178,7 +178,7 @@ export class Semble implements INodeType {
               input: {
                 patientId,
                 staffId,
-                appointmentTypeId,
+                bookingTypeId,
                 startTime,
                 endTime,
                 ...additionalFields,
@@ -190,22 +190,22 @@ export class Semble implements INodeType {
               mutation,
               variables
             );
-            responseData = response.data.createAppointment;
+            responseData = response.data.createBooking;
           }
 
           if (operation === "get") {
-            const appointmentId = this.getNodeParameter(
-              "appointmentId",
+            const bookingId = this.getNodeParameter(
+              "bookingId",
               i
             ) as string;
 
             const query = `
-							query GetAppointment($id: ID!) {
-								appointment(id: $id) {
+							query GetBooking($id: ID!) {
+								booking(id: $id) {
 									id
 									patientId
 									staffId
-									appointmentTypeId
+									bookingTypeId
 									startTime
 									endTime
 									status
@@ -225,13 +225,13 @@ export class Semble implements INodeType {
 							}
 						`;
 
-            const variables = { id: appointmentId };
+            const variables = { id: bookingId };
             const response = await sembleApiRequest.call(
               this,
               query,
               variables
             );
-            responseData = response.data.appointment;
+            responseData = response.data.booking;
           }
 
           if (operation === "getAll") {
@@ -239,12 +239,12 @@ export class Semble implements INodeType {
             const filters = this.getNodeParameter("filters", i) as IDataObject;
 
             let query = `
-							query GetAppointments($limit: Int, $offset: Int) {
-								appointments(limit: $limit, offset: $offset) {
+							query GetBookings($limit: Int, $offset: Int) {
+								bookings(limit: $limit, offset: $offset) {
 									id
 									patientId
 									staffId
-									appointmentTypeId
+									bookingTypeId
 									startTime
 									endTime
 									status
@@ -277,12 +277,12 @@ export class Semble implements INodeType {
               query,
               variables
             );
-            responseData = response.data.appointments;
+            responseData = response.data.bookings;
           }
 
           if (operation === "update") {
-            const appointmentId = this.getNodeParameter(
-              "appointmentId",
+            const bookingId = this.getNodeParameter(
+              "bookingId",
               i
             ) as string;
             const updateFields = this.getNodeParameter(
@@ -291,12 +291,12 @@ export class Semble implements INodeType {
             ) as IDataObject;
 
             const mutation = `
-							mutation UpdateAppointment($id: ID!, $input: UpdateAppointmentInput!) {
-								updateAppointment(id: $id, input: $input) {
+							mutation UpdateBooking($id: ID!, $input: UpdateBookingInput!) {
+								updateBooking(id: $id, input: $input) {
 									id
 									patientId
 									staffId
-									appointmentTypeId
+									bookingTypeId
 									startTime
 									endTime
 									status
@@ -306,7 +306,7 @@ export class Semble implements INodeType {
 						`;
 
             const variables = {
-              id: appointmentId,
+              id: bookingId,
               input: updateFields,
             };
 
@@ -315,31 +315,31 @@ export class Semble implements INodeType {
               mutation,
               variables
             );
-            responseData = response.data.updateAppointment;
+            responseData = response.data.updateBooking;
           }
 
           if (operation === "delete") {
-            const appointmentId = this.getNodeParameter(
-              "appointmentId",
+            const bookingId = this.getNodeParameter(
+              "bookingId",
               i
             ) as string;
 
             const mutation = `
-							mutation DeleteAppointment($id: ID!) {
-								deleteAppointment(id: $id) {
+							mutation DeleteBooking($id: ID!) {
+								deleteBooking(id: $id) {
 									success
 									message
 								}
 							}
 						`;
 
-            const variables = { id: appointmentId };
+            const variables = { id: bookingId };
             const response = await sembleApiRequest.call(
               this,
               mutation,
               variables
             );
-            responseData = response.data.deleteAppointment;
+            responseData = response.data.deleteBooking;
           }
         }
 

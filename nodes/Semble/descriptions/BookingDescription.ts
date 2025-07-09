@@ -1,6 +1,6 @@
 /**
- * @fileoverview Appointment resource descriptions for Semble node
- * @description This module defines the UI properties and operations for appointment management
+ * @fileoverview Booking resource descriptions for Semble node
+ * @description This module defines the UI properties and operations for booking management
  * @author Mike Hatcher <mike.hatcher@progenious.com>
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Descriptions
@@ -9,11 +9,11 @@
 import { INodeProperties } from 'n8n-workflow';
 
 /**
- * Operation definitions for appointment resource
- * @const {INodeProperties[]} appointmentOperations
- * @description Defines available CRUD operations for appointments (Create, Read, Update, Delete)
+ * Operation definitions for booking resource
+ * @const {INodeProperties[]} bookingOperations
+ * @description Defines available CRUD operations for bookings (Create, Read, Update, Delete)
  */
-export const appointmentOperations: INodeProperties[] = [
+export const bookingOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
 		name: 'operation',
@@ -21,39 +21,39 @@ export const appointmentOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 			},
 		},
 		options: [
 			{
 				name: 'Create',
 				value: 'create',
-				description: 'Create a new appointment',
-				action: 'Create an appointment',
+				description: 'Create a new booking',
+				action: 'Create a booking',
 			},
 			{
 				name: 'Get',
 				value: 'get',
-				description: 'Get an appointment',
-				action: 'Get an appointment',
+				description: 'Get a booking',
+				action: 'Get a booking',
 			},
 			{
 				name: 'Get Many',
 				value: 'getAll',
-				description: 'Get many appointments',
-				action: 'Get many appointments',
+				description: 'Get many bookings',
+				action: 'Get many bookings',
 			},
 			{
 				name: 'Update',
 				value: 'update',
-				description: 'Update an appointment',
-				action: 'Update an appointment',
+				description: 'Update a booking',
+				action: 'Update a booking',
 			},
 			{
 				name: 'Delete',
 				value: 'delete',
-				description: 'Delete an appointment',
-				action: 'Delete an appointment',
+				description: 'Delete a booking',
+				action: 'Delete a booking',
 			},
 		],
 		default: 'create',
@@ -61,14 +61,14 @@ export const appointmentOperations: INodeProperties[] = [
 ];
 
 /**
- * Field definitions for appointment operations
- * @const {INodeProperties[]} appointmentFields
- * @description Defines input fields and parameters for all appointment operations
+ * Field definitions for booking operations
+ * @const {INodeProperties[]} bookingFields
+ * @description Defines input fields and parameters for all booking operations
  * @description Organized by operation type (create, read, update, delete) with conditional display logic
  */
-export const appointmentFields: INodeProperties[] = [
+export const bookingFields: INodeProperties[] = [
 	/* -------------------------------------------------------------------------- */
-	/*                                appointment:create                         */
+	/*                                booking:create                         */
 	/* -------------------------------------------------------------------------- */
 	{
 		displayName: 'Patient ID',
@@ -77,12 +77,12 @@ export const appointmentFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'The ID of the patient for this appointment',
+		description: 'The ID of the patient for this booking',
 	},
 	{
 		displayName: 'Staff',
@@ -94,29 +94,29 @@ export const appointmentFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'The staff member for this appointment',
+		description: 'The staff member for this booking',
 	},
 	{
-		displayName: 'Appointment Type',
-		name: 'appointmentTypeId',
+		displayName: 'Booking Type',
+		name: 'bookingTypeId',
 		type: 'options',
 		typeOptions: {
-			loadOptionsMethod: 'getAppointmentTypes',
+			loadOptionsMethod: 'getBookingTypes',
 		},
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'The type of appointment',
+		description: 'The type of booking',
 	},
 	{
 		displayName: 'Start Time',
@@ -125,12 +125,12 @@ export const appointmentFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'The start time of the appointment',
+		description: 'The start time of the booking',
 	},
 	{
 		displayName: 'End Time',
@@ -139,12 +139,12 @@ export const appointmentFields: INodeProperties[] = [
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['create'],
 			},
 		},
 		default: '',
-		description: 'The end time of the appointment',
+		description: 'The end time of the booking',
 	},
 	{
 		displayName: 'Additional Fields',
@@ -154,7 +154,7 @@ export const appointmentFields: INodeProperties[] = [
 		default: {},
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['create'],
 			},
 		},
@@ -167,7 +167,7 @@ export const appointmentFields: INodeProperties[] = [
 					alwaysOpenEditWindow: true,
 				},
 				default: '',
-				description: 'Additional notes for the appointment',
+				description: 'Additional notes for the booking',
 			},
 			{
 				displayName: 'Status',
@@ -188,31 +188,31 @@ export const appointmentFields: INodeProperties[] = [
 					},
 				],
 				default: 'scheduled',
-				description: 'The status of the appointment',
+				description: 'The status of the booking',
 			},
 		],
 	},
 
 	/* -------------------------------------------------------------------------- */
-	/*                                appointment:get                            */
+	/*                                booking:get                            */
 	/* -------------------------------------------------------------------------- */
 	{
-		displayName: 'Appointment ID',
-		name: 'appointmentId',
+		displayName: 'Booking ID',
+		name: 'bookingId',
 		type: 'string',
 		required: true,
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['get', 'update', 'delete'],
 			},
 		},
 		default: '',
-		description: 'The ID of the appointment to retrieve',
+		description: 'The ID of the booking to retrieve',
 	},
 
 	/* -------------------------------------------------------------------------- */
-	/*                                appointment:getAll                         */
+	/*                                booking:getAll                         */
 	/* -------------------------------------------------------------------------- */
 	{
 		displayName: 'Return All',
@@ -220,7 +220,7 @@ export const appointmentFields: INodeProperties[] = [
 		type: 'boolean',
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['getAll'],
 			},
 		},
@@ -233,7 +233,7 @@ export const appointmentFields: INodeProperties[] = [
 		type: 'number',
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['getAll'],
 				returnAll: [false],
 			},
@@ -253,7 +253,7 @@ export const appointmentFields: INodeProperties[] = [
 		default: {},
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['getAll'],
 			},
 		},
@@ -277,14 +277,14 @@ export const appointmentFields: INodeProperties[] = [
 				name: 'dateFrom',
 				type: 'dateTime',
 				default: '',
-				description: 'Filter appointments from this date',
+				description: 'Filter bookings from this date',
 			},
 			{
 				displayName: 'Date To',
 				name: 'dateTo',
 				type: 'dateTime',
 				default: '',
-				description: 'Filter appointments to this date',
+				description: 'Filter bookings to this date',
 			},
 			{
 				displayName: 'Status',
@@ -309,13 +309,13 @@ export const appointmentFields: INodeProperties[] = [
 					},
 				],
 				default: '',
-				description: 'Filter by appointment status',
+				description: 'Filter by booking status',
 			},
 		],
 	},
 
 	/* -------------------------------------------------------------------------- */
-	/*                                appointment:update                         */
+	/*                                booking:update                         */
 	/* -------------------------------------------------------------------------- */
 	{
 		displayName: 'Update Fields',
@@ -325,7 +325,7 @@ export const appointmentFields: INodeProperties[] = [
 		default: {},
 		displayOptions: {
 			show: {
-				resource: ['appointment'],
+				resource: ['booking'],
 				operation: ['update'],
 			},
 		},
@@ -335,14 +335,14 @@ export const appointmentFields: INodeProperties[] = [
 				name: 'startTime',
 				type: 'dateTime',
 				default: '',
-				description: 'The start time of the appointment',
+				description: 'The start time of the booking',
 			},
 			{
 				displayName: 'End Time',
 				name: 'endTime',
 				type: 'dateTime',
 				default: '',
-				description: 'The end time of the appointment',
+				description: 'The end time of the booking',
 			},
 			{
 				displayName: 'Notes',
@@ -352,7 +352,7 @@ export const appointmentFields: INodeProperties[] = [
 					alwaysOpenEditWindow: true,
 				},
 				default: '',
-				description: 'Additional notes for the appointment',
+				description: 'Additional notes for the booking',
 			},
 			{
 				displayName: 'Status',
@@ -377,7 +377,7 @@ export const appointmentFields: INodeProperties[] = [
 					},
 				],
 				default: '',
-				description: 'The status of the appointment',
+				description: 'The status of the booking',
 			},
 		],
 	},
