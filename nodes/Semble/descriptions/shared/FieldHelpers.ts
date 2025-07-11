@@ -9,14 +9,27 @@
 import { INodeProperties, INodePropertyOptions } from 'n8n-workflow';
 
 /**
- * Common status options used across booking operations
+ * Status options for different resource types
  */
-export const BOOKING_STATUS_OPTIONS: INodePropertyOptions[] = [
-	{ name: 'Scheduled', value: 'scheduled' },
-	{ name: 'Confirmed', value: 'confirmed' },
-	{ name: 'Cancelled', value: 'cancelled' },
-	{ name: 'Completed', value: 'completed' },
-];
+export const STATUS_OPTIONS = {
+  booking: [
+    { name: 'Scheduled', value: 'scheduled' },
+    { name: 'Confirmed', value: 'confirmed' },
+    { name: 'Cancelled', value: 'cancelled' },
+    { name: 'Completed', value: 'completed' },
+  ] as INodePropertyOptions[],
+  patient: [
+    { name: 'Active', value: 'active' },
+    { name: 'Inactive', value: 'inactive' },
+    { name: 'Archived', value: 'archived' },
+  ] as INodePropertyOptions[],
+};
+
+/**
+ * Legacy export for backward compatibility
+ * @deprecated Use STATUS_OPTIONS.booking instead
+ */
+export const BOOKING_STATUS_OPTIONS = STATUS_OPTIONS.booking;
 
 /**
  * Creates a standardised display options configuration

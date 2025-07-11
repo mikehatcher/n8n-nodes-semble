@@ -20,6 +20,7 @@ import {
 } from "n8n-workflow";
 
 import { sembleApiRequest } from "./GenericFunctions";
+import { RESOURCE_REGISTRY, ResourceName } from "./resources";
 
 import {
   bookingOperations,
@@ -132,240 +133,31 @@ export class Semble implements INodeType {
    * @returns {Promise<INodeExecutionData[][]>} Array of execution data
    * @throws {NodeOperationError} When operation is not supported or parameters are invalid
    * @throws {NodeApiError} When API requests fail
-   * @description Handles all CRUD operations for appointments/bookings
+   * @description Handles all CRUD operations using resource-based approach
    */
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const returnData: IDataObject[] = [];
     const length = items.length;
-    let responseData;
 
-    const resource = this.getNodeParameter("resource", 0) as string;
+    const resource = this.getNodeParameter("resource", 0) as ResourceName;
     const operation = this.getNodeParameter("operation", 0) as string;
     
-    // Get debug mode setting (defaults to false if not set)
-    const debugMode = this.getNodeParameter("debugMode", 0, false) as boolean;
-
-    if (debugMode && this.logger) {
-      this.logger.info(`[SEMBLE-DEBUG] Debug mode enabled for ${resource}:${operation} operation`);
+    // Get the resource class from the registry
+    const ResourceClass = RESOURCE_REGISTRY[resource];
+    if (!ResourceClass) {
+      throw new NodeOperationError(this.getNode(), `Unknown resource: ${resource}`);
     }
+
+    // Create resource instance
+    const resourceInstance = new ResourceClass();
 
     for (let i = 0; i < length; i++) {
       try {
-        if (resource === "booking") {
-          // Booking operations
-          if (operation === "create") {
-            const patientId = this.getNodeParameter("patientId", i) as string;
-            const staffId = this.getNodeParameter("staffId", i) as string;
-            const bookingTypeId = this.getNodeParameter(
-              "bookingTypeId",
-              i
-            ) as string;
-            const startTime = this.getNodeParameter("startTime", i) as string;
-            const endTime = this.getNodeParameter("endTime", i) as string;
-            const additionalFields = this.getNodeParameter(
-              "additionalFields",
-              i
-            ) as IDataObject;
-
-            const mutation = `
-							mutation CreateBooking($input: CreateBookingInput!) {
-								createBooking(input: $input) {
-									id
-									patientId
-									staffId
-									bookingTypeId
-									startTime
-									endTime
-									status
-									notes
-								}
-							}
-						`;
-
-            const variables = {
-              input: {
-                patientId,
-                staffId,
-                bookingTypeId,
-                startTime,
-                endTime,
-                ...additionalFields,
-              },
-            };
-
-            const response = await sembleApiRequest.call(
-              this,
-              mutation,
-              variables,
-              3,
-              debugMode
-            );
-            responseData = response.data.createBooking;
-          }
-
-          if (operation === "get") {
-            const bookingId = this.getNodeParameter(
-              "bookingId",
-              i
-            ) as string;
-
-            const query = `
-							query GetBooking($id: ID!) {
-								booking(id: $id) {
-									id
-									patientId
-									staffId
-									bookingTypeId
-									startTime
-									endTime
-									status
-									notes
-									patient {
-										id
-										firstName
-										lastName
-										email
-									}
-									staff {
-										id
-										firstName
-										lastName
-									}
-								}
-							}
-						`;
-
-            const variables = { id: bookingId };
-            const response = await sembleApiRequest.call(
-              this,
-              query,
-              variables,
-              3,
-              debugMode
-            );
-            responseData = response.data.booking;
-          }
-
-          if (operation === "getAll") {
-            const returnAll = this.getNodeParameter("returnAll", i) as boolean;
-            const filters = this.getNodeParameter("filters", i) as IDataObject;
-
-            let query = `
-							query GetBookings($limit: Int, $offset: Int) {
-								bookings(limit: $limit, offset: $offset) {
-									id
-									patientId
-									staffId
-									bookingTypeId
-									startTime
-									endTime
-									status
-									notes
-									patient {
-										id
-										firstName
-										lastName
-										email
-									}
-									staff {
-										id
-										firstName
-										lastName
-									}
-								}
-							}
-						`;
-
-            const variables: IDataObject = {};
-            if (!returnAll) {
-              variables.limit = this.getNodeParameter("limit", i) as number;
-            }
-
-            // Apply filters if provided
-            Object.assign(variables, filters);
-
-            const response = await sembleApiRequest.call(
-              this,
-              query,
-              variables,
-              3,
-              debugMode
-            );
-            responseData = response.data.bookings;
-          }
-
-          if (operation === "update") {
-            const bookingId = this.getNodeParameter(
-              "bookingId",
-              i
-            ) as string;
-            const updateFields = this.getNodeParameter(
-              "updateFields",
-              i
-            ) as IDataObject;
-
-            const mutation = `
-							mutation UpdateBooking($id: ID!, $input: UpdateBookingInput!) {
-								updateBooking(id: $id, input: $input) {
-									id
-									patientId
-									staffId
-									bookingTypeId
-									startTime
-									endTime
-									status
-									notes
-								}
-							}
-						`;
-
-            const variables = {
-              id: bookingId,
-              input: updateFields,
-            };
-
-            const response = await sembleApiRequest.call(
-              this,
-              mutation,
-              variables,
-              3,
-              debugMode
-            );
-            responseData = response.data.updateBooking;
-          }
-
-          if (operation === "delete") {
-            const bookingId = this.getNodeParameter(
-              "bookingId",
-              i
-            ) as string;
-
-            const mutation = `
-							mutation DeleteBooking($id: ID!) {
-								deleteBooking(id: $id) {
-									success
-									message
-								}
-							}
-						`;
-
-            const variables = { id: bookingId };
-            const response = await sembleApiRequest.call(
-              this,
-              mutation,
-              variables,
-              3,
-              debugMode
-            );
-            responseData = response.data.deleteBooking;
-          }
-        }
-
-
+        const responseData = await resourceInstance.execute(this, operation, i);
 
         if (Array.isArray(responseData)) {
-          returnData.push.apply(returnData, responseData as IDataObject[]);
+          returnData.push(...(responseData as IDataObject[]));
         } else if (responseData !== undefined) {
           returnData.push(responseData as IDataObject);
         }
