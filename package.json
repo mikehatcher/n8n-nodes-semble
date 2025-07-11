@@ -24,25 +24,41 @@
   },
   "main": "dist/index.js",
   "scripts": {
+    "// === Package Management ===": "",
     "preinstall": "npx only-allow pnpm",
+    "prepublishOnly": "npm run build",
+    
+    "// === Build & Development ===": "",
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
-    "pack:local": "npm run build && npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
-    "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
-    "update:node": "npm run pack:local && npm run install:node",
-    "setup:test-env": "./scripts/setup-n8n-test-env.sh",
-    "start:n8n": "cd ../n8n-local-test && docker compose up -d",
-    "stop:n8n": "cd ../n8n-local-test && docker compose down",
-    "restart:n8n": "cd ../n8n-local-test && docker compose restart",
-    "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
-    "setup:owner": "cd ../n8n-local-test && ./setup-owner-account.sh",
-    "test:env": "./scripts/test-setup.sh",
-    "dev:full": "npm run pack:local && npm run install:node && npm run restart:n8n",
+    
+    "// === Code Quality ===": "",
     "lint": "eslint nodes/**/*.ts credentials/**/*.ts",
     "lint:fix": "eslint nodes/**/*.ts credentials/**/*.ts --fix",
     "lintfix": "npm run lint:fix",
     "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
-    "prepublishOnly": "npm run build"
+    
+    "// === Local Development & Testing ===": "",
+    "pack:local": "npm run build && npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
+    "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
+    "update:node": "npm run pack:local && npm run install:node",
+    "dev:full": "npm run pack:local && npm run install:node && npm run restart:n8n",
+    "test:env": "./scripts/test-setup.sh",
+    
+    "// === Local n8n Environment Management ===": "",
+    "setup:test-env": "./scripts/setup-n8n-test-env.sh",
+    "setup:owner": "cd ../n8n-local-test && ./setup-owner-account.sh",
+    "start:n8n": "cd ../n8n-local-test && docker compose up -d",
+    "stop:n8n": "cd ../n8n-local-test && docker compose down",
+    "restart:n8n": "cd ../n8n-local-test && docker compose restart",
+    "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
+    
+    "// === Production Deployment ===": "",
+    "pack:prod": "npm run build && npm pack",
+    "deploy:prod": "./scripts/deploy-production.sh",
+    "deploy:prod:quick": "./scripts/deploy-production.sh --quick",
+    "rollback:prod": "./scripts/deploy-production.sh --rollback",
+    "status:prod": "./scripts/deploy-production.sh --status"
   },
   "files": [
     "dist"
