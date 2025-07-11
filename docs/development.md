@@ -1,0 +1,286 @@
+# Development Guide
+
+This guide covers setting up a development environment, understanding the codebase, and contributing to the n8n-nodes-semble project.
+
+## Prerequisites
+
+- Node.js ≥18.10
+- pnpm ≥7.18 (enforced by preinstall script)
+- Docker and Docker Compose (for local n8n testing)
+- Git
+
+## Project Setup
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/mikehatcher/n8n-nodes-semble.git
+cd n8n-nodes-semble
+pnpm install
+```
+
+### 2. Environment Configuration
+
+Create a `.env` file in the workspace root (not in the project directory):
+
+```bash
+# SSH Key Configuration
+SSH_KEY_PATH=/path/to/your/ssh/key
+
+# n8n host configuration (for production deployment)
+N8N_HOST=your-production-server.com
+N8N_HOST_USER=root
+N8N_HOST_PWD=your-password
+
+# n8n Configuration
+N8N_ADMIN_EMAIL=your-email@example.com
+N8N_ADMIN_PASSWORD=your-password
+N8N_ADMIN_FIRST_NAME=your_first_name
+N8N_ADMIN_LAST_NAME=your_last_name
+```
+
+## Script Reference
+
+The project uses organized npm scripts grouped by purpose:
+
+### Package Management
+```bash
+# Enforce pnpm usage (runs automatically)
+pnpm run preinstall
+
+# Build before publishing (runs automatically)
+pnpm run prepublishOnly
+```
+
+### Build & Development
+```bash
+# Build TypeScript and icons
+pnpm run build
+
+# Watch mode for development
+pnpm run dev
+```
+
+### Code Quality
+```bash
+# Check code style and rules
+pnpm run lint
+
+# Auto-fix linting issues
+pnpm run lint:fix
+# or
+pnpm run lintfix
+
+# Format code with Prettier
+pnpm run format
+```
+
+### Local Development & Testing
+```bash
+# Build and package for local testing
+pnpm run pack:local
+
+# Install package to local n8n
+pnpm run install:node
+
+# Full update cycle (build, pack, install)
+pnpm run update:node
+
+# Complete development workflow (build, pack, install, restart n8n)
+pnpm run dev:full
+
+# Test environment setup
+pnpm run test:env
+```
+
+### Local n8n Environment Management
+```bash
+# Set up local n8n test environment
+pnpm run setup:test-env
+
+# Set up n8n owner account
+pnpm run setup:owner
+
+# Start local n8n container
+pnpm run start:n8n
+
+# Stop local n8n container
+pnpm run stop:n8n
+
+# Restart local n8n container
+pnpm run restart:n8n
+
+# View n8n container logs
+pnpm run logs:n8n
+```
+
+### Production Deployment
+```bash
+# Build production package
+pnpm run pack:prod
+
+# Full production deployment
+pnpm run deploy:prod
+
+# Quick deploy (skip build)
+pnpm run deploy:prod:quick
+
+# Rollback production deployment
+pnpm run rollback:prod
+
+# Check production status
+pnpm run status:prod
+```
+
+## Development Workflow
+
+### 1. Local Development Setup
+
+```bash
+# Set up local n8n environment (first time only)
+pnpm run setup:test-env
+
+# Start local n8n
+pnpm run start:n8n
+
+# Set up owner account (first time only)
+pnpm run setup:owner
+```
+
+### 2. Development Cycle
+
+```bash
+# Start development with watch mode
+pnpm run dev
+
+# In another terminal, update the local n8n installation
+pnpm run dev:full
+
+# View logs if needed
+pnpm run logs:n8n
+```
+
+### 3. Testing Changes
+
+1. Make your code changes
+2. Run `pnpm run dev:full` to build and update local n8n
+3. Test the nodes in the local n8n interface
+4. Check functionality and debug as needed
+
+### 4. Code Quality
+
+Before committing:
+
+```bash
+# Check and fix code style
+pnpm run lint:fix
+
+# Format code
+pnpm run format
+
+# Build to ensure no errors
+pnpm run build
+```
+
+## Project Structure
+
+```
+n8n-nodes-semble/
+├── credentials/              # API credential definitions
+│   └── SembleApi.credentials.ts
+├── nodes/                    # Node implementations
+│   └── Semble/
+│       ├── Semble.node.ts           # Main Semble node
+│       ├── SembleTrigger.node.ts    # Trigger node
+│       ├── GenericFunctions.ts     # Shared API functions
+│       └── descriptions/            # UI property definitions
+├── scripts/                  # Development and deployment scripts
+├── docs/                     # Documentation
+├── dist/                     # Compiled output (generated)
+└── package.json             # Project configuration
+```
+
+## Key Architecture Concepts
+
+### DRY Permission Handling
+The project uses centralized permission checking to avoid code duplication:
+- `GenericFunctions.ts` contains shared API utilities
+- Permission validation is handled consistently across all operations
+
+### Debug Logging
+Comprehensive logging system for troubleshooting:
+- Enable debug mode in trigger nodes
+- Logs include API requests, responses, and error details
+- Rate limiting and retry logic is logged
+
+### Extensible Design
+The codebase is designed for easy extension:
+- New resources can be added by following existing patterns
+- UI descriptions are modular and reusable
+- API functions are generalized for multiple resources
+
+## Adding New Features
+
+### Adding a New Resource
+
+1. **Define the resource** in the appropriate description file
+2. **Add API functions** in `GenericFunctions.ts`
+3. **Update the node** to include the new resource
+4. **Test thoroughly** with the local environment
+
+### Adding New Operations
+
+1. **Add operation definition** in the description file
+2. **Implement the operation** in the main node file
+3. **Add any required UI fields**
+4. **Update documentation**
+
+## Production Deployment
+
+See the [Deployment Guide](deployment.md) for detailed production deployment instructions.
+
+## Debugging
+
+### Local Development
+- Use `pnpm run logs:n8n` to view container logs
+- Enable debug mode in trigger nodes
+- Check the browser console for client-side errors
+
+### Production Issues
+- Use `pnpm run status:prod` to check deployment status
+- Check production n8n logs via SSH
+- Review API responses and rate limiting
+
+## Contributing
+
+### Pull Request Process
+
+1. **Fork** the repository
+2. **Create a feature branch** from `main`
+3. **Make your changes** following the coding standards
+4. **Test thoroughly** using the local environment
+5. **Run code quality checks** (`lint:fix`, `format`)
+6. **Submit a pull request** with a clear description
+
+### Coding Standards
+
+- Use TypeScript with strict type checking
+- Follow the existing code organization
+- Add comprehensive error handling
+- Include debug logging for new features
+- Update documentation for user-facing changes
+
+### Commit Messages
+
+Use conventional commit format:
+- `feat:` for new features
+- `fix:` for bug fixes
+- `docs:` for documentation changes
+- `refactor:` for code refactoring
+- `test:` for test changes
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/mikehatcher/n8n-nodes-semble/issues)
+- **Documentation**: [Project Docs](index.md)
+- **n8n Community**: [n8n Community Forum](https://community.n8n.io/)
