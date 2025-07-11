@@ -1,3 +1,22 @@
+<SYSTEM>
+You are an AI programming assistant that is specialized in applying code changes to an existing document.
+Follow Microsoft content policies.
+Avoid content that violates copyrights.
+If you are asked to generate content that is harmful, hateful, racist, sexist, lewd, violent, or completely irrelevant to software engineering, only respond with "Sorry, I can't assist with that."
+Keep your answers short and impersonal.
+The user has a code block that represents a suggestion for a code change and a instructions file opened in a code editor.
+Rewrite the existing document to fully incorporate the code changes in the provided code block.
+For the response, always follow these instructions:
+1. Analyse the code block and the existing document to decide if the code block should replace existing code or should be inserted.
+2. If necessary, break up the code block in multiple parts and insert each part at the appropriate location.
+3. Preserve whitespace and newlines right after the parts of the file that you modify.
+4. The final result must be syntactically valid, properly formatted, and correctly indented. It should not contain any ...existing code... comments.
+5. Finally, provide the fully rewritten file. You must output the complete file.
+</SYSTEM>
+
+
+I have the following code open in the editor, starting from line 1 to line 278.
+````instructions
 # Copilot Custom Instruction
 
 ## 🚀 QUICK REFERENCE - CRITICAL GUIDELINES
@@ -264,14 +283,41 @@ This project is an n8n community node package that provides integration with the
 - Implement timeout handling for long-running API requests
 - Monitor and log performance metrics for continuous optimisation
 
-### File Management Instructions
+### Field Handling Strategy
+**DRY Excluded Fields Solution**: Complex fields like Letters, Labs, Prescriptions, Records, Patient Documents, Bookings, and Invoices are intentionally excluded from n8n triggers to maintain simplicity and performance.
 
-When renaming or moving files:
+- **User Experience**: Excluded fields appear as actual fields in the n8n output with explanatory messages like "Excluded from n8n - Use dedicated Letter nodes for detailed letter data"
+- **Implementation**: Uses `EXCLUDED_FIELDS_CONFIG` in `BaseTrigger.ts` for centralized configuration
+- **Function**: `addExcludedFieldsToItem()` adds these fields to all trigger outputs
+- **Extensible**: Easy to add new excluded fields or extend to other resource types
+- **Similar to Permission Fields**: Follows the same pattern as restricted fields for consistency
 
-1. Delete old files that are no longer needed after migration
-2. Update all references to moved/renamed files across the codebase
-3. Remove superfluous code which has been duplicated or moved between files
-4. Verify that all dependencies and imports are correctly updated
-5. Ensure that the file structure remains logically organized
+**Before:**
+```json
+{
+  "id": "123",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
 
-This helps maintain a clean codebase without stale files or duplicate functionality.
+**After (with excluded fields):**
+```json
+{
+  "id": "123",
+  "firstName": "John",
+  "lastName": "Doe",
+  "letters": {
+    "__excludedFromN8n": true,
+    "message": "Excluded from n8n - Use dedicated Letter nodes for detailed letter data",
+    "suggestedAction": "Use Semble Letter nodes or API calls for accessing letter data",
+    "timestamp": "2025-07-11T14:03:22.100Z"
+  },
+  "labs": {
+    "__excludedFromN8n": true,
+    "message": "Excluded from n8n - Use dedicated Lab nodes for detailed lab data",
+    "suggestedAction": "Use Semble Lab nodes or API calls for accessing lab data",
+    "timestamp": "2025-07-11T14:03:22.103Z"
+  }
+}
+````

@@ -892,3 +892,115 @@ async function makeRawApiRequest(
     }
   }
 }
+
+/**
+ * Configuration for fields excluded from n8n triggers
+ * @const {Object} EXCLUDED_FIELDS_CONFIG
+ * @description Defines which fields are excluded and their messages
+ * 
+ * Example usage:
+ * prescriptions: "My custom message goes here."
+ */
+export const EXCLUDED_FIELDS_CONFIG = {
+  // Default exclusion message
+  _DEFAULT_MESSAGE: "Excluded from n8n.",
+  
+  // Complex object fields that require dedicated nodes
+  patient: {
+    letters: null, // Will use default message
+    labs: null, // Will use default message
+    prescriptions: null, // Will use default message
+    records: null, // Will use default message
+    patientDocuments: null, // Will use default message
+    bookings: null, // Will use default message
+    invoices: null, // Will use default message
+    episodes: null, // Will use default message
+    consultations: null, // Will use default message
+  },
+  booking: {
+    // Add booking-specific exclusions if needed
+  },
+  // Add other resource types as needed
+};
+
+/**
+ * Adds excluded fields to an item's data with explanatory messages
+ * @function addExcludedFieldsToItem
+ * @param {IDataObject} item - The item to add excluded fields to
+ * @param {string} resourceType - The type of resource (patient, booking, etc.)
+ * @returns {IDataObject} The item with excluded fields added
+ * @description Adds excluded fields with messages to maintain user experience consistency
+ */
+export function addExcludedFieldsToItem(item: IDataObject, resourceType: string): IDataObject {
+  const excludedFields = EXCLUDED_FIELDS_CONFIG[resourceType as keyof typeof EXCLUDED_FIELDS_CONFIG];
+  
+  if (!excludedFields || typeof excludedFields !== 'object') {
+    return item;
+  }
+
+  const itemWithExcludedFields = { ...item };
+  const defaultMessage = EXCLUDED_FIELDS_CONFIG._DEFAULT_MESSAGE;
+  
+  // Add each excluded field with its explanatory message
+  for (const [fieldName, message] of Object.entries(excludedFields)) {
+    // Skip the _DEFAULT_MESSAGE field itself
+    if (fieldName === '_DEFAULT_MESSAGE') {
+      continue;
+    }
+    
+    // Use the specific message or fall back to the default message
+    itemWithExcludedFields[fieldName] = message || defaultMessage;
+  }
+
+  return itemWithExcludedFields;
+}
+
+/**
+ * Processes an array of items and adds excluded fields to each
+ * @function addExcludedFieldsToItems
+ * @param {IDataObject[]} items - Array of items to process
+ * @param {string} resourceType - The type of resource (patient, booking, etc.)
+ * @returns {IDataObject[]} Array of items with excluded fields added
+ * @description Batch processes items to add excluded fields consistently
+ */
+export function addExcludedFieldsToItems(items: IDataObject[], resourceType: string): IDataObject[] {
+  return items.map(item => addExcludedFieldsToItem(item, resourceType));
+}
+
+/**
+ * Checks if a field is excluded for a given resource type
+ * @function isFieldExcluded
+ * @param {string} fieldName - Name of the field to check
+ * @param {string} resourceType - The type of resource (patient, booking, etc.)
+ * @returns {boolean} True if the field is excluded
+ * @description Utility function to check if a field should be excluded
+ */
+export function isFieldExcluded(fieldName: string, resourceType: string): boolean {
+  const excludedFields = EXCLUDED_FIELDS_CONFIG[resourceType as keyof typeof EXCLUDED_FIELDS_CONFIG];
+  return !!(excludedFields && typeof excludedFields === 'object' && fieldName in excludedFields);
+}
+
+/**
+ * Gets the exclusion message for a specific field
+ * @function getExclusionMessage
+ * @param {string} fieldName - Name of the field
+ * @param {string} resourceType - The type of resource (patient, booking, etc.)
+ * @returns {string | null} The exclusion message or null if not excluded
+ * @description Gets the user-friendly message for an excluded field
+ */
+export function getExclusionMessage(fieldName: string, resourceType: string): string | null {
+  const excludedFields = EXCLUDED_FIELDS_CONFIG[resourceType as keyof typeof EXCLUDED_FIELDS_CONFIG];
+  
+  if (!excludedFields || typeof excludedFields !== 'object') {
+    return null;
+  }
+  
+  const fieldMessage = excludedFields[fieldName as keyof typeof excludedFields];
+  
+  if (fieldMessage === undefined) {
+    return null; // Field is not excluded
+  }
+  
+  // Return the specific message or the default message if field value is null
+  return fieldMessage || EXCLUDED_FIELDS_CONFIG._DEFAULT_MESSAGE;
+}

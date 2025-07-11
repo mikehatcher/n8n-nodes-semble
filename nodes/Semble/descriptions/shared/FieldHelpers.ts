@@ -26,6 +26,16 @@ export const STATUS_OPTIONS = {
 };
 
 /**
+ * Common gender options used across patient operations
+ */
+export const GENDER_OPTIONS: INodePropertyOptions[] = [
+	{ name: 'Male', value: 'male' },
+	{ name: 'Female', value: 'female' },
+	{ name: 'Other', value: 'other' },
+	{ name: 'Prefer not to say', value: 'prefer_not_to_say' },
+];
+
+/**
  * Legacy export for backward compatibility
  * @deprecated Use STATUS_OPTIONS.booking instead
  */
@@ -155,6 +165,31 @@ export function createOptionsField(
 }
 
 /**
+ * Creates a standardised options field with static options
+ */
+export function createStaticOptionsField(
+	displayName: string,
+	name: string,
+	resource: string,
+	operations: string[],
+	options: INodePropertyOptions[],
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'options',
+		options,
+		required,
+		displayOptions: createDisplayOptions(resource, operations),
+		default: defaultValue,
+		description: description || displayName,
+	};
+}
+
+/**
  * Creates a standardised boolean field
  */
 export function createBooleanField(
@@ -219,6 +254,101 @@ export function createStringField(
 		displayOptions: createDisplayOptions(resource, operations),
 		default: '',
 		description: description || displayName,
+	};
+}
+
+/**
+ * Creates a standardised text field
+ */
+export function createTextField(
+	displayName: string,
+	name: string,
+	resource: string,
+	operations: string[],
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		displayOptions: createDisplayOptions(resource, operations),
+		default: defaultValue,
+		description: description || displayName,
+	};
+}
+
+/**
+ * Creates a standardised email field
+ */
+export function createEmailField(
+	displayName: string,
+	name: string,
+	resource: string,
+	operations: string[],
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		displayOptions: createDisplayOptions(resource, operations),
+		default: defaultValue,
+		description: description || displayName,
+		placeholder: 'name@example.com',
+	};
+}
+
+/**
+ * Creates a standardised phone field
+ */
+export function createPhoneField(
+	displayName: string,
+	name: string,
+	resource: string,
+	operations: string[],
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		displayOptions: createDisplayOptions(resource, operations),
+		default: defaultValue,
+		description: description || displayName,
+		placeholder: '+1234567890',
+	};
+}
+
+/**
+ * Creates a standardised date field
+ */
+export function createDateField(
+	displayName: string,
+	name: string,
+	resource: string,
+	operations: string[],
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		displayOptions: createDisplayOptions(resource, operations),
+		default: defaultValue,
+		description: description || displayName,
+		placeholder: 'YYYY-MM-DD',
 	};
 }
 

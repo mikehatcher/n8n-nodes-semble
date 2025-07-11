@@ -27,6 +27,11 @@ import {
   bookingFields,
 } from "./descriptions/BookingDescription";
 
+import {
+  patientOperations,
+  patientFields,
+} from "./descriptions/PatientDescription";
+
 /**
  * Main Semble node class for n8n
  * @class Semble
@@ -70,6 +75,11 @@ export class Semble implements INodeType {
             value: "booking",
             description: "Manage appointments and bookings in your practice",
           },
+          {
+            name: "Patient",
+            value: "patient",
+            description: "Manage patient records and information",
+          },
         ],
         default: "booking",
         description: "The type of data you want to work with in Semble",
@@ -78,6 +88,10 @@ export class Semble implements INodeType {
       // Booking operations
       ...bookingOperations,
       ...bookingFields,
+      
+      // Patient operations
+      ...patientOperations,
+      ...patientFields,
     ],
   };
 

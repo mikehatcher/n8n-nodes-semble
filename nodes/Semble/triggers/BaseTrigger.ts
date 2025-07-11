@@ -16,7 +16,8 @@ import {
 import { 
   sembleApiRequestWithPermissions,
   addPermissionMetaToItem,
-  PermissionMetadata 
+  PermissionMetadata,
+  addExcludedFieldsToItem
 } from "../GenericFunctions";
 
 /**
@@ -276,9 +277,12 @@ export class BaseTrigger {
       const originalIndex = allItems.indexOf(item);
       const enhancedItem = addPermissionMetaToItem(item, totalPermissionMeta, originalIndex);
       
+      // Add excluded fields with explanatory messages
+      const itemWithExcludedFields = addExcludedFieldsToItem(enhancedItem, resource);
+      
       returnData.push({
         json: {
-          ...enhancedItem,
+          ...itemWithExcludedFields,
           __meta: {
             resource,
             event,

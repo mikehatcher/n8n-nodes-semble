@@ -32,12 +32,16 @@ import {
   BOOKING_RESOURCE_OPTION 
 } from "./triggers";
 
+// Import patient trigger config
+import { patientTriggerConfig, PATIENT_RESOURCE_OPTION } from "./triggers/PatientTrigger";
+
 /**
  * Resource configuration for triggers
  * @description Defines available resources and their polling queries
  */
 const TRIGGER_RESOURCES: { [key: string]: TriggerResourceConfig } = {
   booking: BOOKING_TRIGGER_CONFIG,
+  patient: patientTriggerConfig,
   // Note: The "Appointment (Beta)" UI in Semble is just a new calendar view
   // for the same underlying bookings data. The API only has 'bookings' resource.
   // Keeping this placeholder for potential future API expansion:
@@ -95,7 +99,8 @@ export class SembleTrigger implements INodeType {
         type: "options",
         noDataExpression: true,
         options: [
-          BOOKING_RESOURCE_OPTION
+          BOOKING_RESOURCE_OPTION,
+          PATIENT_RESOURCE_OPTION,
           // Future resources can be added here when available in the API:
           // PATIENT_RESOURCE_OPTION,
           // STAFF_RESOURCE_OPTION,
