@@ -3,6 +3,7 @@
 ## 🚀 QUICK REFERENCE - CRITICAL GUIDELINES
 
 **Essential Rules:**
+- **Authentication**: CRITICAL - Semble API uses `x-token` header, NOT `Authorization: Bearer`
 - **Testing**: NEVER create new workflows - always use "Automated test - Don't delete"
 - **API Docs**: ALWAYS verify Semble API documentation at https://docs.semble.io/ before coding
 - **API Endpoint**: https://open.semble.io/graphql
@@ -12,6 +13,61 @@
 - **Types**: TypeScript strict mode with comprehensive annotations
 - **Git**: Feature branches with conventional commits (feat:, fix:, docs:)
 - **Files**: Check if files exist before creating, update all references when moving
+
+---
+
+## SEMBLE API AUTHENTICATION - CRITICAL INFORMATION
+
+### Semble API Authentication
+**CRITICAL**: The Semble API uses the `x-token` header for authentication, NOT the standard `Authorization: Bearer` header.
+
+```javascript
+// CORRECT - Use x-token header
+const headers = {
+    'x-token': 'your-api-token-here',
+    'Content-Type': 'application/json'
+};
+
+// INCORRECT - Do NOT use Authorization Bearer
+const headers = {
+    'Authorization': 'Bearer your-api-token-here',  // This will NOT work
+    'Content-Type': 'application/json'
+};
+```
+
+This is implemented correctly in the node credentials (`SembleApi.credentials.ts`) and should be used consistently in all API calls and tests.
+
+### Common Authentication Mistakes to Avoid
+
+1. **Using Authorization: Bearer header** - This will result in 401 Unauthorized errors
+2. **Missing x-token header** - API calls will fail silently or return authentication errors
+3. **Using lowercase header names** - While HTTP headers are case-insensitive, consistently use `x-token`
+4. **Forgetting to update test scripts** - Always use `x-token` in curl commands and Node.js test scripts
+
+### Testing Authentication
+When testing API calls manually, always use:
+```bash
+# Correct curl command
+curl -X POST https://open.semble.io/graphql \
+  -H "Content-Type: application/json" \
+  -H "x-token: your-api-token-here" \
+  -d '{"query": "query { patients { data { id firstName } } }"}'
+
+# Incorrect curl command (will fail)
+curl -X POST https://open.semble.io/graphql \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-token-here" \
+  -d '{"query": "query { patients { data { id firstName } } }"}'
+```
+
+### API Field Validation
+When implementing GraphQL queries, always verify field names against the official Semble API documentation at https://docs.semble.io/docs/API/objects/
+
+**CRITICAL**: GraphQL validation errors (`GRAPHQL_VALIDATION_FAILED`) typically indicate invalid field names, not access restrictions. Always check the official API documentation for correct field structures:
+
+- CustomAttribute fields: `id`, `title`, `text`, `response`, `required`
+- PatientRelationship fields: `relationshipId`, `relationshipType`, `relationshipLabel`, `deleted`, `contactDetails`
+- Use nested object syntax correctly (e.g., `placeOfBirth { name code }`)
 
 ---
 
