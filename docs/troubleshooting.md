@@ -169,6 +169,92 @@ This guide helps you diagnose and resolve common issues with the n8n-nodes-sembl
    - Enable debug mode to see what data is being retrieved
    - Check the last execution time stored by n8n
 
+### Null Field Values
+
+**Symptoms:**
+- Fields showing as `null` in the output
+- Missing data in expected fields
+
+**Understanding:**
+
+**This is normal behavior!** Many fields in Semble data are conditionally populated based on the actual state of appointments and practice data.
+
+**Common null fields and their meanings:**
+
+1. **`cancellationReason`**: Only populated for cancelled appointments
+2. **`videoUrl`**: Only present for video/telehealth consultations
+3. **`onlineBookingPaymentStatus`**: Only for appointments booked online
+4. **`bookingJourney` subfields**:
+   - `consultation`: Only set when consultation has started/completed
+   - `dna`: Only set when patient "Did Not Attend"
+   - `arrived`: Only set when patient has checked in
+5. **`appointment.price`**: May be null if pricing hasn't been configured
+6. **Patient messaging fields**: Only populated when messages have been sent
+
+**Solutions:**
+
+1. **Verify Data State**
+   - Check if the appointment is in the expected state
+   - Confirm the feature is configured in your Semble account
+
+2. **Handle Nulls in Workflows**
+   ```javascript
+   // Example: Check for null before using
+   if (items[0].json.cancellationReason !== null) {
+     // Process cancellation
+   }
+   ```
+
+3. **Use Default Values**
+   ```javascript
+   // Example: Provide fallback values
+   const price = items[0].json.appointment?.price || 'Not set';
+   ```
+
+### Excluded Fields
+
+**Symptoms:**
+- Fields showing "Excluded from n8n." instead of data
+- Missing complex data like patient episodes or prescriptions
+
+**Understanding:**
+
+Certain fields are excluded from n8n triggers for performance and/or data privacy reasons.
+
+**Common excluded fields:**
+
+1. **Patient medical data**:
+   - `episodes`: Medical episode records
+   - `consultations`: Detailed consultation data
+   - `prescriptions`: Prescription records
+   - `labs`: Laboratory results
+   - `letters`: Clinical letters
+   - `patientDocuments`: Uploaded documents
+
+2. **Large datasets**: Any field that could contain hundreds of records
+
+**Solutions:**
+
+1. **Use the Main Semble Node**
+   - For detailed data access, use the Semble node instead of triggers
+   - Make targeted API calls for specific patient or appointment data
+
+2. **Trigger + Fetch Pattern**
+   ```javascript
+   // In your workflow:
+   // 1. Trigger detects new patient
+   // 2. Use Semble node to fetch detailed patient data
+   // 3. Process the complete dataset
+   ```
+
+3. **Check Field Availability**
+   ```javascript
+   // Check if field is excluded
+   if (items[0].json.episodes === 'Excluded from n8n.') {
+     // Use main Semble node to fetch episodes
+   }
+   ```
+
 ## Performance Issues
 
 ### Slow Execution

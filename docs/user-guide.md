@@ -54,11 +54,22 @@ The Semble node allows you to perform operations on your Semble data.
 
 #### Available Resources
 - **Booking**: Create, read, update, delete, and list bookings
+  - Includes comprehensive appointment data: patient info, doctor details, location, timing
+  - Appointment pricing information (when available)
+  - Journey tracking: arrival, consultation, and departure states
+- **Patient**: Create, read, update, delete, and list patients
+  - Comprehensive patient data: personal info, contact details, relationships
+  - Patient documents, medical records, and prescriptions (excluded from triggers for performance)
+  - Custom attributes and practice-specific fields
 
 
 ### Semble Trigger
 
 The Semble Trigger node monitors for changes in your Semble data and triggers workflows automatically.
+
+#### Available Triggers
+- **Booking Trigger**: Monitor new and updated bookings/appointments
+- **Patient Trigger**: Monitor new and updated patient records
 
 #### How It Works
 - The trigger polls the Semble API at regular intervals
@@ -83,17 +94,46 @@ The nodes include built-in rate limiting to respect Semble's API limits:
 
 ## Common Use Cases
 
-### Appointment Notifications
-Use the Semble Trigger to monitor new bookings and send notifications via email, SMS, or Slack.
+### Appointment Management
+- **Booking Notifications**: Monitor new bookings and send notifications via email, SMS, or Slack
+- **Data Synchronization**: Sync booking data between Semble and other systems like CRM platforms or calendar applications
+- **Automated Workflows**: Create workflows for appointment confirmations, reminders, and follow-ups
+- **Revenue Tracking**: Extract booking and pricing data for custom reporting and analytics
 
-### Data Synchronization
-Sync booking data between Semble and other systems like CRM platforms or calendar applications.
+### Patient Management
+- **Patient Onboarding**: Automatically create patient records in external systems when new patients are added
+- **Contact Updates**: Sync patient contact information across multiple platforms
+- **Relationship Management**: Track patient relationships and emergency contacts
+- **Custom Workflows**: Use patient data to trigger personalized communication and care pathways
 
-### Automated Workflows
-Create automated workflows for appointment confirmations, reminders, and follow-ups.
+## Data Field Information
 
-### Reporting
-Extract booking data for custom reporting and analytics.
+### Understanding Null Values
+
+When working with Semble data, you may notice some fields return `null` values. This is normal and expected behavior representing actual data states:
+
+#### Booking Fields
+- **`cancellationReason`**: Only populated for cancelled appointments
+- **`videoUrl`**: Only present for video/telehealth consultations  
+- **`onlineBookingPaymentStatus`**: Only for appointments booked through online booking system
+- **`bookingJourney` subfields** (`consultation`, `dna`, etc.): Populated as appointment progresses through different states
+- **`appointment.price`**: May be null if pricing hasn't been set for that appointment type
+
+#### Patient Fields  
+- **`episodes`**: Complex medical episode data (excluded from triggers for performance)
+- **`consultations`**: Detailed consultation records (excluded from triggers for performance)
+- **`letters`**, **`labs`**, **`prescriptions`**: Clinical data (excluded from triggers)
+- **Custom attributes**: May be null if not configured for your practice
+
+### Understanding Excluded Fields
+
+Some complex fields are excluded from n8n triggers for performance reasons but show explanatory messages:
+
+- **Patient medical data**: Episodes, consultations, prescriptions, lab results, and letters are excluded
+- **Large datasets**: Fields that could contain hundreds of records are excluded to maintain trigger performance
+- **Dedicated access**: Use specific API calls or the main Semble node for accessing excluded data
+
+These fields will show "Excluded from n8n." instead of actual data in trigger outputs.
 
 ## Troubleshooting
 

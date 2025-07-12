@@ -202,10 +202,24 @@ n8n-nodes-semble/
 
 ## Key Architecture Concepts
 
-### DRY Permission Handling
-The project uses centralized permission checking to avoid code duplication:
-- `GenericFunctions.ts` contains shared API utilities
-- Permission validation is handled consistently across all operations
+### Modular DRY Architecture
+The project uses a modular, extensible architecture built on DRY principles:
+
+#### Base Classes
+- **`BaseResource`**: Shared CRUD operations for all resources (booking, patient, etc.)
+- **`BaseTrigger`**: Shared polling logic for all triggers
+- **`FieldHelpers`**: Reusable field description utilities
+
+#### Resource System
+- **`BookingResource`**: Handles booking-specific operations
+- **`PatientResource`**: Handles patient-specific operations  
+- **Resource Registry**: Dynamic resource handling for easy extension
+- **Trigger Classes**: `BookingTrigger`, `PatientTrigger` for resource-specific configurations
+
+#### Permission & Field Handling
+- **Centralized permission checking** to avoid code duplication
+- **Excluded fields mechanism** for performance optimization
+- **Null value handling** with explanatory messages for users
 
 ### Debug Logging
 Comprehensive logging system for troubleshooting:
@@ -215,7 +229,7 @@ Comprehensive logging system for troubleshooting:
 
 ### Extensible Design
 The codebase is designed for easy extension:
-- New resources can be added by following existing patterns
+- New resources can be added by extending base classes
 - UI descriptions are modular and reusable
 - API functions are generalized for multiple resources
 
@@ -223,17 +237,47 @@ The codebase is designed for easy extension:
 
 ### Adding a New Resource
 
-1. **Define the resource** in the appropriate description file
-2. **Add API functions** in `GenericFunctions.ts`
-3. **Update the node** to include the new resource
-4. **Test thoroughly** with the local environment
+The modular architecture makes adding new resources straightforward:
+
+1. **Create Base Classes**:
+   ```typescript
+   // resources/NewResource.ts
+   export class NewResource extends BaseResource {
+     // Resource-specific CRUD operations
+   }
+   
+   // triggers/NewTrigger.ts  
+   export const NEW_TRIGGER_CONFIG: TriggerResourceConfig = {
+     // Trigger-specific configuration
+   }
+   ```
+
+2. **Create UI Description**:
+   ```typescript
+   // descriptions/NewDescription.ts
+   export const newDescription = {
+     // Field definitions using FieldHelpers
+   }
+   ```
+
+3. **Register the Resource**:
+   ```typescript
+   // resources/index.ts
+   export { NewResource } from './NewResource';
+   
+   // triggers/index.ts  
+   export { NEW_TRIGGER_CONFIG } from './NewTrigger';
+   ```
+
+4. **Update Main Nodes**: Add the new resource to the resource registry
+5. **Test thoroughly** with the local environment
 
 ### Adding New Operations
 
-1. **Add operation definition** in the description file
-2. **Implement the operation** in the main node file
-3. **Add any required UI fields**
-4. **Update documentation**
+1. **Add operation definition** in the description file using `FieldHelpers`
+2. **Implement the operation** in the resource class
+3. **Add any required UI fields** using the shared field utilities
+4. **Update documentation** to reflect the new operation
 
 ## Production Deployment
 
