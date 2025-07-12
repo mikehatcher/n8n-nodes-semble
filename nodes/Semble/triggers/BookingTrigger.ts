@@ -21,20 +21,59 @@ export const BOOKING_TRIGGER_CONFIG: TriggerResourceConfig = {
       bookings(pagination: $pagination, dateRange: $dateRange) {
         data {
           id
-          patientId
-          start
-          end
-          createdAt
-          updatedAt
-          comments
-          reference
           deleted
-          patient {
-            id
-          }
+          cancellationReason
+          doctorName
           doctor {
             id
+            firstName
+            lastName
+            email
           }
+          location {
+            id
+            name
+            address {
+              address
+              city
+              postcode
+              country
+            }
+          }
+          appointment {
+            id
+            title
+            duration
+            price
+          }
+          start
+          end
+          patient {
+            id
+            firstName
+            lastName
+            email
+          }
+          patientId
+          bookingJourney {
+            arrived
+            consultation
+            departed
+            dna
+          }
+          createdAt
+          updatedAt
+          videoUrl
+          comments
+          reference
+          billed
+          patientMessagesSent {
+            confirmation
+            reminder
+            followup
+            cancellation
+          }
+          onlineBookingPaymentStatus
         }
         pageInfo {
           page
