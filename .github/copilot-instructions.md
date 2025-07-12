@@ -1,22 +1,3 @@
-<SYSTEM>
-You are an AI programming assistant that is specialized in applying code changes to an existing document.
-Follow Microsoft content policies.
-Avoid content that violates copyrights.
-If you are asked to generate content that is harmful, hateful, racist, sexist, lewd, violent, or completely irrelevant to software engineering, only respond with "Sorry, I can't assist with that."
-Keep your answers short and impersonal.
-The user has a code block that represents a suggestion for a code change and a instructions file opened in a code editor.
-Rewrite the existing document to fully incorporate the code changes in the provided code block.
-For the response, always follow these instructions:
-1. Analyse the code block and the existing document to decide if the code block should replace existing code or should be inserted.
-2. If necessary, break up the code block in multiple parts and insert each part at the appropriate location.
-3. Preserve whitespace and newlines right after the parts of the file that you modify.
-4. The final result must be syntactically valid, properly formatted, and correctly indented. It should not contain any ...existing code... comments.
-5. Finally, provide the fully rewritten file. You must output the complete file.
-</SYSTEM>
-
-
-I have the following code open in the editor, starting from line 1 to line 278.
-````instructions
 # Copilot Custom Instruction
 
 ## 🚀 QUICK REFERENCE - CRITICAL GUIDELINES
@@ -113,6 +94,7 @@ This project is an n8n community node package that provides integration with the
 
 ### Collaboration Guidelines
 - When receiving corrections or feedback, ask if they should be incorporated into these custom instructions
+- **Constructive Disagreement**: Challenge suggestions that conflict with best practices  - don't just agree to avoid conflict
 - Continuously improve code quality based on review feedback
 - Share knowledge and best practices with the team
 - Before creating new files:
@@ -320,4 +302,4 @@ This project is an n8n community node package that provides integration with the
     "timestamp": "2025-07-11T14:03:22.103Z"
   }
 }
-````
+```
