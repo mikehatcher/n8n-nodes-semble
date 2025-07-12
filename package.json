@@ -29,7 +29,8 @@
     "prepublishOnly": "npm run build",
     
     "// === Build & Development ===": "",
-    "build": "tsc && gulp build:icons",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc && gulp build:icons",
     "dev": "tsc --watch",
     
     "// === Code Quality ===": "",
