@@ -179,14 +179,11 @@ All credentials and endpoints are managed via the workspace `.env` file:
 
 ### Production Deployment
 ```bash
-# Build production package
+# Build production package (lint + build + pack)
 pnpm run pack:prod
 
 # Full production deployment
 pnpm run deploy:prod
-
-# Quick deploy (skip build)
-pnpm run deploy:prod:quick
 
 # Rollback production deployment
 pnpm run rollback:prod

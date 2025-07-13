@@ -47,9 +47,8 @@
     "test:env": "./scripts/test-setup.sh",
     
     "// === Production Deployment ===": "",
-    "pack:prod": "npm run build && npm pack",
-    "deploy:prod": "./scripts/deploy-production.sh",
-    "deploy:prod:quick": "./scripts/deploy-production.sh --quick",
+    "pack:prod": "npm run pack:local",
+    "deploy:prod": "npm run pack:prod && ./scripts/deploy-production.sh",
     "rollback:prod": "./scripts/deploy-production.sh --rollback",
     "status:prod": "./scripts/deploy-production.sh --status",
     

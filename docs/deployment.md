@@ -59,18 +59,11 @@ pnpm run deploy:prod
 ```
 
 This is the standard deployment command that:
+- Runs linting to ensure code quality
 - Builds the TypeScript code
-- Creates a production package without pnpm restrictions
+- Creates a production package
 - Deploys to the production server
 - Restarts n8n and verifies the installation
-
-### Quick Deployment
-```bash
-# Deploy existing package (skip build)
-pnpm run deploy:prod:quick
-```
-
-Use this when you have an existing built package and want to skip the build step.
 
 ### Status Check
 ```bash
@@ -311,8 +304,8 @@ For detailed information about n8n version management, see the [Development Guid
 ## Performance Optimization
 
 ### Deployment Speed
-- Use `deploy:prod:quick` to skip builds when package is unchanged
 - Keep deployment packages small by excluding unnecessary files
+- Use efficient build processes with proper caching
 
 ### Runtime Performance
 - Monitor n8n memory usage after deployments

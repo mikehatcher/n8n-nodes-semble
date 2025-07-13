@@ -8,7 +8,6 @@
 #
 # Usage:
 #   ./scripts/deploy-production.sh           # Full deployment
-#   ./scripts/deploy-production.sh --quick   # Skip build (use existing package)
 #   ./scripts/deploy-production.sh --rollback # Rollback to previous version
 #   ./scripts/deploy-production.sh --status   # Check deployment status
 #
@@ -411,7 +410,6 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  (no args)    Full deployment: build + deploy"
-    echo "  --quick      Quick deploy: use existing package (skip build)"
     echo "  --rollback   Rollback to previous version"
     echo "  --status     Check deployment status"
     echo "  --help       Show this help message"
@@ -423,7 +421,6 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  $0                           # Full deployment"
-    echo "  $0 --quick                   # Quick deployment"
     echo "  $0 --status                  # Check status"
     echo "  PROD_HOST=my-server $0       # Override host"
 }
@@ -450,11 +447,8 @@ case "${1:-}" in
         rollback_deployment
         exit 0
         ;;
-    --quick)
-        SKIP_BUILD=true
-        ;;
     "")
-        SKIP_BUILD=false
+        # Default case - no arguments
         ;;
     *)
         error "Unknown option: $1. Use --help for usage information."
@@ -478,10 +472,7 @@ log "Container: $DOCKER_CONTAINER_NAME"
 check_dependencies
 test_ssh_connection
 
-if [ "$SKIP_BUILD" != "true" ]; then
-    build_package
-fi
-
+build_package
 create_backup
 deploy_package
 check_status
