@@ -267,8 +267,8 @@ export class BaseTrigger {
     // Filter items based on event type and last poll time
     let filteredItems = allItems;
     
-    if (event === "newOnly" && lastPoll) {
-      // Only include items created after last poll
+    if (event === "newOnly") {
+      // Only include items created after cutoff date
       filteredItems = allItems.filter((item: IDataObject) => {
         const createdAt = item.createdAt as string;
         return createdAt && new Date(createdAt) > new Date(cutoffDate);
@@ -276,13 +276,27 @@ export class BaseTrigger {
       
       debugLog(context, debugMode, `Filtered to ${filteredItems.length} new items only (created after ${cutoffDate})`);
     } else {
-      // For "newOrUpdated", use updatedAt field  
+      // For "newOrUpdated", include items that are either:
+      // 1. Created after cutoff date (new items)
+      // 2. Updated after cutoff date (updated items - updatedAt will be set)
       filteredItems = allItems.filter((item: IDataObject) => {
+        const createdAt = item.createdAt as string;
         const updatedAt = item.updatedAt as string;
-        return updatedAt && new Date(updatedAt) > new Date(cutoffDate);
+        
+        // Include if created after cutoff (new items)
+        if (createdAt && new Date(createdAt) > new Date(cutoffDate)) {
+          return true;
+        }
+        
+        // Include if updated after cutoff (updated items - updatedAt will be set)
+        if (updatedAt && new Date(updatedAt) > new Date(cutoffDate)) {
+          return true;
+        }
+        
+        return false;
       });
       
-      debugLog(context, debugMode, `Filtered to ${filteredItems.length} new or updated items (updated after ${cutoffDate})`);
+      debugLog(context, debugMode, `Filtered to ${filteredItems.length} new or updated items (created or updated after ${cutoffDate})`);
     }
 
     // Convert to execution data with permission metadata
@@ -297,6 +311,16 @@ export class BaseTrigger {
       // Add excluded fields with explanatory messages
       const itemWithExcludedFields = addExcludedFieldsToItem(enhancedItem, resource);
       
+      // Determine if this is a newly created item vs an updated item
+      const createdAt = new Date(item.createdAt as string);
+      const cutoffDateTime = new Date(cutoffDate);
+      
+      const isNewItem = createdAt > cutoffDateTime;
+      
+      // updatedAt is null/blank until the record is actually updated
+      const updatedAt = item.updatedAt as string;
+      const isUpdatedItem = updatedAt && new Date(updatedAt) > cutoffDateTime;
+      
       returnData.push({
         json: {
           ...itemWithExcludedFields,
@@ -304,7 +328,8 @@ export class BaseTrigger {
             resource,
             event,
             pollTime: now,
-            isNew: lastPoll ? new Date(item.createdAt as string) > new Date(cutoffDate) : true,
+            isNew: isNewItem,
+            isUpdated: !!isUpdatedItem,
             // Include permission summary in metadata
             permissions: {
               hasIssues: totalPermissionMeta.hasPermissionIssues,
