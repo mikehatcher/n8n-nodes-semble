@@ -48,11 +48,21 @@
     
     "// === Local n8n Environment Management ===": "",
     "setup:test-env": "./scripts/setup-n8n-test-env.sh",
-    "setup:owner": "cd ../n8n-local-test && ./setup-owner-account.sh",
     "start:n8n": "cd ../n8n-local-test && docker compose up -d",
     "stop:n8n": "cd ../n8n-local-test && docker compose down",
     "restart:n8n": "cd ../n8n-local-test && docker compose restart",
     "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
+    
+    "// === n8n Version Management ===": "",
+    "update:n8n": "./scripts/update-n8n.sh",
+    "update:n8n:local": "./scripts/update-n8n.sh local",
+    "update:n8n:production": "./scripts/update-n8n.sh production",
+    "update:n8n:local:latest": "./scripts/update-n8n.sh local latest",
+    "update:n8n:production:latest": "./scripts/update-n8n.sh production latest",
+    "n8n:version": "./scripts/update-n8n.sh current",
+    "n8n:version:local": "./scripts/update-n8n.sh local current",
+    "n8n:version:production": "./scripts/update-n8n.sh production current",
+    "n8n:versions": "./scripts/update-n8n.sh list",
     
     "// === Production Deployment ===": "",
     "pack:prod": "npm run build && npm pack",

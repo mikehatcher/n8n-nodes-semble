@@ -114,6 +114,69 @@ pnpm run restart:n8n
 pnpm run logs:n8n
 ```
 
+### n8n Version Management
+```bash
+# Check current versions (both local and production)
+pnpm run n8n:version
+
+# Check current local version
+pnpm run n8n:version:local
+
+# Check current production version
+pnpm run n8n:version:production
+
+# List available n8n versions
+pnpm run n8n:versions
+
+# Update local n8n to latest version
+pnpm run update:n8n:local:latest
+
+# Update production n8n to latest version
+pnpm run update:n8n:production:latest
+
+# Update local n8n to specific version
+pnpm run update:n8n:local -- 1.102.0
+
+# Update production n8n to specific version
+pnpm run update:n8n:production -- 1.102.0
+
+# Generic update commands (defaults to latest)
+pnpm run update:n8n:local
+pnpm run update:n8n:production
+```
+
+#### How n8n Version Management Works
+
+The n8n version management system provides unified API-based control over both local and production n8n environments:
+
+**Local Environment:**
+- Uses Docker Compose in `../n8n-local-test/`
+- Updates the `N8N_VERSION` variable in workspace `.env` file
+- Pulls the specified Docker image version
+- Restarts the container with health checks
+
+**Production Environment:**
+- Connects via SSH to the production server
+- Updates the `docker-compose.yml` file with the specific version tag
+- Creates automatic backups before updates
+- Handles Traefik reverse proxy configuration
+- Performs health checks after deployment
+
+**Features:**
+- ✅ **API-based connectivity**: Uses n8n REST API for health checks
+- ✅ **Automatic backups**: Production updates create timestamped backups
+- ✅ **Health monitoring**: Waits for n8n to be accessible after updates
+- ✅ **Version tracking**: Updates `.env` file with current versions
+- ✅ **Error handling**: Comprehensive error reporting and rollback guidance
+- ✅ **Unified interface**: Same commands work for both environments
+
+**Configuration:**
+All credentials and endpoints are managed via the workspace `.env` file:
+- `N8N_LOCAL_*`: Local environment configuration
+- `N8N_HOST_*`: Production SSH and API credentials
+- `N8N_VERSION`: Current local version
+- `N8N_PRODUCTION_VERSION`: Current production version
+
 ### Production Deployment
 ```bash
 # Build production package
@@ -181,6 +244,56 @@ pnpm run format
 # Build to ensure no errors
 pnpm run build
 ```
+
+### 5. n8n Version Management Workflow
+
+**Checking Current Versions:**
+```bash
+# Check both environments
+pnpm run n8n:version
+
+# Check specific environment
+pnpm run n8n:version:local
+pnpm run n8n:version:production
+```
+
+**Updating Local Environment:**
+```bash
+# Update to latest version
+pnpm run update:n8n:local:latest
+
+# Update to specific version for testing
+pnpm run update:n8n:local -- 1.102.0
+
+# After update, restart your node development
+pnpm run restart:n8n
+pnpm run dev:full
+```
+
+**Updating Production Environment:**
+```bash
+# Check what's available first
+pnpm run n8n:versions
+
+# Update to latest stable version
+pnpm run update:n8n:production:latest
+
+# Or update to specific version
+pnpm run update:n8n:production -- 1.102.0
+```
+
+**Best Practices:**
+- Always test n8n updates in local environment first
+- Check release notes for breaking changes before updating
+- Production updates create automatic backups
+- Keep local and production versions synchronized when possible
+- Use specific version numbers rather than "latest" for production
+
+**Troubleshooting:**
+- If update fails, check the logs with `pnpm run logs:n8n`
+- For production issues, backups are available in `/root/n8n-backups/`
+- Health checks ensure n8n is accessible after updates
+- SSH connection issues are reported with troubleshooting hints
 
 ## Project Structure
 

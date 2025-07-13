@@ -257,7 +257,7 @@ ssh your-user@your-server.com "docker logs your-n8n-container 2>&1 | grep -i sem
 ### Updates
 
 ```bash
-# Deploy new version
+# Deploy new version of Semble nodes
 pnpm run deploy:prod
 
 # Verify deployment
@@ -266,6 +266,30 @@ pnpm run status:prod
 # Monitor logs for issues
 ssh your-user@your-server.com "docker logs your-n8n-container --tail 50"
 ```
+
+### n8n Version Management
+
+The project includes unified n8n version management for both local and production environments:
+
+```bash
+# Check current n8n versions
+pnpm run n8n:version
+
+# Update production n8n to latest version
+pnpm run update:n8n:production:latest
+
+# Update to specific version
+pnpm run update:n8n:production -- 1.102.0
+```
+
+**Important Notes:**
+- n8n updates are separate from Semble node deployment
+- Always test n8n updates in local environment first
+- Production updates create automatic backups
+- Updates modify the docker-compose.yml file with specific version tags
+- Health checks ensure n8n is accessible after updates
+
+For detailed information about n8n version management, see the [Development Guide](development.md#n8n-version-management).
 
 ## Security Considerations
 
