@@ -1,6 +1,6 @@
 # n8n-nodes-semble
 
-A community node for n8n that integrates with Semble practice management system, providing healthcare practitioners with powerful automation capabilities for managing bookings, patients, and practice workflows.
+A community node for n8n that integrates with Semble practice management system, providing healthcare practitioners with powerful automation capabilities for managing bookings, patients, products/services, and practice workflows.
 
 ## For End Users
 

@@ -35,6 +35,9 @@ import {
 // Import patient trigger config
 import { patientTriggerConfig, PATIENT_RESOURCE_OPTION } from "./triggers/PatientTrigger";
 
+// Import product trigger config
+import { PRODUCT_TRIGGER_CONFIG, PRODUCT_RESOURCE_OPTION } from "./triggers/ProductTrigger";
+
 /**
  * Resource configuration for triggers
  * @description Defines available resources and their polling queries
@@ -42,6 +45,7 @@ import { patientTriggerConfig, PATIENT_RESOURCE_OPTION } from "./triggers/Patien
 const TRIGGER_RESOURCES: { [key: string]: TriggerResourceConfig } = {
   booking: BOOKING_TRIGGER_CONFIG,
   patient: patientTriggerConfig,
+  product: PRODUCT_TRIGGER_CONFIG,
   // Note: The "Appointment (Beta)" UI in Semble is just a new calendar view
   // for the same underlying bookings data. The API only has 'bookings' resource.
   // Keeping this placeholder for potential future API expansion:
@@ -55,9 +59,7 @@ const TRIGGER_RESOURCES: { [key: string]: TriggerResourceConfig } = {
   // }
 
   // Future resources can be added here when available in the API:
-  // patient: PATIENT_TRIGGER_CONFIG,
-  // staff: STAFF_TRIGGER_CONFIG,
-  // product: PRODUCT_TRIGGER_CONFIG
+  // staff: STAFF_TRIGGER_CONFIG
 };
 
 /**
@@ -101,8 +103,8 @@ export class SembleTrigger implements INodeType {
         options: [
           BOOKING_RESOURCE_OPTION,
           PATIENT_RESOURCE_OPTION,
+          PRODUCT_RESOURCE_OPTION,
           // Future resources can be added here when available in the API:
-          // PATIENT_RESOURCE_OPTION,
           // STAFF_RESOURCE_OPTION,
         ],
         default: '',

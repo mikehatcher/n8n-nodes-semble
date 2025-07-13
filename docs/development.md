@@ -323,8 +323,9 @@ The project uses a modular, extensible architecture built on DRY principles:
 #### Resource System
 - **`BookingResource`**: Handles booking-specific operations
 - **`PatientResource`**: Handles patient-specific operations  
+- **`ProductResource`**: Handles product/service-specific operations
 - **Resource Registry**: Dynamic resource handling for easy extension
-- **Trigger Classes**: `BookingTrigger`, `PatientTrigger` for resource-specific configurations
+- **Trigger Classes**: `BookingTrigger`, `PatientTrigger`, `ProductTrigger` for resource-specific configurations
 
 #### Permission & Field Handling
 - **Centralized permission checking** to avoid code duplication

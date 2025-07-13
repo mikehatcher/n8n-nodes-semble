@@ -180,18 +180,22 @@ export class BaseTrigger {
         }
       };
 
-      // Set appropriate date range based on datePeriod
-      if (datePeriod === 'all') {
-        // For "all" records, use a very wide date range
-        variables.dateRange = {
-          start: '1970-01-01',
-          end: currentTime.toISOString().split('T')[0]
-        };
-      } else {
-        variables.dateRange = {
-          start: dateRangeStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
-          end: currentTime.toISOString().split('T')[0] // Format as YYYY-MM-DD
-        };
+      // Only add dateRange for resources that support it
+      // Products don't support dateRange filtering in the API
+      if (resource !== 'product') {
+        // Set appropriate date range based on datePeriod
+        if (datePeriod === 'all') {
+          // For "all" records, use a very wide date range
+          variables.dateRange = {
+            start: '1970-01-01',
+            end: currentTime.toISOString().split('T')[0]
+          };
+        } else {
+          variables.dateRange = {
+            start: dateRangeStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
+            end: currentTime.toISOString().split('T')[0] // Format as YYYY-MM-DD
+          };
+        }
       }
 
       debugLog(context, debugMode, `Fetching page ${currentPage} with variables:`, variables);
@@ -225,6 +229,8 @@ export class BaseTrigger {
         pageItems = responseData.appointments?.data || [];
       } else if (resource === 'patient') {
         pageItems = responseData.patients?.data || [];
+      } else if (resource === 'product') {
+        pageItems = responseData.products?.data || [];
       } else {
         // Fallback: try to find data in response
         const dataKeys = Object.keys(responseData || {});
@@ -243,6 +249,8 @@ export class BaseTrigger {
         ? responseData.bookings?.pageInfo?.hasMore 
         : resource === 'patient'
         ? responseData.patients?.pageInfo?.hasMore
+        : resource === 'product'
+        ? responseData.products?.pageInfo?.hasMore
         : responseData.appointments?.pageInfo?.hasMore;
       
       if (!hasMore) {

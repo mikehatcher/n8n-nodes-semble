@@ -21,8 +21,8 @@ Welcome to the n8n-nodes-semble documentation. This page contains links to all a
 ## Quick Reference
 
 ### Node Types
-- **Semble Node** - CRUD operations for bookings and resources
-- **Semble Trigger** - Event monitoring for new/updated data
+- **Semble Node** - CRUD operations for bookings, patients, and products
+- **Semble Trigger** - Event monitoring for new/updated data (bookings, patients, products)
 
 ### Key Features
 - DRY permission handling

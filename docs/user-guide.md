@@ -61,6 +61,10 @@ The Semble node allows you to perform operations on your Semble data.
   - Comprehensive patient data: personal info, contact details, relationships
   - Patient documents, medical records, and prescriptions (excluded from triggers for performance)
   - Custom attributes and practice-specific fields
+- **Product**: Read and list products/services
+  - Complete product catalog data: pricing, inventory, supplier information
+  - Product labels, tax information, and booking configuration
+  - Recursive appointment relationships with full product details
 
 
 ### Semble Trigger
@@ -70,6 +74,7 @@ The Semble Trigger node monitors for changes in your Semble data and triggers wo
 #### Available Triggers
 - **Booking Trigger**: Monitor new and updated bookings/appointments
 - **Patient Trigger**: Monitor new and updated patient records
+- **Product Trigger**: Monitor new and updated products/services
 
 #### How It Works
 - The trigger polls the Semble API at regular intervals
@@ -106,6 +111,14 @@ The nodes include built-in rate limiting to respect Semble's API limits:
 - **Relationship Management**: Track patient relationships and emergency contacts
 - **Custom Workflows**: Use patient data to trigger personalized communication and care pathways
 
+### Product/Service Management
+- **Inventory Tracking**: Monitor product stock levels and trigger reorder workflows
+- **Price Synchronization**: Sync pricing changes across multiple platforms or e-commerce systems
+- **Service Catalog Updates**: Automatically update external systems when services are modified
+- **Tax and Compliance**: Track tax rate changes and ensure compliance across booking systems
+- **Supplier Management**: Monitor supplier information and automate vendor communication
+- **Revenue Analytics**: Extract product performance data for business intelligence
+
 ## Data Field Information
 
 ### Understanding Null Values
@@ -124,6 +137,15 @@ When working with Semble data, you may notice some fields return `null` values. 
 - **`consultations`**: Detailed consultation records (excluded from triggers for performance)
 - **`letters`**, **`labs`**, **`prescriptions`**: Clinical data (excluded from triggers)
 - **Custom attributes**: May be null if not configured for your practice
+
+#### Product Fields
+- **`tax`**: Tax information with name, rate, and code - may be null if no tax applied
+- **`stockLevel`**: Current inventory level - may be null for non-inventory items
+- **`supplierName`**, **`supplierDisplayName`**: Supplier information - null if not configured
+- **`price`**, **`cost`**: Financial data - may be null if pricing not set
+- **`appointments`**: Recursive product relationships - contains full product data for related services
+- **`labels`**: Product categorization tags - array may be empty if no labels assigned
+- **Booking configuration**: `isBookable`, `requiresPayment`, `requiresConfirmation` - boolean flags for service setup
 
 ### Understanding Excluded Fields
 

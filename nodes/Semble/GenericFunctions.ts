@@ -920,6 +920,10 @@ export const EXCLUDED_FIELDS_CONFIG = {
   booking: {
     // Add booking-specific exclusions if needed
   },
+  product: {
+    // Add product-specific exclusions if needed
+    // Examples might include: reviews, inventory, analytics, etc.
+  },
   // Add other resource types as needed
 };
 

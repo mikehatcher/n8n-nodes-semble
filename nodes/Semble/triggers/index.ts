@@ -12,7 +12,7 @@ export * from './BaseTrigger';
 // Specific trigger configurations
 export * from './BookingTrigger';
 export * from './PatientTrigger';
+export * from './ProductTrigger';
 
 // Note: Future trigger exports will be added here:
-// export * from './PatientTrigger';
 // export * from './StaffTrigger';
