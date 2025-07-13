@@ -32,7 +32,7 @@ export const GENDER_OPTIONS: INodePropertyOptions[] = [
 	{ name: 'Male', value: 'male' },
 	{ name: 'Female', value: 'female' },
 	{ name: 'Other', value: 'other' },
-	{ name: 'Prefer not to say', value: 'prefer_not_to_say' },
+	{ name: 'Prefer Not To Say', value: 'prefer_not_to_say' },
 ];
 
 /**
@@ -111,7 +111,7 @@ export function createStatusField(
 		options: BOOKING_STATUS_OPTIONS,
 		required,
 		displayOptions: createDisplayOptions(resource, operations),
-		default: required ? 'scheduled' : '',
+		default: 'scheduled',
 		description: 'The status of the booking',
 	};
 }
@@ -205,7 +205,7 @@ export function createBooleanField(
 		name,
 		type: 'boolean',
 		displayOptions: createDisplayOptions(resource, operations),
-		default: defaultValue,
+		default: false,
 		description: description || displayName,
 		noDataExpression: true,
 	};
@@ -228,7 +228,6 @@ export function createLimitField(resource: string): INodeProperties {
 		},
 		typeOptions: {
 			minValue: 1,
-			maxValue: 100,
 		},
 		default: 50,
 		description: 'Max number of results to return',
@@ -281,6 +280,26 @@ export function createTextField(
 }
 
 /**
+ * Creates a standardised text field WITHOUT displayOptions (for use in collections)
+ */
+export function createTextFieldNoDisplay(
+	displayName: string,
+	name: string,
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		default: defaultValue,
+		description: description || displayName,
+	};
+}
+
+/**
  * Creates a standardised email field
  */
 export function createEmailField(
@@ -298,6 +317,27 @@ export function createEmailField(
 		type: 'string',
 		required,
 		displayOptions: createDisplayOptions(resource, operations),
+		default: defaultValue,
+		description: description || displayName,
+		placeholder: 'name@example.com',
+	};
+}
+
+/**
+ * Creates a standardised email field WITHOUT displayOptions (for use in collections)
+ */
+export function createEmailFieldNoDisplay(
+	displayName: string,
+	name: string,
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
 		default: defaultValue,
 		description: description || displayName,
 		placeholder: 'name@example.com',
@@ -329,6 +369,26 @@ export function createPhoneField(
 }
 
 /**
+ * Creates a standardised phone field WITHOUT displayOptions (for use in collections)
+ */
+export function createPhoneFieldNoDisplay(
+	displayName: string,
+	name: string,
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		default: defaultValue,
+		description: description || `${displayName} number`,
+	};
+}
+
+/**
  * Creates a standardised date field
  */
 export function createDateField(
@@ -353,6 +413,49 @@ export function createDateField(
 }
 
 /**
+ * Creates a standardised date field WITHOUT displayOptions (for use in collections)
+ */
+export function createDateFieldNoDisplay(
+	displayName: string,
+	name: string,
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required,
+		default: defaultValue,
+		description: description || displayName,
+		placeholder: 'YYYY-MM-DD',
+	};
+}
+
+/**
+ * Creates a standardised static options field WITHOUT displayOptions (for use in collections)
+ */
+export function createStaticOptionsFieldNoDisplay(
+	displayName: string,
+	name: string,
+	options: INodePropertyOptions[],
+	defaultValue: string = '',
+	description?: string,
+	required: boolean = false
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'options',
+		required,
+		options,
+		default: defaultValue,
+		description: description || displayName,
+	};
+}
+
+/**
  * Creates a collection field with specified options
  */
 export function createCollectionField(
@@ -371,5 +474,43 @@ export function createCollectionField(
 		default: {},
 		displayOptions: createDisplayOptions(resource, operations),
 		options,
+	};
+}
+
+/**
+ * Creates a collection field with specified options WITHOUT displayOptions (for use in collections)
+ */
+export function createCollectionFieldNoDisplay(
+	displayName: string,
+	name: string,
+	options: INodeProperties[],
+	placeholder?: string
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'collection',
+		placeholder: placeholder || 'Add Field',
+		default: {},
+		options,
+	};
+}
+
+/**
+ * Creates a boolean field WITHOUT displayOptions (for use in collections)
+ */
+export function createBooleanFieldNoDisplay(
+	displayName: string,
+	name: string,
+	defaultValue: boolean = false,
+	description?: string
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'boolean',
+		default: defaultValue,
+		description: description || displayName,
+		noDataExpression: true,
 	};
 }
