@@ -60,13 +60,16 @@ export interface TriggerPollResult {
 /**
  * Calculates the start date for the date range based on the selected period
  * @function calculateDateRangeStart
- * @param {string} period - The date period (1d, 1w, 1m, 3m, 6m, 12m)
+ * @param {string} period - The date period (1d, 1w, 1m, 3m, 6m, 12m, all)
  * @returns {Date} The calculated start date
  */
 export function calculateDateRangeStart(period: string): Date {
   const now = new Date();
   
   switch (period) {
+    case 'all':
+      // Return a very old date to effectively get all records
+      return new Date('1970-01-01');
     case '1d':
       return new Date(now.getTime() - (1 * 24 * 60 * 60 * 1000)); // 1 day
     case '1w':
@@ -135,7 +138,11 @@ export class BaseTrigger {
     const currentTime = new Date();
     const dateRangeStart = calculateDateRangeStart(datePeriod);
     
-    debugLog(context, debugMode, `Using date range: ${dateRangeStart.toISOString()} to ${currentTime.toISOString()}`);
+    if (datePeriod === 'all') {
+      debugLog(context, debugMode, `Querying ALL records (use with caution)`);
+    } else {
+      debugLog(context, debugMode, `Using date range: ${dateRangeStart.toISOString()} to ${currentTime.toISOString()}`);
+    }
     
     // Calculate the cutoff date for filtering (use lastPoll if available, otherwise use date range start)
     let cutoffDate: string;
@@ -150,7 +157,7 @@ export class BaseTrigger {
 
     const now = new Date().toISOString();
 
-    debugLog(context, debugMode, `Fetching up to ${maxPages} pages with date filtering`);
+    debugLog(context, debugMode, `Fetching ALL pages until no more data available`);
 
     // Collect items from multiple pages
     let allItems: any[] = [];
@@ -167,15 +174,25 @@ export class BaseTrigger {
       
       // Build query variables with dateRange and pagination
       const variables: IDataObject = {
-        dateRange: {
-          start: dateRangeStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
-          end: currentTime.toISOString().split('T')[0] // Format as YYYY-MM-DD
-        },
         pagination: {
           page: currentPage,
           pageSize: limit
         }
       };
+
+      // Set appropriate date range based on datePeriod
+      if (datePeriod === 'all') {
+        // For "all" records, use a very wide date range
+        variables.dateRange = {
+          start: '1970-01-01',
+          end: currentTime.toISOString().split('T')[0]
+        };
+      } else {
+        variables.dateRange = {
+          start: dateRangeStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          end: currentTime.toISOString().split('T')[0] // Format as YYYY-MM-DD
+        };
+      }
 
       debugLog(context, debugMode, `Fetching page ${currentPage} with variables:`, variables);
 
@@ -239,7 +256,7 @@ export class BaseTrigger {
       }
     }
 
-    debugLog(context, debugMode, `Found ${allItems.length} total items from ${maxPages} pages within date range`);
+    debugLog(context, debugMode, `Found ${allItems.length} total items from all available pages within date range`);
     if (totalPermissionMeta.hasPermissionIssues) {
       debugLog(context, debugMode, `Permission issues detected:`, {
         missingFields: totalPermissionMeta.missingFields.map(f => f.fieldName),

@@ -162,6 +162,11 @@ export class SembleTrigger implements INodeType {
             value: "6m",
             description: "Monitor bookings from the last 180 days",
           },
+          {
+            name: "All Records",
+            value: "all",
+            description: "Use with caution. Recommend use in conjunction with Loop Over Items Node.",
+          },
         ],
         default: "1m",
         description: "Time period to search for bookings. This filters bookings using the Semble API's dateRange parameter for efficient querying.",
@@ -240,7 +245,7 @@ export class SembleTrigger implements INodeType {
     const additionalOptions = this.getNodeParameter("additionalOptions", {}) as IDataObject;
     
     const limit = additionalOptions.limit as number || 50;
-    const maxPages = additionalOptions.maxPages as number || 1;
+    const maxPages = additionalOptions.maxPages as number || Number.MAX_SAFE_INTEGER; // Always unlimited by default
 
     // Get resource configuration
     const resourceConfig = TRIGGER_RESOURCES[resource];
