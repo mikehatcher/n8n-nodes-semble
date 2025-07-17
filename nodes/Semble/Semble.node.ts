@@ -1,6 +1,6 @@
 /**
- * @fileoverview Main Semble node implementation for n8n
- * @description This module provides CRUD operations for Semble practice management system
+ * @fileoverview Main Semble node implementation for n8n (Action/Trigger-based architecture)
+ * @description This module provides CRUD operations for Semble practice management system using action-based structure
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Nodes
@@ -20,29 +20,18 @@ import {
 } from "n8n-workflow";
 
 import { sembleApiRequest } from "./GenericFunctions";
-import { RESOURCE_REGISTRY, ResourceName } from "./resources";
-
-import {
-  bookingOperations,
-  bookingFields,
-} from "./descriptions/BookingDescription";
-
-import {
-  patientOperations,
-  patientFields,
-} from "./descriptions/PatientDescription";
 
 /**
  * Main Semble node class for n8n
  * @class Semble
  * @implements {INodeType}
- * @description Provides booking management access to Semble API
+ * @description Action/trigger-based node architecture for Semble API access
  */
 export class Semble implements INodeType {
   /**
    * Node type description and configuration
    * @type {INodeTypeDescription}
-   * @description Defines the node's appearance, properties, and available operations
+   * @description Defines the node's appearance, properties, and available actions
    */
   description: INodeTypeDescription = {
     displayName: "Semble",
@@ -50,7 +39,7 @@ export class Semble implements INodeType {
     icon: "file:semble.svg",
     group: ["input"],
     version: 1,
-    subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+    subtitle: '={{$parameter["action"]}}',
     description: "Interact with Semble practice management system",
     defaults: {
       name: "Semble",
@@ -65,40 +54,43 @@ export class Semble implements INodeType {
     ],
     properties: [
       {
-        displayName: "Resource",
-        name: "resource",
+        displayName: "Action",
+        name: "action",
         type: "options",
         noDataExpression: true,
         options: [
           {
-            name: "Booking",
-            value: "booking",
-            description: "Manage appointments and bookings in your practice",
+            name: "Get",
+            value: "get",
+            description: "Retrieve data from Semble",
           },
           {
-            name: "Patient",
-            value: "patient",
-            description: "Manage patient records and information",
+            name: "Create",
+            value: "create", 
+            description: "Create new records in Semble",
+          },
+          {
+            name: "Update",
+            value: "update",
+            description: "Update existing records in Semble",
+          },
+          {
+            name: "Delete",
+            value: "delete",
+            description: "Delete records from Semble",
           },
         ],
-        default: "booking",
-        description: "The type of data you want to work with in Semble",
+        default: "get",
+        description: "The action you want to perform",
       },
-
-      // Booking operations
-      ...bookingOperations,
-      ...bookingFields,
-      
-      // Patient operations
-      ...patientOperations,
-      ...patientFields,
+      // TODO: Add action-specific properties
     ],
   };
 
   /**
    * Dynamic option loading methods  
    * @type {Object}
-   * @description Provides dynamic dropdown options for bookings
+   * @description Provides dynamic dropdown options for various actions
    */
   methods = {
     loadOptions: {
@@ -109,20 +101,19 @@ export class Semble implements INodeType {
        * @param {ILoadOptionsFunctions} this - n8n load options context
        * @returns {Promise<INodePropertyOptions[]>} Array of booking type options
        */
-      // Load booking types
       async getBookingTypes(
         this: ILoadOptionsFunctions
       ): Promise<INodePropertyOptions[]> {
         const returnData: INodePropertyOptions[] = [];
 
         const query = `
-					query GetBookingTypes {
-						bookingTypes {
-							id
-							name
-						}
-					}
-				`;
+query GetBookingTypes {
+bookingTypes {
+id
+name
+}
+}
+`;
 
         const response = await sembleApiRequest.call(this, query, {}, 3, false);
         const types = response.data.bookingTypes || [];
@@ -145,30 +136,41 @@ export class Semble implements INodeType {
    * @method execute
    * @param {IExecuteFunctions} this - n8n execution context
    * @returns {Promise<INodeExecutionData[][]>} Array of execution data
-   * @throws {NodeOperationError} When operation is not supported or parameters are invalid
+   * @throws {NodeOperationError} When action is not supported or parameters are invalid
    * @throws {NodeApiError} When API requests fail
-   * @description Handles all CRUD operations using resource-based approach
+   * @description Handles all CRUD operations using action-based approach
    */
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const returnData: IDataObject[] = [];
     const length = items.length;
 
-    const resource = this.getNodeParameter("resource", 0) as ResourceName;
-    const operation = this.getNodeParameter("operation", 0) as string;
-    
-    // Get the resource class from the registry
-    const ResourceClass = RESOURCE_REGISTRY[resource];
-    if (!ResourceClass) {
-      throw new NodeOperationError(this.getNode(), `Unknown resource: ${resource}`);
-    }
-
-    // Create resource instance
-    const resourceInstance = new ResourceClass();
+    const action = this.getNodeParameter("action", 0) as string;
 
     for (let i = 0; i < length; i++) {
       try {
-        const responseData = await resourceInstance.execute(this, operation, i);
+        let responseData: IDataObject | IDataObject[] | undefined;
+
+        switch (action) {
+          case "get":
+            // TODO: Implement get action
+            responseData = { message: "Get action not yet implemented" };
+            break;
+          case "create":
+            // TODO: Implement create action
+            responseData = { message: "Create action not yet implemented" };
+            break;
+          case "update":
+            // TODO: Implement update action
+            responseData = { message: "Update action not yet implemented" };
+            break;
+          case "delete":
+            // TODO: Implement delete action
+            responseData = { message: "Delete action not yet implemented" };
+            break;
+          default:
+            throw new NodeOperationError(this.getNode(), `Unknown action: ${action}`);
+        }
 
         if (Array.isArray(responseData)) {
           returnData.push(...(responseData as IDataObject[]));

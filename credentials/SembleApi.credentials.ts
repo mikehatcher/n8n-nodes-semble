@@ -67,7 +67,7 @@ export class SembleApi implements ICredentialType {
       typeOptions: { password: true },
       default: "",
       description:
-        "The API token for your Semble account (JWT token from Semble app settings)",
+        "The API token for your Semble account",
       required: true,
     },
     {

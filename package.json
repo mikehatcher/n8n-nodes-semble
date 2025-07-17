@@ -30,34 +30,41 @@
   },
   "main": "dist/index.js",
   "scripts": {
+
     "// === Package Management ===": "",
     "preinstall": "npx only-allow pnpm",
     "prepublishOnly": "npm run build",
-    
+
     "// === Build & Development ===": "",
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc && gulp build:icons",
     "dev": "tsc --watch",
-    
+
     "// === Code Quality ===": "",
     "lint": "eslint nodes/**/*.ts credentials/**/*.ts",
     "lint:fix": "eslint nodes/**/*.ts credentials/**/*.ts --fix",
     "lintfix": "npm run lint:fix",
     "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
-    
+
+    "// === Testing ===": "",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+
     "// === Local Development & Testing ===": "",
     "pack:local": "npm run lint && npm run build && npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
     "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
     "update:node": "npm run pack:local && npm run install:node",
     "dev:full": "npm run pack:local && npm run install:node && npm run restart:n8n",
     "test:env": "./scripts/test-setup.sh",
-    
+
     "// === Production Deployment ===": "",
     "pack:prod": "npm run pack:local",
     "deploy:prod": "npm run pack:prod && ./scripts/deploy-production.sh",
     "rollback:prod": "./scripts/deploy-production.sh --rollback",
     "status:prod": "./scripts/deploy-production.sh --status",
-    
+
     "// === Local n8n Environment Management ===": "",
     "setup:test-env": "./scripts/setup-n8n-test-env.sh",
     "start:n8n": "cd ../n8n-local-test && docker compose up -d",
@@ -90,12 +97,18 @@
     ]
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@typescript-eslint/parser": "~8.32.0",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^4.0.2",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "jest-mock-extended": "^4.0.0",
     "n8n-workflow": "^1.82.0",
+    "nock": "^13.5.6",
     "prettier": "^3.5.3",
+    "ts-jest": "^29.4.0",
     "typescript": "^5.8.2"
   },
   "peerDependencies": {
