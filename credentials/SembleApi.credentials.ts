@@ -43,18 +43,19 @@ export class SembleApi implements ICredentialType {
         {
           name: "Production",
           value: "production",
-          description: "Live production environment - USE WITH EXTREME CAUTION"
+          description: "Live production environment - USE WITH EXTREME CAUTION",
         },
         {
           name: "Staging",
-          value: "staging", 
-          description: "Staging/testing environment"
+          value: "staging",
+          description: "Staging/testing environment",
         },
         {
           name: "Development",
           value: "development",
-          description: "Local development environment (recommended for testing)"
-        }
+          description:
+            "Local development environment (recommended for testing)",
+        },
       ],
       default: "development",
       description: "Select the environment you are connecting to",
@@ -66,8 +67,7 @@ export class SembleApi implements ICredentialType {
       type: "string",
       typeOptions: { password: true },
       default: "",
-      description:
-        "The API token for your Semble account",
+      description: "The API token for your Semble account",
       required: true,
     },
     {
@@ -80,29 +80,31 @@ export class SembleApi implements ICredentialType {
     },
     {
       displayName: "Enable Safety Mode",
-      name: "safetyMode", 
+      name: "safetyMode",
       type: "boolean",
       default: true,
-      description: "Enable safety mode to prevent accidental data modifications. Recommended for non-production environments.",
+      description:
+        "Enable safety mode to prevent accidental data modifications. Recommended for non-production environments.",
       displayOptions: {
         show: {
-          environment: ["development", "staging"]
-        }
-      }
+          environment: ["development", "staging"],
+        },
+      },
     },
     {
       displayName: "Production Confirmation",
       name: "productionConfirmed",
-      type: "boolean", 
+      type: "boolean",
       default: false,
-      description: "⚠️ I confirm I am intentionally connecting to PRODUCTION and understand the risks",
+      description:
+        "⚠️ I confirm I am intentionally connecting to PRODUCTION and understand the risks",
       displayOptions: {
         show: {
-          environment: ["production"]
-        }
+          environment: ["production"],
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   ];
 
   /**

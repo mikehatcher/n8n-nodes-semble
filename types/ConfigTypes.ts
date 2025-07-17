@@ -1,9 +1,14 @@
 /**
- * TypeScript type definitions for configuration and options interfaces
- * Phase 1.1 - Foundation Layer Type Definitions
+ * @fileoverview TypeScript type definitions for configuration and options interfaces
+ * @description Configuration management types for services, caching, validation, and application settings
+ * @author Mike Hatcher
+ * @website https://progenious.com
+ * @namespace N8nNodesSemble.Types.Config
+ * @since 2.0.0
  */
 
-import { SembleResourceType, SembleActionType, SembleTriggerEventType, SemblePollInterval } from './NodeTypes';
+import { SembleActionType, SembleTriggerEventType, SemblePollInterval } from './NodeTypes';
+import { SembleResourceType } from './SembleTypes';
 
 // =============================================================================
 // CACHE CONFIGURATION
@@ -37,8 +42,8 @@ export interface CacheEntryMetadata {
 	expiresAt: number;
 	/** How many times this entry has been accessed */
 	accessCount: number;
-	/** Last access timestamp */
-	lastAccessed: number;
+	/** Last access timestamp - undefined if never accessed after creation */
+	lastAccessed?: number;
 	/** Whether this entry is currently being refreshed */
 	refreshing: boolean;
 }

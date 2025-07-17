@@ -1,9 +1,11 @@
 /**
  * @fileoverview Global test setup for n8n-nodes-semble
  * @description Configures Jest environment and global mocks following n8n best practices
+ * @author Mike Hatcher
+ * @website https://progenious.com
+ * @namespace N8nNodesSemble.Tests.Setup
+ * @since 2.0.0
  */
-
-import { jest } from '@jest/globals';
 
 /**
  * Global test timeout configuration

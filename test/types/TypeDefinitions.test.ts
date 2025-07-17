@@ -1,6 +1,10 @@
 /**
- * Test suite for TypeScript type definitions
- * Phase 1.1 - Foundation Layer Type Definitions Testing
+ * @fileoverview Test suite for TypeScript type definitions
+ * @description Comprehensive unit tests for all Semble API type definitions, n8n integrations, and configuration types
+ * @author Mike Hatcher
+ * @website https://progenious.com
+ * @namespace N8nNodesSemble.Tests.Types
+ * @since 2.0.0
  */
 
 import { 

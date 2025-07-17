@@ -1,6 +1,10 @@
 /**
  * @fileoverview Test helper utilities for n8n-nodes-semble
- * @description Provides common testing utilities following n8n patterns
+ * @description Provides common testing utilities, mock functions, and sample data following n8n patterns
+ * @author Mike Hatcher
+ * @website https://progenious.com
+ * @namespace N8nNodesSemble.Tests.Helpers
+ * @since 2.0.0
  */
 
 import { 

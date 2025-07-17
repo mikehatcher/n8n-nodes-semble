@@ -1,6 +1,10 @@
 /**
- * TypeScript type definitions for Semble API objects and responses
- * Phase 1.1 - Foundation Layer Type Definitions
+ * @fileoverview TypeScript type definitions for Semble API objects and responses
+ * @description Comprehensive type definitions for all Semble API interfaces, GraphQL responses, and utility types
+ * @author Mike Hatcher
+ * @website https://progenious.com
+ * @namespace N8nNodesSemble.Types.Semble
+ * @since 2.0.0
  */
 
 // =============================================================================
@@ -311,6 +315,82 @@ export interface SembleResourceInputMap {
 }
 
 // =============================================================================
+// GRAPHQL AND API TYPES
+// =============================================================================
+
+/**
+ * GraphQL query structure
+ */
+export interface GraphQLQuery {
+	query: string;
+	variables?: Record<string, any>;
+	operationName?: string;
+}
+
+/**
+ * GraphQL response structure
+ */
+export interface GraphQLResponse<T = any> {
+	data?: T;
+	errors?: GraphQLError[];
+	extensions?: any;
+}
+
+/**
+ * GraphQL error structure
+ */
+export interface GraphQLError {
+	message: string;
+	locations?: Array<{ line: number; column: number }>;
+	path?: Array<string | number>;
+	extensions?: {
+		code?: string;
+		exception?: any;
+		[key: string]: any;
+	};
+}
+
+/**
+ * Credentials for Semble API authentication
+ */
+export interface SembleCredentials {
+	token?: string;
+	apiKey?: string;
+	baseUrl: string;
+	environment?: 'development' | 'staging' | 'production';
+}
+
+/**
+ * Query options for API requests
+ */
+export interface QueryOptions {
+	timeout?: number;
+	retries?: number;
+	cache?: boolean;
+	priority?: 'low' | 'normal' | 'high';
+}
+
+/**
+ * Rate limiting state
+ */
+export interface RateLimitState {
+	requests: number[];
+	remaining: number;
+	resetTime: number;
+}
+
+/**
+ * Retry configuration options
+ */
+export interface RetryOptions {
+	maxAttempts: number;
+	initialDelay: number;
+	maxDelay: number;
+	backoffMultiplier: number;
+	retryableErrors: string[];
+}
+
+// =============================================================================
 // UTILITY TYPES
 // =============================================================================
 
@@ -331,4 +411,64 @@ export interface SembleBaseObject {
 	id: string;
 	createdAt: string;
 	updatedAt: string;
+}
+
+// =============================================================================
+// GRAPHQL INTROSPECTION TYPES
+// =============================================================================
+
+/**
+ * GraphQL introspection and schema types
+ */
+export interface GraphQLSchema {
+	queryType?: GraphQLType;
+	mutationType?: GraphQLType;
+	subscriptionType?: GraphQLType;
+	types: GraphQLType[];
+	directives: GraphQLDirective[];
+}
+
+export interface GraphQLType {
+	kind: string;
+	name: string;
+	description?: string;
+	fields: Record<string, GraphQLField>;
+	inputFields: GraphQLField[];
+	interfaces: GraphQLType[];
+	enumValues: GraphQLEnumValue[];
+	possibleTypes: GraphQLType[];
+}
+
+export interface GraphQLField {
+	name: string;
+	description?: string;
+	type: string;
+	args: GraphQLField[];
+	isDeprecated: boolean;
+	deprecationReason?: string;
+	defaultValue?: any;
+}
+
+export interface GraphQLEnumValue {
+	name: string;
+	description?: string;
+	isDeprecated: boolean;
+	deprecationReason?: string;
+}
+
+export interface GraphQLDirective {
+	name: string;
+	description?: string;
+	locations: string[];
+	args: GraphQLField[];
+}
+
+/**
+ * Cache options for service operations
+ */
+export interface CacheOptions {
+	ttl?: number;
+	namespace?: string;
+	compress?: boolean;
+	serialize?: boolean;
 }

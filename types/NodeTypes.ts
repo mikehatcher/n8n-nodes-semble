@@ -1,6 +1,10 @@
 /**
- * TypeScript type definitions for n8n-specific interfaces and extensions
- * Phase 1.1 - Foundation Layer Type Definitions
+ * @fileoverview TypeScript type definitions for n8n-specific interfaces and extensions
+ * @description n8n node type definitions, execution contexts, and component configuration types for Semble integration
+ * @author Mike Hatcher
+ * @website https://progenious.com
+ * @namespace N8nNodesSemble.Types.Node
+ * @since 2.0.0
  */
 
 import { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription, INodeProperties, NodePropertyTypes } from 'n8n-workflow';
@@ -323,6 +327,15 @@ export interface EventEmitter {
 // UTILITY TYPES FOR n8n INTEGRATION
 // =============================================================================
 
+/**
+ * n8n property type with Semble extensions
+ */
+export type SembleNodeProperty = INodeProperties;
+
+/**
+ * Complete n8n node properties array type
+ */
+export type SembleNodeProperties = INodeProperties[];
 
 /**
  * Node type description with Semble-specific extensions  

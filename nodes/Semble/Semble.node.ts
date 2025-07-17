@@ -63,21 +63,25 @@ export class Semble implements INodeType {
             name: "Get",
             value: "get",
             description: "Retrieve data from Semble",
+            action: "Retrieve data from semble",
           },
           {
             name: "Create",
-            value: "create", 
+            value: "create",
             description: "Create new records in Semble",
+            action: "Create new records in semble",
           },
           {
             name: "Update",
             value: "update",
             description: "Update existing records in Semble",
+            action: "Update existing records in semble",
           },
           {
             name: "Delete",
             value: "delete",
             description: "Delete records from Semble",
+            action: "Delete records from semble",
           },
         ],
         default: "get",
@@ -88,7 +92,7 @@ export class Semble implements INodeType {
   };
 
   /**
-   * Dynamic option loading methods  
+   * Dynamic option loading methods
    * @type {Object}
    * @description Provides dynamic dropdown options for various actions
    */
@@ -102,7 +106,7 @@ export class Semble implements INodeType {
        * @returns {Promise<INodePropertyOptions[]>} Array of booking type options
        */
       async getBookingTypes(
-        this: ILoadOptionsFunctions
+        this: ILoadOptionsFunctions,
       ): Promise<INodePropertyOptions[]> {
         const returnData: INodePropertyOptions[] = [];
 
@@ -169,7 +173,10 @@ name
             responseData = { message: "Delete action not yet implemented" };
             break;
           default:
-            throw new NodeOperationError(this.getNode(), `Unknown action: ${action}`);
+            throw new NodeOperationError(
+              this.getNode(),
+              `Unknown action: ${action}`,
+            );
         }
 
         if (Array.isArray(responseData)) {
