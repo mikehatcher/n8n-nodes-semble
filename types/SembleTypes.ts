@@ -12,26 +12,185 @@
 // =============================================================================
 
 /**
+ * Place of Birth interface - represents birth location information
+ */
+export interface SemblePlaceOfBirth {
+	name?: string;
+	code?: string;
+}
+
+/**
+ * Phone interface - represents a phone number with type information
+ */
+export interface SemblePhone {
+	phoneId: string;
+	phoneType?: string;
+	phoneNumber?: string;
+}
+
+/**
+ * SharingToken interface - represents patient sharing token information
+ */
+export interface SembleSharingToken {
+	token?: string;
+}
+
+/**
+ * PatientNumber interface - represents patient number/ID assignments
+ */
+export interface SemblePatientNumber {
+	id: string;
+	name?: string;
+	value?: string;
+}
+
+/**
+ * CustomAttribute interface - represents custom patient attributes/fields
+ */
+export interface SembleCustomAttribute {
+	id: string;
+	title?: string;
+	text?: string;
+	response?: string;
+	required?: boolean;
+}
+
+/**
+ * PrivacyPolicy interface - represents privacy policy response
+ */
+export interface SemblePrivacyPolicy {
+	response?: string;
+}
+
+/**
+ * CommunicationPreferences interface - represents patient communication preferences
+ */
+export interface SembleCommunicationPreferences {
+	receiveEmail?: boolean;
+	receiveSMS?: boolean;
+	promotionalMarketing?: boolean;
+	paymentReminders?: boolean;
+	privacyPolicy?: SemblePrivacyPolicy;
+}
+
+/**
+ * PatientRelationshipType enum - represents types of patient relationships
+ */
+export type SemblePatientRelationshipType = 
+	| 'FAMILY' 
+	| 'EMERGENCY_CONTACT' 
+	| 'NEXT_OF_KIN' 
+	| 'INSURER' 
+	| 'PRACTITIONER' 
+	| 'PAYER' 
+	| 'REFERRING_CLINICIAN' 
+	| 'OTHER' 
+	| 'GP' 
+	| 'PARENT_GUARDIAN' 
+	| 'SOCIAL_WORKER' 
+	| 'SPOUSE_PARTNER' 
+	| 'PHARMACY' 
+	| 'ANAESTHETIST';
+
+/**
+ * PatientRelationshipContact interface - represents contact details for related accounts
+ */
+export interface SemblePatientRelationshipContact {
+	relatedAccountId?: string;
+	source?: string;
+	sourceId?: string;
+	firstName?: string;
+	lastName?: string;
+	title?: string;
+	companyName?: string;
+	phones?: SemblePhone[]; // Reusing existing Phone interface
+	email?: string;
+	address?: string;
+	city?: string;
+	postcode?: string;
+	country?: string;
+	notes?: string;
+	name?: string;
+	contactInfo?: string;
+	policyNumber?: string;
+	authorizationCode?: string;
+}
+
+/**
+ * PatientRelationship interface - represents patient related accounts/relationships
+ */
+export interface SemblePatientRelationship {
+	relationshipId: string;
+	relationshipType?: SemblePatientRelationshipType;
+	relationshipLabel?: string;
+	deleted?: boolean;
+	contactDetails?: SemblePatientRelationshipContact;
+}
+
+/**
+ * PatientLabel interface - represents patient labels/tags
+ */
+export interface SemblePatientLabel {
+	id: string;
+	referenceId?: string;
+	color?: string;
+	text?: string;
+}
+
+/**
+ * PatientAccessGroup interface - represents patient access groups
+ */
+export interface SemblePatientAccessGroup {
+	id: string;
+	name?: string;
+	label?: string;
+}
+
+/**
  * Patient interface - represents a patient/customer in Semble
  */
 export interface SemblePatient {
 	id: string;
+	title?: string;
+	status?: string;
 	firstName: string;
 	lastName: string;
+	fullName?: string;
+	birthSurname?: string;
+	birthName?: string;
+	birthNames?: string;
+	dob?: string;
+	placeOfBirth?: SemblePlaceOfBirth;
+	phones?: SemblePhone[];
+	sharingToken?: SembleSharingToken;
+	numbers?: SemblePatientNumber[];
+	socialSecurityNumber?: string;
+	gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
+	sex?: 'male' | 'female' | 'intersex';
 	email?: string;
+	googleClientId?: string;
+	paymentReference?: string;
+	occupation?: string;
+	membershipName?: string;
+	membershipStartDate?: string;
+	membershipStartDateFormatted?: string;
+	createdAt: string;
+	updatedAt: string;
+	comments?: string;
+	onHold?: boolean;
+	// Legacy fields for backward compatibility
 	phone?: string;
 	dateOfBirth?: string;
-	gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
 	address?: SembleAddress;
 	emergencyContact?: SembleEmergencyContact;
 	notes?: string;
 	tags?: string[];
-	customAttributes?: Record<string, any>;
+	customAttributes?: SembleCustomAttribute[];
+	communicationPreferences?: SembleCommunicationPreferences;
+	relatedAccounts?: SemblePatientRelationship[];
+	labels?: SemblePatientLabel[];
 	marketingPreferences?: SembleMarketingPreferences;
-	accessGroups?: string[];
-	status?: string;
-	createdAt: string;
-	updatedAt: string;
+	accessGroups?: SemblePatientAccessGroup[];
 }
 
 /**
@@ -97,14 +256,12 @@ export interface SembleBookingType {
 }
 
 /**
- * Address interface - used in Patient and Location
+ * Address interface - used in Patient and Location, updated to match actual API structure
  */
 export interface SembleAddress {
-	line1?: string;
-	line2?: string;
+	address?: string;
 	city?: string;
-	state?: string;
-	postalCode?: string;
+	postcode?: string;
 	country?: string;
 }
 

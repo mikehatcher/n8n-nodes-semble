@@ -53,6 +53,10 @@
     "test:coverage": "jest --coverage",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:e2e": "jest test/e2e/ --testTimeout=30000",
+
+    "// === API Validation ===": "",
+    "test:api": "./scripts/test-api-connection.sh",
 
     "// === Quality Gates ===": "",
     "verify": "npm run lint && npm run test && npm run build",

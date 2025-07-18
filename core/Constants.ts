@@ -210,6 +210,72 @@ export const SEMBLE_CONSTANTS = {
 	// FIELD DEFINITIONS AND OPTIONS
 	// =============================================================================
 	FIELDS: {
+		// Patient field definitions
+		PATIENT: {
+			// Scalar fields (24 total)
+			SCALAR: [
+				'id', 'title', 'status', 'firstName', 'lastName', 'fullName', 
+				'birthSurname', 'birthName', 'birthNames', 'dob', 'socialSecurityNumber', 
+				'gender', 'sex', 'email', 'googleClientId', 'paymentReference', 
+				'occupation', 'membershipName', 'membershipStartDate', 'membershipStartDateFormatted', 
+				'createdAt', 'updatedAt', 'comments', 'onHold'
+			],
+			
+			// Complex objects
+			COMPLEX: {
+				placeOfBirth: { name: 'String', code: 'String' },
+				phones: { phoneId: 'ID', phoneType: 'String', phoneNumber: 'String' },
+				address: { address: 'String', city: 'String', postcode: 'String', country: 'String' },
+				sharingToken: { token: 'String' },
+				numbers: { id: 'ID', name: 'String', value: 'String' },
+				customAttributes: { id: 'ID', title: 'String', text: 'String', response: 'String', required: 'Boolean' },
+				communicationPreferences: { 
+					receiveEmail: 'Boolean', 
+					receiveSMS: 'Boolean', 
+					promotionalMarketing: 'Boolean', 
+					paymentReminders: 'Boolean', 
+					privacyPolicy: { response: 'String' } 
+				},
+				relatedAccounts: {
+					relationshipId: 'ID',
+					relationshipType: 'PatientRelationshipType',
+					relationshipLabel: 'String',
+					deleted: 'Boolean',
+					contactDetails: {
+						relatedAccountId: 'ID',
+						source: 'String',
+						sourceId: 'ID',
+						firstName: 'String',
+						lastName: 'String',
+						title: 'String',
+						companyName: 'String',
+						phones: 'Phone[]',
+						email: 'String',
+						address: 'String',
+						city: 'String',
+						postcode: 'String',
+						country: 'String',
+						notes: 'String',
+						name: 'String',
+						contactInfo: 'String',
+						policyNumber: 'String',
+						authorizationCode: 'String'
+					}
+				},
+				labels: {
+					id: 'ID',
+					referenceId: 'ID',
+					color: 'String',
+					text: 'String'
+				},
+				accessGroups: {
+					id: 'ID',
+					name: 'String',
+					label: 'String'
+				}
+			}
+		},
+
 		// Phone type options
 		PHONE_TYPES: ['mobile', 'home', 'work', 'other'],
 
