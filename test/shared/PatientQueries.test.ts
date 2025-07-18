@@ -162,7 +162,7 @@ describe('PatientQueries', () => {
     });
 
     it('should handle optional insData parameter', () => {
-      expect(CREATE_PATIENT_MUTATION).toContain('$insData: String');
+      expect(CREATE_PATIENT_MUTATION).toContain('$insData: INSInput');
     });
 
     it('should include comprehensive patient fields for response', () => {

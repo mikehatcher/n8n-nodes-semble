@@ -1,18 +1,502 @@
 /**
- * @fileoverview Placeholder for SembleTrigger node - to be implemented in Phase 5.1
- * @description Stub implementation to prevent build errors during foundation layer development
+ * @fileoverview Semble trigger node implementation for n8n (refactored architecture)
+ * @description This module provides scheduled polling triggers for Semble practice management system using our Phase 1-2 services
  * @author Mike Hatcher
  * @website https://progenious.com
- * @namespace N8nNodesSemble.Nodes.SembleTrigger
- * @since Phase 1.3 - Temporary stub for build compatibility
+ * @namespace N8nNodesSemble.Nodes
  */
 
-import { ITriggerFunctions } from "n8n-workflow";
+import {
+  IPollFunctions,
+  IDataObject,
+  INodeExecutionData,
+  INodeType,
+  INodeTypeDescription,
+  NodeOperationError,
+  NodeConnectionType,
+} from "n8n-workflow";
 
-// Temporary export to satisfy build requirements
-// This will be replaced with full implementation in Phase 5.1
-class SembleTrigger {
-  // Placeholder - actual implementation in Phase 5.1
+import { sembleApiRequest } from "./GenericFunctions";
+import {
+  SemblePagination,
+  buildPaginationConfig,
+} from "./shared/PaginationHelpers";
+import {
+  GET_PATIENTS_QUERY,
+} from "./shared/PatientQueries";
+
+/**
+ * Configuration interface for trigger resources
+ * @interface TriggerResourceConfig
+ */
+interface TriggerResourceConfig {
+  displayName: string;
+  value: string;
+  description: string;
+  query: string;
+  dateField: string;
+  apiResponseKey: string;
 }
 
-export default SembleTrigger;
+/**
+ * Base configuration for all trigger polling operations
+ * @interface TriggerConfig
+ */
+interface TriggerConfig {
+  resource: string;
+  event: string;
+  debugMode: boolean;
+  datePeriod: string;
+  limit: number;
+  maxPages: number;
+}
+
+/**
+ * Result interface for trigger polling operations
+ * @interface TriggerPollResult
+ */
+interface TriggerPollResult {
+  data: INodeExecutionData[];
+  hasNewData: boolean;
+  pollTime: string;
+  filteredCount: number;
+  totalCount: number;
+}
+
+/**
+ * Resource configuration for triggers
+ * @description Defines available resources and their polling queries
+ */
+const TRIGGER_RESOURCES: { [key: string]: TriggerResourceConfig } = {
+  patient: {
+    displayName: "Patient",
+    value: "patient",
+    description: "Monitor patients for changes (create, update)",
+    query: GET_PATIENTS_QUERY,
+    dateField: "updatedAt",
+    apiResponseKey: "patients",
+  },
+  // Future resources can be added here:
+  // booking: BOOKING_TRIGGER_CONFIG,
+  // product: PRODUCT_TRIGGER_CONFIG,
+};
+
+/**
+ * Calculates the start date for the date range based on the selected period
+ * @function calculateDateRangeStart
+ * @param {string} period - The date period (1d, 1w, 1m, 3m, 6m, 12m, all)
+ * @returns {Date} The calculated start date
+ */
+function calculateDateRangeStart(period: string): Date {
+  const now = new Date();
+  
+  switch (period) {
+    case 'all':
+      return new Date('1970-01-01'); // Very old date to get all records
+    case '1d':
+      return new Date(now.getTime() - (1 * 24 * 60 * 60 * 1000)); // 1 day
+    case '1w':
+      return new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 days
+    case '1m':
+      return new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // 30 days
+    case '3m':
+      return new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000)); // 90 days
+    case '6m':
+      return new Date(now.getTime() - (180 * 24 * 60 * 60 * 1000)); // 180 days
+    case '12m':
+      return new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000)); // 365 days
+    default:
+      return new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // Default to 30 days
+  }
+}
+
+/**
+ * Debug logging utility for triggers
+ * @function debugLog
+ * @param {IPollFunctions} context - n8n polling context
+ * @param {boolean} debugMode - Whether debug mode is enabled
+ * @param {string} message - Debug message
+ * @param {any} data - Optional data to log
+ */
+function debugLog(
+  context: IPollFunctions,
+  debugMode: boolean,
+  message: string,
+  data?: any
+): void {
+  if (debugMode && context.logger) {
+    context.logger.info(`[SEMBLE-TRIGGER-DEBUG] ${message}`, data ? { debugData: data } : undefined);
+  }
+}
+
+/**
+ * Main Semble trigger node class for n8n
+ * @class SembleTrigger
+ * @implements {INodeType}
+ * @description Provides scheduled polling access to Semble API for monitoring changes
+ */
+export class SembleTrigger implements INodeType {
+  /**
+   * Node type description and configuration
+   * @type {INodeTypeDescription}
+   * @description Defines the trigger node's appearance, properties, and polling behavior
+   */
+  description: INodeTypeDescription = {
+    displayName: "Semble Trigger",
+    name: "sembleTrigger",
+    icon: "file:semble.svg",
+    group: ["trigger"],
+    version: 1,
+    subtitle: '={{$parameter["event"] + ": " + $parameter["resource"]}}',
+    description: "Monitor Semble practice management system for changes",
+    defaults: {
+      name: "Semble Trigger",
+    },
+    inputs: [],
+    outputs: [NodeConnectionType.Main],
+    credentials: [
+      {
+        name: "sembleApi",
+        required: true,
+      },
+    ],
+    polling: true,
+    properties: [
+      {
+        displayName: "Resource",
+        name: "resource",
+        type: "options",
+        noDataExpression: true,
+        options: [
+          {
+            name: "Patient",
+            value: "patient",
+            description: "Monitor patients for changes (create, update)",
+          },
+          // Future resources:
+          // {
+          //   name: "Booking",
+          //   value: "booking",
+          //   description: "Monitor bookings for changes (create, update)",
+          // },
+        ],
+        default: "patient",
+        description: "The resource type to monitor for changes",
+      },
+      {
+        displayName: "Event",
+        name: "event",
+        type: "options",
+        options: [
+          {
+            name: "New or Updated",
+            value: "newOrUpdated",
+            description: "Trigger on new items or updates to existing items",
+          },
+          {
+            name: "New Only",
+            value: "newOnly", 
+            description: "Trigger only on newly created items",
+          },
+        ],
+        default: "newOrUpdated",
+        description: "What changes should trigger the workflow",
+      },
+      {
+        displayName: "Created/Updated Date",
+        name: "datePeriod",
+        type: "options",
+        options: [
+          {
+            name: "1 Day",
+            value: "1d",
+            description: "Monitor items from the last 24 hours",
+          },
+          {
+            name: "1 Month",
+            value: "1m",
+            description: "Monitor items from the last 30 days",
+          },
+          {
+            name: "1 Week",
+            value: "1w", 
+            description: "Monitor items from the last 7 days",
+          },
+          {
+            name: "12 Months",
+            value: "12m",
+            description: "Monitor items from the last 365 days",
+          },
+          {
+            name: "3 Months",
+            value: "3m",
+            description: "Monitor items from the last 90 days",
+          },
+          {
+            name: "6 Months", 
+            value: "6m",
+            description: "Monitor items from the last 180 days",
+          },
+          {
+            name: "All Records",
+            value: "all",
+            description: "Use with caution. Recommend use in conjunction with Loop Over Items Node.",
+          },
+        ],
+        default: "1m",
+        description: "Time period to search for items. This filters using the Semble API's dateRange parameter for efficient querying.",
+      },
+      {
+        displayName: "Additional Options",
+        name: "additionalOptions",
+        type: "collection",
+        placeholder: "Add Option",
+        default: {},
+        description: "Optional settings to fine-tune the trigger's polling behavior and performance",
+        options: [
+          {
+            displayName: "Limit",
+            name: "limit",
+            type: "number",
+            default: 50,
+            description: 'Max number of results to return',
+            typeOptions: {
+              minValue: 1,
+            },
+          },
+          {
+            displayName: "Max Pages to Fetch",
+            name: "maxPages",
+            type: "number",
+            default: 5,
+            description: "Maximum number of pages to fetch per polling cycle. Higher values increase data coverage but may impact performance.",
+            typeOptions: {
+              minValue: 1,
+              maxValue: 50,
+            },
+          },
+        ],
+      },
+      {
+        displayName: "Debug Mode",
+        name: "debugMode",
+        type: "boolean",
+        default: false,
+        description: "Whether to enable detailed logging for troubleshooting API requests and responses",
+      },
+    ],
+  };
+
+  /**
+   * Main polling method for the Semble trigger
+   * @async
+   * @method poll
+   * @param {IPollFunctions} this - n8n polling context
+   * @returns {Promise<INodeExecutionData[][] | null>} Array of execution data or null if no new data
+   * @throws {NodeOperationError} When resource is not supported or parameters are invalid
+   * @description Polls Semble API for changes and returns new/updated items
+   */
+  async poll(this: IPollFunctions): Promise<INodeExecutionData[][] | null> {
+    const resource = this.getNodeParameter("resource") as string;
+    const event = this.getNodeParameter("event") as string;
+    const debugMode = this.getNodeParameter("debugMode", false) as boolean;
+    const datePeriod = this.getNodeParameter("datePeriod", "1m") as string;
+    const additionalOptions = this.getNodeParameter("additionalOptions", {}) as IDataObject;
+    
+    const limit = (additionalOptions.limit as number) || 50;
+    const maxPages = (additionalOptions.maxPages as number) || 5;
+
+    // Get resource configuration
+    const resourceConfig = TRIGGER_RESOURCES[resource];
+    if (!resourceConfig) {
+      throw new NodeOperationError(this.getNode(), `Resource "${resource}" is not supported`);
+    }
+
+    try {
+      // Use the polling logic directly within this context
+      const result = await pollResource.call(this, resourceConfig, {
+        resource,
+        event,
+        debugMode,
+        datePeriod,
+        limit,
+        maxPages,
+      });
+      
+      // Return data only if we have new items
+      return result.hasNewData ? [result.data] : null;
+    } catch (error) {
+      if (debugMode && this.logger) {
+        this.logger.error(`[SEMBLE-TRIGGER-DEBUG] Polling failed: ${(error as Error).message}`);
+      }
+      throw error;
+    }
+  }
+}
+
+/**
+ * Resource-specific polling logic
+ * @async
+ * @function pollResource
+ * @param {IPollFunctions} this - n8n polling context
+ * @param {TriggerResourceConfig} resourceConfig - Resource configuration
+ * @param {TriggerConfig} config - Trigger configuration
+ * @returns {Promise<TriggerPollResult>} Polling result
+ */
+async function pollResource(
+  this: IPollFunctions,
+  resourceConfig: TriggerResourceConfig,
+  config: TriggerConfig
+): Promise<TriggerPollResult> {
+  const { resource, event, debugMode, datePeriod, limit, maxPages } = config;
+
+  debugLog(this, debugMode, `Polling ${resource} for ${event} events`);
+
+  // Get workflow static data for tracking last poll time
+  const workflowStaticData = this.getWorkflowStaticData("node");
+  const lastPoll = workflowStaticData.lastPoll as string;
+  
+  // Calculate date range based on the selected period
+  const currentTime = new Date();
+  const dateRangeStart = calculateDateRangeStart(datePeriod);
+  
+  if (datePeriod === 'all') {
+    debugLog(this, debugMode, `Querying ALL records (use with caution)`);
+  } else {
+    debugLog(this, debugMode, `Using date range: ${dateRangeStart.toISOString()} to ${currentTime.toISOString()}`);
+  }
+  
+  // Calculate the cutoff date for filtering (use lastPoll if available, otherwise use date range start)
+  let cutoffDate: string;
+  if (lastPoll) {
+    cutoffDate = lastPoll;
+    debugLog(this, debugMode, `Last poll: ${lastPoll}`);
+  } else {
+    // First run - use the date range start as cutoff
+    cutoffDate = dateRangeStart.toISOString();
+    debugLog(this, debugMode, `First run, using date range start: ${cutoffDate}`);
+  }
+
+  const now = new Date().toISOString();
+
+  // For triggers, we'll use a simplified approach with single page fetching
+  // Build pagination configuration for current page
+  const paginationConfig = buildPaginationConfig({
+    pageSize: limit,
+    returnAll: false,
+  });
+  
+  // Build query variables with dateRange and pagination
+  const variables: IDataObject = {
+    pagination: { 
+      page: 1, 
+      pageSize: paginationConfig.pageSize 
+    },
+  };
+
+  // Add date range filtering for supported resources
+  if (resource !== 'product') {
+    // Set appropriate date range based on datePeriod
+    if (datePeriod === 'all') {
+      // For "all" records, use a very wide date range
+      variables.dateRange = {
+        start: '1970-01-01',
+        end: currentTime.toISOString().split('T')[0]
+      };
+    } else {
+      variables.dateRange = {
+        start: dateRangeStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        end: currentTime.toISOString().split('T')[0] // Format as YYYY-MM-DD
+      };
+    }
+  }
+
+  debugLog(this, debugMode, `Fetching data with variables:`, variables);
+
+  // Execute the query using our GenericFunctions
+  const responseData = await sembleApiRequest.call(
+    this,
+    resourceConfig.query,
+    variables
+  );
+
+  // Get items based on resource API response key
+  const allItems: any[] = responseData[resourceConfig.apiResponseKey]?.data || [];
+
+  debugLog(this, debugMode, `Found ${allItems.length} total items within date range`);
+
+  // Filter items based on event type and last poll time
+  let filteredItems = allItems;
+  
+  if (event === "newOnly") {
+    // Only include items created after cutoff date
+    filteredItems = allItems.filter((item: IDataObject) => {
+      const createdAt = item.createdAt as string;
+      return createdAt && new Date(createdAt) > new Date(cutoffDate);
+    });
+    
+    debugLog(this, debugMode, `Filtered to ${filteredItems.length} new items only (created after ${cutoffDate})`);
+  } else {
+    // For "newOrUpdated", include items that are either:
+    // 1. Created after cutoff date (new items)
+    // 2. Updated after cutoff date (updated items)
+    filteredItems = allItems.filter((item: IDataObject) => {
+      const createdAt = item.createdAt as string;
+      const updatedAt = item.updatedAt as string;
+      
+      // Include if created after cutoff (new items)
+      if (createdAt && new Date(createdAt) > new Date(cutoffDate)) {
+        return true;
+      }
+      
+      // Include if updated after cutoff (updated items)
+      if (updatedAt && new Date(updatedAt) > new Date(cutoffDate)) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    debugLog(this, debugMode, `Filtered to ${filteredItems.length} new or updated items (created or updated after ${cutoffDate})`);
+  }
+
+  // Convert to execution data with metadata
+  const returnData: INodeExecutionData[] = [];
+  for (const item of filteredItems) {
+    // Determine if this is a newly created item vs an updated item
+    const createdAt = new Date(item.createdAt as string);
+    const cutoffDateTime = new Date(cutoffDate);
+    
+    const isNewItem = createdAt > cutoffDateTime;
+    
+    // updatedAt is null/blank until the record is actually updated
+    const updatedAt = item.updatedAt as string;
+    const isUpdatedItem = updatedAt && new Date(updatedAt) > cutoffDateTime;
+    
+    returnData.push({
+      json: {
+        ...item,
+        __meta: {
+          resource,
+          event,
+          pollTime: now,
+          isNew: isNewItem,
+          isUpdated: !!isUpdatedItem,
+        },
+      },
+    });
+  }
+
+  // Update last poll time
+  workflowStaticData.lastPoll = now;
+
+  debugLog(this, debugMode, `Returning ${returnData.length} items, updated lastPoll to ${now}`);
+
+  return {
+    data: returnData,
+    hasNewData: returnData.length > 0,
+    pollTime: now,
+    filteredCount: filteredItems.length,
+    totalCount: allItems.length
+  };
+}

@@ -735,7 +735,8 @@ describe('Semble Node - Patient Operations', () => {
             patientData: {
               first: 'John',
               last: 'Doe'
-            }
+            },
+            insData: null
           },
           3,
           false
@@ -826,9 +827,9 @@ describe('Semble Node - Patient Operations', () => {
 
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
-          { patientData: expectedPatientData },
+          { insData: null, patientData: expectedPatientData },
           3,
-          false
+          false,
         );
         expect(result[0]).toHaveLength(1);
       });
@@ -905,6 +906,7 @@ describe('Semble Node - Patient Operations', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
           {
+            insData: null,
             patientData: {
               first: 'John',
               last: 'Doe',
@@ -943,6 +945,7 @@ describe('Semble Node - Patient Operations', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
           {
+            insData: null,
             patientData: {
               first: 'John',
               last: 'Doe'
@@ -990,6 +993,7 @@ describe('Semble Node - Patient Operations', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
           {
+            insData: null,
             patientData: {
               first: 'John',
               last: 'Doe',
@@ -1028,6 +1032,7 @@ describe('Semble Node - Patient Operations', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
           {
+            insData: null,
             patientData: {
               first: 'John',
               last: 'Doe'
@@ -1095,6 +1100,7 @@ describe('Semble Node - Patient Operations', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
           {
+            insData: null,
             patientData: {
               first: 'John',
               last: 'Doe',
@@ -1133,6 +1139,7 @@ describe('Semble Node - Patient Operations', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
           {
+            insData: null,
             patientData: {
               first: 'John',
               last: 'Doe'
@@ -1211,6 +1218,7 @@ describe('Semble Node - Patient Operations', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledWith(
           expect.stringContaining('mutation CreatePatient'),
           {
+            insData: null,
             patientData: {
               first: 'John',
               last: 'Comprehensive',

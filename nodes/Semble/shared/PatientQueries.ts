@@ -150,7 +150,7 @@ export const GET_PATIENTS_QUERY = `
  * GraphQL mutation for creating a new patient
  */
 export const CREATE_PATIENT_MUTATION = `
-  mutation CreatePatient($insData: String, $patientData: CreatePatientDataInput!) {
+  mutation CreatePatient($insData: INSInput, $patientData: CreatePatientDataInput!) {
     createPatient(
       insData: $insData
       patientData: $patientData

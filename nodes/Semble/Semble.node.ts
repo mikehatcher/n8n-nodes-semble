@@ -157,7 +157,7 @@ export class Semble implements INodeType {
         description: "Patient's first name",
       },
       {
-        displayName: "Last Name", 
+        displayName: "Last Name",
         name: "lastName",
         type: "string",
         required: true,
@@ -184,11 +184,27 @@ export class Semble implements INodeType {
         default: {},
         options: [
           {
-            displayName: "Title",
-            name: "title",
+            displayName: "Address",
+            name: "address",
             type: "string",
             default: "",
-            description: "Patient's title (Mr, Mrs, Dr, etc.)",
+            description: "Patient's street address",
+          },
+          {
+            displayName: "Birth Name",
+            name: "birthName",
+            type: "string",
+            default: "",
+            description:
+              "The birth name of the patient (France INS certified practices only)",
+          },
+          {
+            displayName: "Birth Names",
+            name: "birthNames",
+            type: "string",
+            default: "",
+            description:
+              "The birth names of the patient (France INS certified practices only)",
           },
           {
             displayName: "Birth Surname",
@@ -198,62 +214,6 @@ export class Semble implements INodeType {
             description: "Patient's birth surname",
           },
           {
-            displayName: "Birth Name",
-            name: "birthName", 
-            type: "string",
-            default: "",
-            description: "The birth name of the patient (France INS certified practices only)",
-          },
-          {
-            displayName: "Birth Names",
-            name: "birthNames",
-            type: "string", 
-            default: "",
-            description: "The birth names of the patient (France INS certified practices only)",
-          },
-          {
-            displayName: "Email",
-            name: "email",
-            type: "string",
-            default: "",
-            description: "Patient's email address",
-          },
-          {
-            displayName: "Date of Birth",
-            name: "dob",
-            type: "dateTime",
-            default: "",
-            description: "Patient's date of birth",
-          },
-          {
-            displayName: "Social Security Number",
-            name: "socialSecurityNumber",
-            type: "string",
-            default: "",
-            description: "Patient's social security number (13-15 characters, France only) - may require special permissions",
-          },
-          {
-            displayName: "Gender",
-            name: "gender",
-            type: "string",
-            default: "",
-            description: "Patient's gender (male, female, etc.)",
-          },
-          {
-            displayName: "Sex",
-            name: "sex",
-            type: "string",
-            default: "",
-            description: "Patient's biological sex (male, female, etc.)",
-          },
-          {
-            displayName: "Address",
-            name: "address",
-            type: "string", 
-            default: "",
-            description: "Patient's street address",
-          },
-          {
             displayName: "City",
             name: "city",
             type: "string",
@@ -261,11 +221,11 @@ export class Semble implements INodeType {
             description: "Patient's city",
           },
           {
-            displayName: "Postcode",
-            name: "postcode",
+            displayName: "Comments",
+            name: "comments",
             type: "string",
             default: "",
-            description: "Patient's postal code",
+            description: "Additional comments about the patient",
           },
           {
             displayName: "Country",
@@ -275,10 +235,54 @@ export class Semble implements INodeType {
             description: "Patient's country (US, GB, FR, etc.)",
           },
           {
+            displayName: "Date of Birth",
+            name: "dob",
+            type: "dateTime",
+            default: "",
+            description: "Patient's date of birth",
+          },
+          {
+            displayName: "Email",
+            name: "email",
+            type: "string",
+            placeholder: "name@email.com",
+            default: "",
+            description: "Patient's email address",
+          },
+          {
+            displayName: "Gender",
+            name: "gender",
+            type: "string",
+            default: "",
+            description: "Patient's gender (male, female, etc.)",
+          },
+          {
+            displayName: "Payment Reference",
+            name: "paymentReference",
+            type: "string",
+            default: "",
+            description: "Patient's payment reference",
+          },
+          {
+            displayName: "Phone Number",
+            name: "phoneNumber",
+            type: "string",
+            default: "",
+            description: "Patient's phone number",
+          },
+          {
             displayName: "Phone Type",
             name: "phoneType",
             type: "options",
             options: [
+              {
+                name: "Fax",
+                value: "Fax",
+              },
+              {
+                name: "Home",
+                value: "Home",
+              },
               {
                 name: "Mobile",
                 value: "Mobile",
@@ -286,14 +290,6 @@ export class Semble implements INodeType {
               {
                 name: "Office",
                 value: "Office",
-              },
-              {
-                name: "Home",
-                value: "Home",
-              },
-              {
-                name: "Fax",
-                value: "Fax",
               },
               {
                 name: "Other",
@@ -304,25 +300,33 @@ export class Semble implements INodeType {
             description: "Type of phone number",
           },
           {
-            displayName: "Phone Number", 
-            name: "phoneNumber",
+            displayName: "Postcode",
+            name: "postcode",
             type: "string",
             default: "",
-            description: "Patient's phone number",
+            description: "Patient's postal code",
           },
           {
-            displayName: "Payment Reference",
-            name: "paymentReference",
+            displayName: "Sex",
+            name: "sex",
             type: "string",
             default: "",
-            description: "Patient's payment reference",
+            description: "Patient's biological sex (male, female, etc.)",
           },
           {
-            displayName: "Comments",
-            name: "comments",
+            displayName: "Social Security Number",
+            name: "socialSecurityNumber",
             type: "string",
             default: "",
-            description: "Additional comments about the patient",
+            description:
+              "Patient's social security number (13-15 characters, France only) - may require special permissions",
+          },
+          {
+            displayName: "Title",
+            name: "title",
+            type: "string",
+            default: "",
+            description: "Patient's title (Mr, Mrs, Dr, etc.)",
           },
         ],
       },
@@ -351,7 +355,8 @@ export class Semble implements INodeType {
             name: "code",
             type: "string",
             default: "",
-            description: "The code for the place of birth (INSEE Code for France practices)",
+            description:
+              "The code for the place of birth (INSEE Code for France practices)",
           },
         ],
       },
@@ -369,6 +374,30 @@ export class Semble implements INodeType {
         default: {},
         options: [
           {
+            displayName: "Payment Reminders",
+            name: "paymentReminders",
+            type: "boolean",
+            default: true,
+            description:
+              "Whether the patient wants to receive payment reminders",
+          },
+          {
+            displayName: "Privacy Policy",
+            name: "privacyPolicy",
+            type: "string",
+            default: "",
+            description:
+              "Patient's privacy policy response (accepted, declined, etc.)",
+          },
+          {
+            displayName: "Promotional Marketing",
+            name: "promotionalMarketing",
+            type: "boolean",
+            default: false,
+            description:
+              "Whether the patient wants to receive promotional marketing",
+          },
+          {
             displayName: "Receive Email",
             name: "receiveEmail",
             type: "boolean",
@@ -381,27 +410,6 @@ export class Semble implements INodeType {
             type: "boolean",
             default: true,
             description: "Whether the patient wants to receive SMS messages",
-          },
-          {
-            displayName: "Promotional Marketing",
-            name: "promotionalMarketing",
-            type: "boolean",
-            default: false,
-            description: "Whether the patient wants to receive promotional marketing",
-          },
-          {
-            displayName: "Payment Reminders",
-            name: "paymentReminders",
-            type: "boolean",
-            default: true,
-            description: "Whether the patient wants to receive payment reminders",
-          },
-          {
-            displayName: "Privacy Policy",
-            name: "privacyPolicy",
-            type: "string",
-            default: "",
-            description: "Patient's privacy policy response (accepted, declined, etc.)",
           },
         ],
       },
@@ -482,25 +490,27 @@ export class Semble implements INodeType {
         default: {},
         options: [
           {
-            displayName: "First Name",
-            name: "firstName",
+            displayName: "Address",
+            name: "address",
             type: "string",
             default: "",
-            description: "Patient's first name",
+            description: "Patient's street address",
           },
           {
-            displayName: "Last Name", 
-            name: "lastName",
+            displayName: "Birth Name",
+            name: "birthName",
             type: "string",
             default: "",
-            description: "Patient's last name",
+            description:
+              "The birth name of the patient (France INS certified practices only)",
           },
           {
-            displayName: "Title",
-            name: "title",
+            displayName: "Birth Names",
+            name: "birthNames",
             type: "string",
             default: "",
-            description: "Patient's title (Mr, Mrs, Dr, etc.)",
+            description:
+              "The birth names of the patient (France INS certified practices only)",
           },
           {
             displayName: "Birth Surname",
@@ -510,62 +520,6 @@ export class Semble implements INodeType {
             description: "Patient's birth surname",
           },
           {
-            displayName: "Birth Name",
-            name: "birthName", 
-            type: "string",
-            default: "",
-            description: "The birth name of the patient (France INS certified practices only)",
-          },
-          {
-            displayName: "Birth Names",
-            name: "birthNames",
-            type: "string", 
-            default: "",
-            description: "The birth names of the patient (France INS certified practices only)",
-          },
-          {
-            displayName: "Email",
-            name: "email",
-            type: "string",
-            default: "",
-            description: "Patient's email address",
-          },
-          {
-            displayName: "Date of Birth",
-            name: "dob",
-            type: "dateTime",
-            default: "",
-            description: "Patient's date of birth",
-          },
-          {
-            displayName: "Social Security Number",
-            name: "socialSecurityNumber",
-            type: "string",
-            default: "",
-            description: "Patient's social security number (13-15 characters, France only) - may require special permissions",
-          },
-          {
-            displayName: "Gender",
-            name: "gender",
-            type: "string",
-            default: "",
-            description: "Patient's gender (male, female, etc.)",
-          },
-          {
-            displayName: "Sex",
-            name: "sex",
-            type: "string",
-            default: "",
-            description: "Patient's biological sex (male, female, etc.)",
-          },
-          {
-            displayName: "Address",
-            name: "address",
-            type: "string", 
-            default: "",
-            description: "Patient's street address",
-          },
-          {
             displayName: "City",
             name: "city",
             type: "string",
@@ -573,11 +527,11 @@ export class Semble implements INodeType {
             description: "Patient's city",
           },
           {
-            displayName: "Postcode",
-            name: "postcode",
+            displayName: "Comments",
+            name: "comments",
             type: "string",
             default: "",
-            description: "Patient's postal code",
+            description: "Additional comments about the patient",
           },
           {
             displayName: "Country",
@@ -587,10 +541,68 @@ export class Semble implements INodeType {
             description: "Patient's country (US, GB, FR, etc.)",
           },
           {
+            displayName: "Date of Birth",
+            name: "dob",
+            type: "dateTime",
+            default: "",
+            description: "Patient's date of birth",
+          },
+          {
+            displayName: "Email",
+            name: "email",
+            type: "string",
+            placeholder: "name@email.com",
+            default: "",
+            description: "Patient's email address",
+          },
+          {
+            displayName: "First Name",
+            name: "firstName",
+            type: "string",
+            default: "",
+            description: "Patient's first name",
+          },
+          {
+            displayName: "Gender",
+            name: "gender",
+            type: "string",
+            default: "",
+            description: "Patient's gender (male, female, etc.)",
+          },
+          {
+            displayName: "Last Name",
+            name: "lastName",
+            type: "string",
+            default: "",
+            description: "Patient's last name",
+          },
+          {
+            displayName: "Payment Reference",
+            name: "paymentReference",
+            type: "string",
+            default: "",
+            description: "Patient's payment reference",
+          },
+          {
+            displayName: "Phone Number",
+            name: "phoneNumber",
+            type: "string",
+            default: "",
+            description: "Patient's phone number",
+          },
+          {
             displayName: "Phone Type",
             name: "phoneType",
             type: "options",
             options: [
+              {
+                name: "Fax",
+                value: "Fax",
+              },
+              {
+                name: "Home",
+                value: "Home",
+              },
               {
                 name: "Mobile",
                 value: "Mobile",
@@ -598,14 +610,6 @@ export class Semble implements INodeType {
               {
                 name: "Office",
                 value: "Office",
-              },
-              {
-                name: "Home",
-                value: "Home",
-              },
-              {
-                name: "Fax",
-                value: "Fax",
               },
               {
                 name: "Other",
@@ -616,25 +620,33 @@ export class Semble implements INodeType {
             description: "Type of phone number",
           },
           {
-            displayName: "Phone Number", 
-            name: "phoneNumber",
+            displayName: "Postcode",
+            name: "postcode",
             type: "string",
             default: "",
-            description: "Patient's phone number",
+            description: "Patient's postal code",
           },
           {
-            displayName: "Payment Reference",
-            name: "paymentReference",
+            displayName: "Sex",
+            name: "sex",
             type: "string",
             default: "",
-            description: "Patient's payment reference",
+            description: "Patient's biological sex (male, female, etc.)",
           },
           {
-            displayName: "Comments",
-            name: "comments",
+            displayName: "Social Security Number",
+            name: "socialSecurityNumber",
             type: "string",
             default: "",
-            description: "Additional comments about the patient",
+            description:
+              "Patient's social security number (13-15 characters, France only) - may require special permissions",
+          },
+          {
+            displayName: "Title",
+            name: "title",
+            type: "string",
+            default: "",
+            description: "Patient's title (Mr, Mrs, Dr, etc.)",
           },
         ],
       },
@@ -663,7 +675,8 @@ export class Semble implements INodeType {
             name: "code",
             type: "string",
             default: "",
-            description: "The code for the place of birth (INSEE Code for France practices)",
+            description:
+              "The code for the place of birth (INSEE Code for France practices)",
           },
         ],
       },
@@ -681,6 +694,30 @@ export class Semble implements INodeType {
         default: {},
         options: [
           {
+            displayName: "Payment Reminders",
+            name: "paymentReminders",
+            type: "boolean",
+            default: true,
+            description:
+              "Whether the patient wants to receive payment reminders",
+          },
+          {
+            displayName: "Privacy Policy",
+            name: "privacyPolicy",
+            type: "string",
+            default: "",
+            description:
+              "Patient's privacy policy response (accepted, declined, etc.)",
+          },
+          {
+            displayName: "Promotional Marketing",
+            name: "promotionalMarketing",
+            type: "boolean",
+            default: false,
+            description:
+              "Whether the patient wants to receive promotional marketing",
+          },
+          {
             displayName: "Receive Email",
             name: "receiveEmail",
             type: "boolean",
@@ -693,27 +730,6 @@ export class Semble implements INodeType {
             type: "boolean",
             default: true,
             description: "Whether the patient wants to receive SMS messages",
-          },
-          {
-            displayName: "Promotional Marketing",
-            name: "promotionalMarketing",
-            type: "boolean",
-            default: false,
-            description: "Whether the patient wants to receive promotional marketing",
-          },
-          {
-            displayName: "Payment Reminders",
-            name: "paymentReminders",
-            type: "boolean",
-            default: true,
-            description: "Whether the patient wants to receive payment reminders",
-          },
-          {
-            displayName: "Privacy Policy",
-            name: "privacyPolicy",
-            type: "string",
-            default: "",
-            description: "Patient's privacy policy response (accepted, declined, etc.)",
           },
         ],
       },
@@ -950,10 +966,22 @@ name
               // Create new patient using shared mutation
               const firstName = this.getNodeParameter("firstName", i) as string;
               const lastName = this.getNodeParameter("lastName", i) as string;
-              const additionalFields = this.getNodeParameter("additionalFields", i) as IDataObject;
-              const placeOfBirth = this.getNodeParameter("placeOfBirth", i) as IDataObject;
-              const communicationPreferences = this.getNodeParameter("communicationPreferences", i) as IDataObject;
-              const customAttributesData = this.getNodeParameter("customAttributes", i) as IDataObject;
+              const additionalFields = this.getNodeParameter(
+                "additionalFields",
+                i,
+              ) as IDataObject;
+              const placeOfBirth = this.getNodeParameter(
+                "placeOfBirth",
+                i,
+              ) as IDataObject;
+              const communicationPreferences = this.getNodeParameter(
+                "communicationPreferences",
+                i,
+              ) as IDataObject;
+              const customAttributesData = this.getNodeParameter(
+                "customAttributes",
+                i,
+              ) as IDataObject;
 
               if (!firstName || !lastName) {
                 throw new NodeOperationError(
@@ -975,13 +1003,21 @@ name
               }
 
               // Add communicationPreferences if provided
-              if (communicationPreferences && Object.keys(communicationPreferences).length > 0) {
+              if (
+                communicationPreferences &&
+                Object.keys(communicationPreferences).length > 0
+              ) {
                 patientData.communicationPreferences = communicationPreferences;
               }
 
               // Add customAttributes if provided
-              if (customAttributesData && customAttributesData.customAttribute) {
-                const customAttributes = (customAttributesData.customAttribute as IDataObject[]).map(attr => ({
+              if (
+                customAttributesData &&
+                customAttributesData.customAttribute
+              ) {
+                const customAttributes = (
+                  customAttributesData.customAttribute as IDataObject[]
+                ).map((attr) => ({
                   title: attr.title,
                   text: attr.text,
                   response: attr.response,
@@ -991,7 +1027,7 @@ name
 
               const createVariables = {
                 patientData,
-                // insData is optional and can be added later if needed
+                insData: null, // Insurance data as string (JSON stringified object)
               };
 
               try {
@@ -1025,11 +1061,26 @@ name
               break;
             case "update":
               // Update patient using shared mutation
-              const updatePatientId = this.getNodeParameter("patientId", i) as string;
-              const updateFields = this.getNodeParameter("updateFields", i) as IDataObject;
-              const updatePlaceOfBirth = this.getNodeParameter("placeOfBirth", i) as IDataObject;
-              const updateCommunicationPreferences = this.getNodeParameter("communicationPreferences", i) as IDataObject;
-              const updateCustomAttributesData = this.getNodeParameter("customAttributes", i) as IDataObject;
+              const updatePatientId = this.getNodeParameter(
+                "patientId",
+                i,
+              ) as string;
+              const updateFields = this.getNodeParameter(
+                "updateFields",
+                i,
+              ) as IDataObject;
+              const updatePlaceOfBirth = this.getNodeParameter(
+                "placeOfBirth",
+                i,
+              ) as IDataObject;
+              const updateCommunicationPreferences = this.getNodeParameter(
+                "communicationPreferences",
+                i,
+              ) as IDataObject;
+              const updateCustomAttributesData = this.getNodeParameter(
+                "customAttributes",
+                i,
+              ) as IDataObject;
 
               if (!updatePatientId) {
                 throw new NodeOperationError(
@@ -1054,18 +1105,30 @@ name
               }
 
               // Add placeOfBirth if provided
-              if (updatePlaceOfBirth && (updatePlaceOfBirth.name || updatePlaceOfBirth.code)) {
+              if (
+                updatePlaceOfBirth &&
+                (updatePlaceOfBirth.name || updatePlaceOfBirth.code)
+              ) {
                 updatePatientData.placeOfBirth = updatePlaceOfBirth;
               }
 
               // Add communicationPreferences if provided
-              if (updateCommunicationPreferences && Object.keys(updateCommunicationPreferences).length > 0) {
-                updatePatientData.communicationPreferences = updateCommunicationPreferences;
+              if (
+                updateCommunicationPreferences &&
+                Object.keys(updateCommunicationPreferences).length > 0
+              ) {
+                updatePatientData.communicationPreferences =
+                  updateCommunicationPreferences;
               }
 
               // Add customAttributes if provided
-              if (updateCustomAttributesData && updateCustomAttributesData.customAttribute) {
-                const customAttributes = (updateCustomAttributesData.customAttribute as IDataObject[]).map(attr => ({
+              if (
+                updateCustomAttributesData &&
+                updateCustomAttributesData.customAttribute
+              ) {
+                const customAttributes = (
+                  updateCustomAttributesData.customAttribute as IDataObject[]
+                ).map((attr) => ({
                   title: attr.title,
                   text: attr.text,
                   response: attr.response,
