@@ -9,6 +9,8 @@
 import { 
   GET_PATIENT_QUERY, 
   GET_PATIENTS_QUERY, 
+  CREATE_PATIENT_MUTATION,
+  UPDATE_PATIENT_MUTATION,
   DELETE_PATIENT_MUTATION,
   PATIENT_FIELDS 
 } from '../../nodes/Semble/shared/PatientQueries';
@@ -120,7 +122,7 @@ describe('PatientQueries', () => {
 
     it('should not contain syntax errors', () => {
       // Basic syntax validation - should not contain common GraphQL errors
-      const queries = [GET_PATIENT_QUERY, GET_PATIENTS_QUERY, DELETE_PATIENT_MUTATION];
+      const queries = [GET_PATIENT_QUERY, GET_PATIENTS_QUERY, CREATE_PATIENT_MUTATION, DELETE_PATIENT_MUTATION];
       
       queries.forEach(query => {
         // Should have balanced braces
@@ -134,6 +136,100 @@ describe('PatientQueries', () => {
         // Should not contain undefined variables
         expect(query).not.toMatch(/\$undefined/);
       });
+    });
+  });
+
+  describe('CREATE_PATIENT_MUTATION', () => {
+    it('should be a valid GraphQL mutation structure', () => {
+      expect(CREATE_PATIENT_MUTATION).toContain('mutation CreatePatient');
+      expect(CREATE_PATIENT_MUTATION).toContain('$patientData: CreatePatientDataInput!');
+      expect(CREATE_PATIENT_MUTATION).toContain('createPatient(');
+      expect(CREATE_PATIENT_MUTATION).toContain('insData: $insData');
+      expect(CREATE_PATIENT_MUTATION).toContain('patientData: $patientData');
+    });
+
+    it('should include error and data fields', () => {
+      expect(CREATE_PATIENT_MUTATION).toContain('error');
+      expect(CREATE_PATIENT_MUTATION).toContain('data {');
+    });
+
+    it('should include all patient fields in data section', () => {
+      expect(CREATE_PATIENT_MUTATION).toContain(PATIENT_FIELDS);
+    });
+
+    it('should use CreatePatientDataInput type', () => {
+      expect(CREATE_PATIENT_MUTATION).toContain('CreatePatientDataInput!');
+    });
+
+    it('should handle optional insData parameter', () => {
+      expect(CREATE_PATIENT_MUTATION).toContain('$insData: String');
+    });
+
+    it('should include comprehensive patient fields for response', () => {
+      // Check for core fields that should be in the response
+      expect(CREATE_PATIENT_MUTATION).toContain('id');
+      expect(CREATE_PATIENT_MUTATION).toContain('firstName');
+      expect(CREATE_PATIENT_MUTATION).toContain('lastName');
+      expect(CREATE_PATIENT_MUTATION).toContain('email');
+      expect(CREATE_PATIENT_MUTATION).toContain('dob');
+      
+      // Check for complex object fields
+      expect(CREATE_PATIENT_MUTATION).toContain('address {');
+      expect(CREATE_PATIENT_MUTATION).toContain('phones {');
+      expect(CREATE_PATIENT_MUTATION).toContain('customAttributes {');
+      expect(CREATE_PATIENT_MUTATION).toContain('communicationPreferences {');
+      expect(CREATE_PATIENT_MUTATION).toContain('placeOfBirth {');
+    });
+  });
+
+  describe('UPDATE_PATIENT_MUTATION', () => {
+    it('should be a valid GraphQL mutation structure', () => {
+      expect(UPDATE_PATIENT_MUTATION).toContain('mutation UpdatePatient');
+      expect(UPDATE_PATIENT_MUTATION).toContain('$id: ID!');
+      expect(UPDATE_PATIENT_MUTATION).toContain('$patientData: UpdatePatientDataInput!');
+      expect(UPDATE_PATIENT_MUTATION).toContain('updatePatient(');
+      expect(UPDATE_PATIENT_MUTATION).toContain('id: $id');
+      expect(UPDATE_PATIENT_MUTATION).toContain('patientData: $patientData');
+    });
+
+    it('should include error and data fields', () => {
+      expect(UPDATE_PATIENT_MUTATION).toContain('error');
+      expect(UPDATE_PATIENT_MUTATION).toContain('data {');
+    });
+
+    it('should include all patient fields in data section', () => {
+      expect(UPDATE_PATIENT_MUTATION).toContain(PATIENT_FIELDS);
+    });
+
+    it('should use UpdatePatientDataInput type', () => {
+      expect(UPDATE_PATIENT_MUTATION).toContain('UpdatePatientDataInput!');
+    });
+
+    it('should require patient ID parameter', () => {
+      expect(UPDATE_PATIENT_MUTATION).toContain('$id: ID!');
+      expect(UPDATE_PATIENT_MUTATION).toContain('id: $id');
+    });
+
+    it('should include comprehensive patient fields for response', () => {
+      // Check for core fields that should be in the response
+      expect(UPDATE_PATIENT_MUTATION).toContain('id');
+      expect(UPDATE_PATIENT_MUTATION).toContain('firstName');
+      expect(UPDATE_PATIENT_MUTATION).toContain('lastName');
+      expect(UPDATE_PATIENT_MUTATION).toContain('email');
+      expect(UPDATE_PATIENT_MUTATION).toContain('dob');
+      expect(UPDATE_PATIENT_MUTATION).toContain('updatedAt');
+      
+      // Check for complex object fields
+      expect(UPDATE_PATIENT_MUTATION).toContain('address {');
+      expect(UPDATE_PATIENT_MUTATION).toContain('phones {');
+      expect(UPDATE_PATIENT_MUTATION).toContain('customAttributes {');
+      expect(UPDATE_PATIENT_MUTATION).toContain('communicationPreferences {');
+      expect(UPDATE_PATIENT_MUTATION).toContain('placeOfBirth {');
+    });
+
+    it('should not include insData parameter (update-specific)', () => {
+      expect(UPDATE_PATIENT_MUTATION).not.toContain('insData');
+      expect(UPDATE_PATIENT_MUTATION).not.toContain('$insData');
     });
   });
 });

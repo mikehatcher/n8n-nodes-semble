@@ -147,6 +147,37 @@ export const GET_PATIENTS_QUERY = `
 `;
 
 /**
+ * GraphQL mutation for creating a new patient
+ */
+export const CREATE_PATIENT_MUTATION = `
+  mutation CreatePatient($insData: String, $patientData: CreatePatientDataInput!) {
+    createPatient(
+      insData: $insData
+      patientData: $patientData
+    ) {
+      data {
+        ${PATIENT_FIELDS}
+      }
+      error
+    }
+  }
+`;
+
+/**
+ * GraphQL mutation for updating a patient
+ */
+export const UPDATE_PATIENT_MUTATION = `
+  mutation UpdatePatient($id: ID!, $patientData: UpdatePatientDataInput!) {
+    updatePatient(id: $id, patientData: $patientData) {
+      data {
+        ${PATIENT_FIELDS}
+      }
+      error
+    }
+  }
+`;
+
+/**
  * GraphQL mutation for deleting a patient
  */
 export const DELETE_PATIENT_MUTATION = `

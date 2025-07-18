@@ -27,6 +27,8 @@ import {
 import {
   GET_PATIENT_QUERY,
   GET_PATIENTS_QUERY,
+  CREATE_PATIENT_MUTATION,
+  UPDATE_PATIENT_MUTATION,
   DELETE_PATIENT_MUTATION,
 } from "./shared/PatientQueries";
 
@@ -131,13 +133,637 @@ export class Semble implements INodeType {
         required: true,
         displayOptions: {
           show: {
-            action: ["get", "delete"],
+            action: ["get", "delete", "update"],
             resource: ["patient"],
           },
         },
         default: "",
         placeholder: "e.g., 68740bc493985f7d03d4f8c9",
         description: "The ID of the patient to retrieve or delete",
+      },
+      // Patient creation fields
+      {
+        displayName: "First Name",
+        name: "firstName",
+        type: "string",
+        required: true,
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["patient"],
+          },
+        },
+        default: "",
+        description: "Patient's first name",
+      },
+      {
+        displayName: "Last Name", 
+        name: "lastName",
+        type: "string",
+        required: true,
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["patient"],
+          },
+        },
+        default: "",
+        description: "Patient's last name",
+      },
+      {
+        displayName: "Additional Fields",
+        name: "additionalFields",
+        type: "collection",
+        placeholder: "Add Field",
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "Title",
+            name: "title",
+            type: "string",
+            default: "",
+            description: "Patient's title (Mr, Mrs, Dr, etc.)",
+          },
+          {
+            displayName: "Birth Surname",
+            name: "birthSurname",
+            type: "string",
+            default: "",
+            description: "Patient's birth surname",
+          },
+          {
+            displayName: "Birth Name",
+            name: "birthName", 
+            type: "string",
+            default: "",
+            description: "The birth name of the patient (France INS certified practices only)",
+          },
+          {
+            displayName: "Birth Names",
+            name: "birthNames",
+            type: "string", 
+            default: "",
+            description: "The birth names of the patient (France INS certified practices only)",
+          },
+          {
+            displayName: "Email",
+            name: "email",
+            type: "string",
+            default: "",
+            description: "Patient's email address",
+          },
+          {
+            displayName: "Date of Birth",
+            name: "dob",
+            type: "dateTime",
+            default: "",
+            description: "Patient's date of birth",
+          },
+          {
+            displayName: "Social Security Number",
+            name: "socialSecurityNumber",
+            type: "string",
+            default: "",
+            description: "Patient's social security number (13-15 characters, France only) - may require special permissions",
+          },
+          {
+            displayName: "Gender",
+            name: "gender",
+            type: "string",
+            default: "",
+            description: "Patient's gender (male, female, etc.)",
+          },
+          {
+            displayName: "Sex",
+            name: "sex",
+            type: "string",
+            default: "",
+            description: "Patient's biological sex (male, female, etc.)",
+          },
+          {
+            displayName: "Address",
+            name: "address",
+            type: "string", 
+            default: "",
+            description: "Patient's street address",
+          },
+          {
+            displayName: "City",
+            name: "city",
+            type: "string",
+            default: "",
+            description: "Patient's city",
+          },
+          {
+            displayName: "Postcode",
+            name: "postcode",
+            type: "string",
+            default: "",
+            description: "Patient's postal code",
+          },
+          {
+            displayName: "Country",
+            name: "country",
+            type: "string",
+            default: "",
+            description: "Patient's country (US, GB, FR, etc.)",
+          },
+          {
+            displayName: "Phone Type",
+            name: "phoneType",
+            type: "options",
+            options: [
+              {
+                name: "Mobile",
+                value: "Mobile",
+              },
+              {
+                name: "Office",
+                value: "Office",
+              },
+              {
+                name: "Home",
+                value: "Home",
+              },
+              {
+                name: "Fax",
+                value: "Fax",
+              },
+              {
+                name: "Other",
+                value: "Other",
+              },
+            ],
+            default: "Mobile",
+            description: "Type of phone number",
+          },
+          {
+            displayName: "Phone Number", 
+            name: "phoneNumber",
+            type: "string",
+            default: "",
+            description: "Patient's phone number",
+          },
+          {
+            displayName: "Payment Reference",
+            name: "paymentReference",
+            type: "string",
+            default: "",
+            description: "Patient's payment reference",
+          },
+          {
+            displayName: "Comments",
+            name: "comments",
+            type: "string",
+            default: "",
+            description: "Additional comments about the patient",
+          },
+        ],
+      },
+      {
+        displayName: "Place of Birth",
+        name: "placeOfBirth",
+        type: "collection",
+        placeholder: "Add Place of Birth",
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "Name",
+            name: "name",
+            type: "string",
+            default: "",
+            description: "Name of the place of birth",
+          },
+          {
+            displayName: "Code",
+            name: "code",
+            type: "string",
+            default: "",
+            description: "The code for the place of birth (INSEE Code for France practices)",
+          },
+        ],
+      },
+      {
+        displayName: "Communication Preferences",
+        name: "communicationPreferences",
+        type: "collection",
+        placeholder: "Add Communication Preferences",
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "Receive Email",
+            name: "receiveEmail",
+            type: "boolean",
+            default: true,
+            description: "Whether the patient wants to receive emails",
+          },
+          {
+            displayName: "Receive SMS",
+            name: "receiveSMS",
+            type: "boolean",
+            default: true,
+            description: "Whether the patient wants to receive SMS messages",
+          },
+          {
+            displayName: "Promotional Marketing",
+            name: "promotionalMarketing",
+            type: "boolean",
+            default: false,
+            description: "Whether the patient wants to receive promotional marketing",
+          },
+          {
+            displayName: "Payment Reminders",
+            name: "paymentReminders",
+            type: "boolean",
+            default: true,
+            description: "Whether the patient wants to receive payment reminders",
+          },
+          {
+            displayName: "Privacy Policy",
+            name: "privacyPolicy",
+            type: "string",
+            default: "",
+            description: "Patient's privacy policy response (accepted, declined, etc.)",
+          },
+        ],
+      },
+      {
+        displayName: "Custom Attributes",
+        name: "customAttributes",
+        type: "fixedCollection",
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        placeholder: "Add Custom Attribute",
+        typeOptions: {
+          multipleValues: true,
+        },
+        options: [
+          {
+            displayName: "Custom Attribute",
+            name: "customAttribute",
+            values: [
+              {
+                displayName: "Title",
+                name: "title",
+                type: "string",
+                required: true,
+                default: "",
+                description: "The title of the custom attribute",
+              },
+              {
+                displayName: "Text",
+                name: "text",
+                type: "string",
+                required: true,
+                default: "",
+                description: "The text/description of the custom attribute",
+              },
+              {
+                displayName: "Response",
+                name: "response",
+                type: "string",
+                required: true,
+                default: "",
+                description: "The response value for the custom attribute",
+              },
+            ],
+          },
+        ],
+      },
+      // Patient update fields
+      {
+        displayName: "Patient ID",
+        name: "patientId",
+        type: "string",
+        required: true,
+        displayOptions: {
+          show: {
+            action: ["update"],
+            resource: ["patient"],
+          },
+        },
+        default: "",
+        description: "ID of the patient to update",
+      },
+      {
+        displayName: "Update Fields",
+        name: "updateFields",
+        type: "collection",
+        placeholder: "Add Field",
+        displayOptions: {
+          show: {
+            action: ["update"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "First Name",
+            name: "firstName",
+            type: "string",
+            default: "",
+            description: "Patient's first name",
+          },
+          {
+            displayName: "Last Name", 
+            name: "lastName",
+            type: "string",
+            default: "",
+            description: "Patient's last name",
+          },
+          {
+            displayName: "Title",
+            name: "title",
+            type: "string",
+            default: "",
+            description: "Patient's title (Mr, Mrs, Dr, etc.)",
+          },
+          {
+            displayName: "Birth Surname",
+            name: "birthSurname",
+            type: "string",
+            default: "",
+            description: "Patient's birth surname",
+          },
+          {
+            displayName: "Birth Name",
+            name: "birthName", 
+            type: "string",
+            default: "",
+            description: "The birth name of the patient (France INS certified practices only)",
+          },
+          {
+            displayName: "Birth Names",
+            name: "birthNames",
+            type: "string", 
+            default: "",
+            description: "The birth names of the patient (France INS certified practices only)",
+          },
+          {
+            displayName: "Email",
+            name: "email",
+            type: "string",
+            default: "",
+            description: "Patient's email address",
+          },
+          {
+            displayName: "Date of Birth",
+            name: "dob",
+            type: "dateTime",
+            default: "",
+            description: "Patient's date of birth",
+          },
+          {
+            displayName: "Social Security Number",
+            name: "socialSecurityNumber",
+            type: "string",
+            default: "",
+            description: "Patient's social security number (13-15 characters, France only) - may require special permissions",
+          },
+          {
+            displayName: "Gender",
+            name: "gender",
+            type: "string",
+            default: "",
+            description: "Patient's gender (male, female, etc.)",
+          },
+          {
+            displayName: "Sex",
+            name: "sex",
+            type: "string",
+            default: "",
+            description: "Patient's biological sex (male, female, etc.)",
+          },
+          {
+            displayName: "Address",
+            name: "address",
+            type: "string", 
+            default: "",
+            description: "Patient's street address",
+          },
+          {
+            displayName: "City",
+            name: "city",
+            type: "string",
+            default: "",
+            description: "Patient's city",
+          },
+          {
+            displayName: "Postcode",
+            name: "postcode",
+            type: "string",
+            default: "",
+            description: "Patient's postal code",
+          },
+          {
+            displayName: "Country",
+            name: "country",
+            type: "string",
+            default: "",
+            description: "Patient's country (US, GB, FR, etc.)",
+          },
+          {
+            displayName: "Phone Type",
+            name: "phoneType",
+            type: "options",
+            options: [
+              {
+                name: "Mobile",
+                value: "Mobile",
+              },
+              {
+                name: "Office",
+                value: "Office",
+              },
+              {
+                name: "Home",
+                value: "Home",
+              },
+              {
+                name: "Fax",
+                value: "Fax",
+              },
+              {
+                name: "Other",
+                value: "Other",
+              },
+            ],
+            default: "Mobile",
+            description: "Type of phone number",
+          },
+          {
+            displayName: "Phone Number", 
+            name: "phoneNumber",
+            type: "string",
+            default: "",
+            description: "Patient's phone number",
+          },
+          {
+            displayName: "Payment Reference",
+            name: "paymentReference",
+            type: "string",
+            default: "",
+            description: "Patient's payment reference",
+          },
+          {
+            displayName: "Comments",
+            name: "comments",
+            type: "string",
+            default: "",
+            description: "Additional comments about the patient",
+          },
+        ],
+      },
+      {
+        displayName: "Place of Birth",
+        name: "placeOfBirth",
+        type: "collection",
+        placeholder: "Add Place of Birth",
+        displayOptions: {
+          show: {
+            action: ["update"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "Name",
+            name: "name",
+            type: "string",
+            default: "",
+            description: "Name of the place of birth",
+          },
+          {
+            displayName: "Code",
+            name: "code",
+            type: "string",
+            default: "",
+            description: "The code for the place of birth (INSEE Code for France practices)",
+          },
+        ],
+      },
+      {
+        displayName: "Communication Preferences",
+        name: "communicationPreferences",
+        type: "collection",
+        placeholder: "Add Communication Preferences",
+        displayOptions: {
+          show: {
+            action: ["update"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "Receive Email",
+            name: "receiveEmail",
+            type: "boolean",
+            default: true,
+            description: "Whether the patient wants to receive emails",
+          },
+          {
+            displayName: "Receive SMS",
+            name: "receiveSMS",
+            type: "boolean",
+            default: true,
+            description: "Whether the patient wants to receive SMS messages",
+          },
+          {
+            displayName: "Promotional Marketing",
+            name: "promotionalMarketing",
+            type: "boolean",
+            default: false,
+            description: "Whether the patient wants to receive promotional marketing",
+          },
+          {
+            displayName: "Payment Reminders",
+            name: "paymentReminders",
+            type: "boolean",
+            default: true,
+            description: "Whether the patient wants to receive payment reminders",
+          },
+          {
+            displayName: "Privacy Policy",
+            name: "privacyPolicy",
+            type: "string",
+            default: "",
+            description: "Patient's privacy policy response (accepted, declined, etc.)",
+          },
+        ],
+      },
+      {
+        displayName: "Custom Attributes",
+        name: "customAttributes",
+        type: "fixedCollection",
+        displayOptions: {
+          show: {
+            action: ["update"],
+            resource: ["patient"],
+          },
+        },
+        default: {},
+        placeholder: "Add Custom Attribute",
+        typeOptions: {
+          multipleValues: true,
+        },
+        options: [
+          {
+            displayName: "Custom Attribute",
+            name: "customAttribute",
+            values: [
+              {
+                displayName: "Title",
+                name: "title",
+                type: "string",
+                required: true,
+                default: "",
+                description: "The title of the custom attribute",
+              },
+              {
+                displayName: "Text",
+                name: "text",
+                type: "string",
+                required: true,
+                default: "",
+                description: "The text/description of the custom attribute",
+              },
+              {
+                displayName: "Response",
+                name: "response",
+                type: "string",
+                required: true,
+                default: "",
+                description: "The response value for the custom attribute",
+              },
+            ],
+          },
+        ],
       },
       // Search parameters for get many operations
       {
@@ -173,7 +799,8 @@ export class Semble implements INodeType {
             name: "returnAll",
             type: "boolean",
             default: false,
-            description: 'Whether to return all results or only up to a given limit',
+            description:
+              "Whether to return all results or only up to a given limit",
           },
         ],
       },
@@ -320,16 +947,165 @@ name
               }
               break;
             case "create":
-              // TODO: Implement create patient action
-              responseData = {
-                message: "Create patient action not yet implemented",
+              // Create new patient using shared mutation
+              const firstName = this.getNodeParameter("firstName", i) as string;
+              const lastName = this.getNodeParameter("lastName", i) as string;
+              const additionalFields = this.getNodeParameter("additionalFields", i) as IDataObject;
+              const placeOfBirth = this.getNodeParameter("placeOfBirth", i) as IDataObject;
+              const communicationPreferences = this.getNodeParameter("communicationPreferences", i) as IDataObject;
+              const customAttributesData = this.getNodeParameter("customAttributes", i) as IDataObject;
+
+              if (!firstName || !lastName) {
+                throw new NodeOperationError(
+                  this.getNode(),
+                  "First Name and Last Name are required for create operation",
+                );
+              }
+
+              // Build patient data object from the API introspection
+              const patientData: IDataObject = {
+                first: firstName,
+                last: lastName,
+                ...additionalFields,
               };
+
+              // Add placeOfBirth if provided
+              if (placeOfBirth && (placeOfBirth.name || placeOfBirth.code)) {
+                patientData.placeOfBirth = placeOfBirth;
+              }
+
+              // Add communicationPreferences if provided
+              if (communicationPreferences && Object.keys(communicationPreferences).length > 0) {
+                patientData.communicationPreferences = communicationPreferences;
+              }
+
+              // Add customAttributes if provided
+              if (customAttributesData && customAttributesData.customAttribute) {
+                const customAttributes = (customAttributesData.customAttribute as IDataObject[]).map(attr => ({
+                  title: attr.title,
+                  text: attr.text,
+                  response: attr.response,
+                }));
+                patientData.customAttributes = customAttributes;
+              }
+
+              const createVariables = {
+                patientData,
+                // insData is optional and can be added later if needed
+              };
+
+              try {
+                const createResponse = await sembleApiRequest.call(
+                  this,
+                  CREATE_PATIENT_MUTATION,
+                  createVariables,
+                  3,
+                  false,
+                );
+                const createResult = createResponse.createPatient;
+
+                if (createResult.error) {
+                  throw new NodeApiError(this.getNode(), {
+                    message: `Failed to create patient: ${createResult.error}`,
+                    description: createResult.error,
+                  });
+                }
+
+                responseData = createResult.data;
+              } catch (error) {
+                if (error instanceof NodeApiError) {
+                  throw error;
+                }
+
+                throw new NodeApiError(this.getNode(), {
+                  message: `Failed to create patient: ${(error as Error).message}`,
+                  description: (error as Error).message,
+                });
+              }
               break;
             case "update":
-              // TODO: Implement update patient action
-              responseData = {
-                message: "Update patient action not yet implemented",
+              // Update patient using shared mutation
+              const updatePatientId = this.getNodeParameter("patientId", i) as string;
+              const updateFields = this.getNodeParameter("updateFields", i) as IDataObject;
+              const updatePlaceOfBirth = this.getNodeParameter("placeOfBirth", i) as IDataObject;
+              const updateCommunicationPreferences = this.getNodeParameter("communicationPreferences", i) as IDataObject;
+              const updateCustomAttributesData = this.getNodeParameter("customAttributes", i) as IDataObject;
+
+              if (!updatePatientId) {
+                throw new NodeOperationError(
+                  this.getNode(),
+                  "Patient ID is required for update operation",
+                );
+              }
+
+              // Build patient data object from updateFields
+              const updatePatientData: IDataObject = {
+                ...updateFields,
               };
+
+              // Map first name and last name to the API fields
+              if (updateFields.firstName) {
+                updatePatientData.first = updateFields.firstName;
+                delete updatePatientData.firstName;
+              }
+              if (updateFields.lastName) {
+                updatePatientData.last = updateFields.lastName;
+                delete updatePatientData.lastName;
+              }
+
+              // Add placeOfBirth if provided
+              if (updatePlaceOfBirth && (updatePlaceOfBirth.name || updatePlaceOfBirth.code)) {
+                updatePatientData.placeOfBirth = updatePlaceOfBirth;
+              }
+
+              // Add communicationPreferences if provided
+              if (updateCommunicationPreferences && Object.keys(updateCommunicationPreferences).length > 0) {
+                updatePatientData.communicationPreferences = updateCommunicationPreferences;
+              }
+
+              // Add customAttributes if provided
+              if (updateCustomAttributesData && updateCustomAttributesData.customAttribute) {
+                const customAttributes = (updateCustomAttributesData.customAttribute as IDataObject[]).map(attr => ({
+                  title: attr.title,
+                  text: attr.text,
+                  response: attr.response,
+                }));
+                updatePatientData.customAttributes = customAttributes;
+              }
+
+              const updateVariables = {
+                id: updatePatientId,
+                patientData: updatePatientData,
+              };
+
+              try {
+                const updateResponse = await sembleApiRequest.call(
+                  this,
+                  UPDATE_PATIENT_MUTATION,
+                  updateVariables,
+                  3,
+                  false,
+                );
+                const updateResult = updateResponse.updatePatient;
+
+                if (updateResult.error) {
+                  throw new NodeApiError(this.getNode(), {
+                    message: `Failed to update patient: ${updateResult.error}`,
+                    description: updateResult.error,
+                  });
+                }
+
+                responseData = updateResult.data;
+              } catch (error) {
+                if (error instanceof NodeApiError) {
+                  throw error;
+                }
+
+                throw new NodeApiError(this.getNode(), {
+                  message: `Failed to update patient: ${(error as Error).message}`,
+                  description: (error as Error).message,
+                });
+              }
               break;
             case "delete":
               // Delete patient using shared mutation

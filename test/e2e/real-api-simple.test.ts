@@ -3,7 +3,7 @@
  * @description Real API testing for priority data types using direct GraphQL queries
  * @author Mike Hatcher
  * @website https://progenious.com
- * @namespace Test.E2E.API
+ * @namespace N8nNodesSemble.Test.E2E.API
  */
 
 import DEFAULT_CONFIG from '../../core/BaseConfig';
