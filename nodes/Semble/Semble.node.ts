@@ -32,6 +32,29 @@ import {
   DELETE_PATIENT_MUTATION,
 } from "./shared/PatientQueries";
 
+// Phase 4 Integration - Core Components
+import { 
+  ServiceContainer, 
+  EventSystem,
+  SchemaRegistry,
+  MiddlewarePipeline,
+  ServiceLifetime,
+  type IServiceContainer,
+  type IEventSystem,
+  type ISchemaRegistry,
+  type NodeExecutedEvent
+} from "../../core";
+
+// Phase 2 Services
+import { CredentialService } from "../../services/CredentialService";
+import { CacheService } from "../../services/CacheService";
+import { SembleQueryService } from "../../services/SembleQueryService";
+import { ValidationService } from "../../services/ValidationService";
+
+// Configuration types
+import { CacheConfig } from "../../types/ConfigTypes";
+import { SembleQueryConfig } from "../../services/SembleQueryService";
+
 /**
  * Main Semble node class for n8n
  * @class Semble
@@ -39,6 +62,85 @@ import {
  * @description Action/trigger-based node architecture for Semble API access
  */
 export class Semble implements INodeType {
+  /**
+   * Static service container for dependency injection
+   * @private
+   */
+  private static serviceContainer: IServiceContainer;
+
+  /**
+   * Initialize static service container
+   * @private
+   */
+  private static initializeServices(): void {
+    if (this.serviceContainer) return; // Already initialized
+
+    this.serviceContainer = new ServiceContainer();
+
+    // Default configurations
+    const cacheConfig: CacheConfig = {
+      enabled: true,
+      defaultTtl: 24 * 60 * 60, // 24 hours in seconds
+      maxSize: 1000,
+      autoRefreshInterval: 60 * 60, // 1 hour in seconds
+      backgroundRefresh: true,
+      keyPrefix: 'semble_'
+    };
+
+    const queryConfig: SembleQueryConfig = {
+      name: 'query',
+      enabled: true,
+      initTimeout: 5000,
+      options: {},
+      baseUrl: 'https://api.semble.com', // Will be overridden by credentials
+      timeout: 30000,
+      retries: {
+        maxAttempts: 3,
+        initialDelay: 1000
+      },
+      rateLimit: {
+        maxRequests: 100,
+        windowMs: 60000 // 1 minute
+      }
+    };
+
+    // Register core services
+    this.serviceContainer.register('eventSystem', () => new EventSystem(), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('schemaRegistry', () => new SchemaRegistry(), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('credentialService', () => new CredentialService(), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('cacheService', () => new CacheService(cacheConfig), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('validationService', () => ValidationService.getInstance(), ServiceLifetime.SINGLETON);
+    
+    // Register middleware pipeline with event system dependency
+    this.serviceContainer.register('middlewarePipeline', (container) => {
+      const eventSystem = container.resolve('eventSystem') as EventSystem;
+      return new MiddlewarePipeline(eventSystem);
+    }, ServiceLifetime.SINGLETON);
+    
+    // Register query service with dependencies
+    this.serviceContainer.register('queryService', (container) => {
+      return new SembleQueryService(queryConfig);
+    }, ServiceLifetime.SINGLETON);
+  }
+
+  /**
+   * Get event system for emitting events
+   * @static
+   */
+  private static getEventSystem(): EventSystem {
+    this.initializeServices();
+    return this.serviceContainer.resolve('eventSystem') as EventSystem;
+  }
+
+  /**
+   * Get validation service for input validation
+   * @static
+   */
+  private static getValidationService(): ValidationService {
+    this.initializeServices();
+    return this.serviceContainer.resolve('validationService') as ValidationService;
+  }
+
   /**
    * Node type description and configuration
    * @type {INodeTypeDescription}
@@ -907,6 +1009,22 @@ name
               const getVariables = { id: getSinglePatientId };
 
               try {
+                // Add validation using Phase 4 services
+                const validationService = Semble.getValidationService();
+                const eventSystem = Semble.getEventSystem();
+                
+                // Emit operation start event
+                await eventSystem.emit({
+                  type: 'node.executed',
+                  timestamp: Date.now(),
+                  source: 'semble-node',
+                  id: `patient-get-${Date.now()}`,
+                  nodeType: 'semble',
+                  operation: 'patient.get',
+                  duration: 0,
+                  success: true
+                });
+
                 const getResponse = await sembleApiRequest.call(
                   this,
                   GET_PATIENT_QUERY,

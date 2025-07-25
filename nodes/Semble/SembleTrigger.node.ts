@@ -23,6 +23,28 @@ import {
 } from "./shared/PaginationHelpers";
 import { GET_PATIENTS_QUERY } from "./shared/PatientQueries";
 
+// Phase 4 Integration - Core Components
+import { 
+  ServiceContainer, 
+  EventSystem,
+  SchemaRegistry,
+  MiddlewarePipeline,
+  ServiceLifetime,
+  type IServiceContainer,
+  type IEventSystem,
+  type ISchemaRegistry
+} from "../../core";
+
+// Phase 2 Services
+import { CredentialService } from "../../services/CredentialService";
+import { CacheService } from "../../services/CacheService";
+import { SembleQueryService } from "../../services/SembleQueryService";
+import { ValidationService } from "../../services/ValidationService";
+
+// Configuration types
+import { CacheConfig } from "../../types/ConfigTypes";
+import { SembleQueryConfig } from "../../services/SembleQueryService";
+
 /**
  * Configuration interface for trigger resources
  * @interface TriggerResourceConfig
@@ -114,6 +136,76 @@ function calculateDateRangeStart(period: string): Date {
  * @description Provides scheduled polling access to Semble API for monitoring changes
  */
 export class SembleTrigger implements INodeType {
+  /**
+   * Static service container for dependency injection
+   * @private
+   */
+  private static serviceContainer: IServiceContainer;
+
+  /**
+   * Initialize static service container
+   * @private
+   */
+  private static initializeServices(): void {
+    if (this.serviceContainer) return; // Already initialized
+
+    this.serviceContainer = new ServiceContainer();
+
+    // Default configurations
+    const cacheConfig: CacheConfig = {
+      enabled: true,
+      defaultTtl: 24 * 60 * 60, // 24 hours in seconds
+      maxSize: 1000,
+      autoRefreshInterval: 60 * 60, // 1 hour in seconds
+      backgroundRefresh: true,
+      keyPrefix: 'semble_trigger_'
+    };
+
+    const queryConfig: SembleQueryConfig = {
+      name: 'query',
+      enabled: true,
+      initTimeout: 5000,
+      options: {},
+      baseUrl: 'https://api.semble.com', // Will be overridden by credentials
+      timeout: 30000,
+      retries: {
+        maxAttempts: 3,
+        initialDelay: 1000
+      },
+      rateLimit: {
+        maxRequests: 100,
+        windowMs: 60000 // 1 minute
+      }
+    };
+
+    // Register core services
+    this.serviceContainer.register('eventSystem', () => new EventSystem(), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('schemaRegistry', () => new SchemaRegistry(), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('credentialService', () => new CredentialService(), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('cacheService', () => new CacheService(cacheConfig), ServiceLifetime.SINGLETON);
+    this.serviceContainer.register('validationService', () => ValidationService.getInstance(), ServiceLifetime.SINGLETON);
+    
+    // Register middleware pipeline with event system dependency
+    this.serviceContainer.register('middlewarePipeline', (container) => {
+      const eventSystem = container.resolve('eventSystem') as EventSystem;
+      return new MiddlewarePipeline(eventSystem);
+    }, ServiceLifetime.SINGLETON);
+    
+    // Register query service with dependencies
+    this.serviceContainer.register('queryService', (container) => {
+      return new SembleQueryService(queryConfig);
+    }, ServiceLifetime.SINGLETON);
+  }
+
+  /**
+   * Get event system for emitting events
+   * @static
+   */
+  private static getEventSystem(): EventSystem {
+    this.initializeServices();
+    return this.serviceContainer.resolve('eventSystem') as EventSystem;
+  }
+
   /**
    * Node type description and configuration
    * @type {INodeTypeDescription}
@@ -282,6 +374,19 @@ export class SembleTrigger implements INodeType {
 
     const limit = (additionalOptions.limit as number) || 50;
     const maxPages = (additionalOptions.maxPages as number) || 5;
+
+    // Emit polling event using Phase 4 Event System
+    const eventSystem = SembleTrigger.getEventSystem();
+    await eventSystem.emit({
+      type: 'trigger.polled',
+      timestamp: Date.now(),
+      source: 'semble-trigger',
+      id: `trigger-poll-${Date.now()}`,
+      resource,
+      event,
+      datePeriod,
+      limit
+    });
 
     // Get resource configuration
     const resourceConfig = TRIGGER_RESOURCES[resource];

@@ -8,11 +8,10 @@
  */
 
 // Service Container - Dependency Injection
-export { ServiceContainer, ServiceContainerUtils } from './ServiceContainer';
+export { ServiceContainer, ServiceContainerUtils, ServiceLifetime } from './ServiceContainer';
 export type { 
 	IServiceContainer, 
-	ServiceRegistration,
-	ServiceLifetime 
+	ServiceRegistration
 } from './ServiceContainer';
 
 // Event System - Decoupled Communication
