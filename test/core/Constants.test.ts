@@ -269,5 +269,96 @@ describe('Constants', () => {
         }
       });
     });
+
+    describe('Utility Functions', () => {
+      // Import utility functions for testing
+      const {
+        getEnvironmentMultiplier,
+        applyEnvironmentMultiplier,
+        getEnvironmentTimeout,
+        getEnvironmentCacheTtl,
+        isEnvironmentFeatureEnabled
+      } = require('../../core/Constants');
+
+      test('should get correct environment multipliers', () => {
+        // Development environment
+        expect(getEnvironmentMultiplier('development', 'cache')).toBe(0.1);
+        expect(getEnvironmentMultiplier('development', 'timeout')).toBe(2);
+        expect(getEnvironmentMultiplier('development', 'rateLimit')).toBe(10);
+
+        // Production environment
+        expect(getEnvironmentMultiplier('production', 'cache')).toBe(1);
+        expect(getEnvironmentMultiplier('production', 'timeout')).toBe(1);
+        expect(getEnvironmentMultiplier('production', 'rateLimit')).toBe(1);
+
+        // Default case
+        expect(getEnvironmentMultiplier('development', 'invalid' as any)).toBe(1);
+      });
+
+      test('should apply environment multipliers correctly', () => {
+        // Test cache multiplier
+        expect(applyEnvironmentMultiplier(3600, 'development', 'cache')).toBe(360);
+        expect(applyEnvironmentMultiplier(3600, 'production', 'cache')).toBe(3600);
+
+        // Test timeout multiplier  
+        expect(applyEnvironmentMultiplier(5000, 'development', 'timeout')).toBe(10000);
+        expect(applyEnvironmentMultiplier(5000, 'production', 'timeout')).toBe(5000);
+
+        // Test rate limit multiplier
+        expect(applyEnvironmentMultiplier(100, 'development', 'rateLimit')).toBe(1000);
+        expect(applyEnvironmentMultiplier(100, 'production', 'rateLimit')).toBe(100);
+      });
+
+      test('should get environment-specific timeouts', () => {
+        const baseTimeout = 5000;
+        
+        expect(getEnvironmentTimeout(baseTimeout, 'development')).toBe(10000);
+        expect(getEnvironmentTimeout(baseTimeout, 'production')).toBe(5000);
+      });
+
+      test('should get environment-specific cache TTL', () => {
+        const baseTtl = 3600;
+        
+        expect(getEnvironmentCacheTtl(baseTtl, 'development')).toBe(360);
+        expect(getEnvironmentCacheTtl(baseTtl, 'production')).toBe(3600);
+      });
+
+      test('should check environment feature flags', () => {
+        expect(isEnvironmentFeatureEnabled('development', 'DEBUG')).toBe(true);
+        expect(isEnvironmentFeatureEnabled('development', 'ENABLE_INTROSPECTION')).toBe(true);
+
+        expect(isEnvironmentFeatureEnabled('production', 'DEBUG')).toBe(false);
+        expect(isEnvironmentFeatureEnabled('production', 'ENABLE_INTROSPECTION')).toBe(false);
+      });
+    });
+
+    describe('Individual Constant Exports', () => {
+      // Import individual constant exports
+      const {
+        API_CONSTANTS,
+        TIMEOUT_CONSTANTS,
+        RETRY_CONSTANTS,
+        CACHE_CONSTANTS,
+        VALIDATION_CONSTANTS,
+        VALIDATION_PATTERNS,
+        FIELD_CONSTANTS,
+        ERROR_CONSTANTS,
+        LOGGING_CONSTANTS,
+        PERFORMANCE_CONSTANTS
+      } = require('../../core/Constants');
+
+      test('should export individual constant groups', () => {
+        expect(API_CONSTANTS).toBe(SEMBLE_CONSTANTS.API);
+        expect(TIMEOUT_CONSTANTS).toBe(SEMBLE_CONSTANTS.TIMEOUTS);
+        expect(RETRY_CONSTANTS).toBe(SEMBLE_CONSTANTS.RETRY);
+        expect(CACHE_CONSTANTS).toBe(SEMBLE_CONSTANTS.CACHE);
+        expect(VALIDATION_CONSTANTS).toBe(SEMBLE_CONSTANTS.VALIDATION);
+        expect(VALIDATION_PATTERNS).toBe(SEMBLE_CONSTANTS.VALIDATION.PATTERNS);
+        expect(FIELD_CONSTANTS).toBe(SEMBLE_CONSTANTS.FIELDS);
+        expect(ERROR_CONSTANTS).toBe(SEMBLE_CONSTANTS.ERRORS);
+        expect(LOGGING_CONSTANTS).toBe(SEMBLE_CONSTANTS.LOGGING);
+        expect(PERFORMANCE_CONSTANTS).toBe(SEMBLE_CONSTANTS.PERFORMANCE);
+      });
+    });
   });
 });

@@ -33,8 +33,8 @@ import {
 } from "./shared/PatientQueries";
 
 // Phase 4 Integration - Core Components
-import { 
-  ServiceContainer, 
+import {
+  ServiceContainer,
   EventSystem,
   SchemaRegistry,
   MiddlewarePipeline,
@@ -42,7 +42,7 @@ import {
   type IServiceContainer,
   type IEventSystem,
   type ISchemaRegistry,
-  type NodeExecutedEvent
+  type NodeExecutedEvent,
 } from "../../core";
 
 // Phase 2 Services
@@ -84,43 +84,71 @@ export class Semble implements INodeType {
       maxSize: 1000,
       autoRefreshInterval: 60 * 60, // 1 hour in seconds
       backgroundRefresh: true,
-      keyPrefix: 'semble_'
+      keyPrefix: "semble_",
     };
 
     const queryConfig: SembleQueryConfig = {
-      name: 'query',
+      name: "query",
       enabled: true,
       initTimeout: 5000,
       options: {},
-      baseUrl: 'https://api.semble.com', // Will be overridden by credentials
+      baseUrl: "https://api.semble.com", // Will be overridden by credentials
       timeout: 30000,
       retries: {
         maxAttempts: 3,
-        initialDelay: 1000
+        initialDelay: 1000,
       },
       rateLimit: {
         maxRequests: 100,
-        windowMs: 60000 // 1 minute
-      }
+        windowMs: 60000, // 1 minute
+      },
     };
 
     // Register core services
-    this.serviceContainer.register('eventSystem', () => new EventSystem(), ServiceLifetime.SINGLETON);
-    this.serviceContainer.register('schemaRegistry', () => new SchemaRegistry(), ServiceLifetime.SINGLETON);
-    this.serviceContainer.register('credentialService', () => new CredentialService(), ServiceLifetime.SINGLETON);
-    this.serviceContainer.register('cacheService', () => new CacheService(cacheConfig), ServiceLifetime.SINGLETON);
-    this.serviceContainer.register('validationService', () => ValidationService.getInstance(), ServiceLifetime.SINGLETON);
-    
+    this.serviceContainer.register(
+      "eventSystem",
+      () => new EventSystem(),
+      ServiceLifetime.SINGLETON,
+    );
+    this.serviceContainer.register(
+      "schemaRegistry",
+      () => new SchemaRegistry(),
+      ServiceLifetime.SINGLETON,
+    );
+    this.serviceContainer.register(
+      "credentialService",
+      () => new CredentialService(),
+      ServiceLifetime.SINGLETON,
+    );
+    this.serviceContainer.register(
+      "cacheService",
+      () => new CacheService(cacheConfig),
+      ServiceLifetime.SINGLETON,
+    );
+    this.serviceContainer.register(
+      "validationService",
+      () => ValidationService.getInstance(),
+      ServiceLifetime.SINGLETON,
+    );
+
     // Register middleware pipeline with event system dependency
-    this.serviceContainer.register('middlewarePipeline', (container) => {
-      const eventSystem = container.resolve('eventSystem') as EventSystem;
-      return new MiddlewarePipeline(eventSystem);
-    }, ServiceLifetime.SINGLETON);
-    
+    this.serviceContainer.register(
+      "middlewarePipeline",
+      (container) => {
+        const eventSystem = container.resolve("eventSystem") as EventSystem;
+        return new MiddlewarePipeline(eventSystem);
+      },
+      ServiceLifetime.SINGLETON,
+    );
+
     // Register query service with dependencies
-    this.serviceContainer.register('queryService', (container) => {
-      return new SembleQueryService(queryConfig);
-    }, ServiceLifetime.SINGLETON);
+    this.serviceContainer.register(
+      "queryService",
+      (container) => {
+        return new SembleQueryService(queryConfig);
+      },
+      ServiceLifetime.SINGLETON,
+    );
   }
 
   /**
@@ -129,7 +157,7 @@ export class Semble implements INodeType {
    */
   private static getEventSystem(): EventSystem {
     this.initializeServices();
-    return this.serviceContainer.resolve('eventSystem') as EventSystem;
+    return this.serviceContainer.resolve("eventSystem") as EventSystem;
   }
 
   /**
@@ -138,7 +166,9 @@ export class Semble implements INodeType {
    */
   private static getValidationService(): ValidationService {
     this.initializeServices();
-    return this.serviceContainer.resolve('validationService') as ValidationService;
+    return this.serviceContainer.resolve(
+      "validationService",
+    ) as ValidationService;
   }
 
   /**
@@ -1012,17 +1042,17 @@ name
                 // Add validation using Phase 4 services
                 const validationService = Semble.getValidationService();
                 const eventSystem = Semble.getEventSystem();
-                
+
                 // Emit operation start event
                 await eventSystem.emit({
-                  type: 'node.executed',
+                  type: "node.executed",
                   timestamp: Date.now(),
-                  source: 'semble-node',
+                  source: "semble-node",
                   id: `patient-get-${Date.now()}`,
-                  nodeType: 'semble',
-                  operation: 'patient.get',
+                  nodeType: "semble",
+                  operation: "patient.get",
                   duration: 0,
-                  success: true
+                  success: true,
                 });
 
                 const getResponse = await sembleApiRequest.call(
