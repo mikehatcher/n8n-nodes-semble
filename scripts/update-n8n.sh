@@ -105,21 +105,41 @@ get_current_version_api() {
     fi
 }
 
-# Function to get latest n8n version from Docker Hub
+# Function to get latest stable n8n version from Docker Hub
 get_latest_version() {
+    # Get all versions and filter for stable releases only
     curl -s "https://registry.hub.docker.com/v2/repositories/n8nio/n8n/tags/?page_size=100" | \
     jq -r '.results[] | select(.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' | \
+    # Sort versions semantically (reverse order to get latest first)
+    sort -V -r | \
+    # Filter out pre-release versions (anything > 1.103.x until stable)
+    awk 'BEGIN{FS="."} {
+        major=$1; minor=$2; patch=$3;
+        # Only include versions 1.103.x and below, or 1.105+ (when stable)
+        if (major==1 && minor<=103) print $0;
+        else if (major==1 && minor>=105) print $0;
+        else if (major>=2) print $0;
+    }' | \
     head -1 2>/dev/null || echo "latest"
 }
 
-# Function to list available versions
+# Function to list available stable versions
 list_available_versions() {
-    print_status "$BLUE" "🏷️  Available n8n versions:"
-    echo "   latest (always newest)"
-    echo "   Recent releases:"
+    print_status "$BLUE" "🏷️  Available stable n8n versions:"
+    echo "   latest (latest stable release)"
+    echo "   Recent stable releases:"
     
-    curl -s "https://registry.hub.docker.com/v2/repositories/n8nio/n8n/tags/?page_size=20" | \
+    curl -s "https://registry.hub.docker.com/v2/repositories/n8nio/n8n/tags/?page_size=50" | \
     jq -r '.results[] | select(.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' | \
+    sort -V -r | \
+    # Filter out pre-release versions (anything > 1.103.x until stable)
+    awk 'BEGIN{FS="."} {
+        major=$1; minor=$2; patch=$3;
+        # Only include versions 1.103.x and below, or 1.105+ (when stable)
+        if (major==1 && minor<=103) print $0;
+        else if (major==1 && minor>=105) print $0;
+        else if (major>=2) print $0;
+    }' | \
     head -10 | sed 's/^/   /'
 }
 
@@ -350,14 +370,14 @@ show_usage() {
     echo ""
     echo "Usage:"
     echo "  $0 [local|production] [version]          # Update to specific version"
-    echo "  $0 [local|production] latest             # Update to latest version"
+    echo "  $0 [local|production] latest             # Update to latest stable version"
     echo "  $0 [local|production] current            # Show current version"
     echo "  $0 [local|production] list               # List available versions"
     echo "  $0 list                                  # List available versions"
     echo ""
     echo "Examples:"
     echo "  $0 local 1.55.3                         # Update local to version 1.55.3"
-    echo "  $0 production latest                     # Update production to latest"
+    echo "  $0 production latest                     # Update production to latest stable"
     echo "  $0 production current                    # Show production version"
     echo ""
     echo "Environment Configuration:"

@@ -34,15 +34,18 @@
     "preinstall": "npx only-allow pnpm",
     "prepublishOnly": "npm run build",
     "postinstall": "./scripts/install-hooks.sh",
+
     "// === Build & Development ===": "",
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc && gulp build:icons",
     "dev": "tsc --watch",
+
     "// === Code Quality ===": "",
     "lint": "eslint nodes/**/*.ts credentials/**/*.ts",
     "lint:fix": "eslint nodes/**/*.ts credentials/**/*.ts --fix",
     "lintfix": "npm run lint:fix",
     "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
+
     "// === Testing ===": "",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -50,31 +53,37 @@
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "test:e2e": "jest test/e2e/ --testTimeout=30000",
+
     "// === API Validation ===": "",
     "test:api": "./scripts/test-api-connection.sh",
+
     "// === Quality Gates ===": "",
     "verify": "npm run lint && npm run test && npm run build",
     "verify:full": "npm run lint && npm run test:coverage && npm run build",
     "pre-commit": "./scripts/pre-commit.sh",
     "quality-check": "./scripts/pre-commit.sh",
     "install-hooks": "./scripts/install-hooks.sh",
+
     "// === Local Development & Testing ===": "",
     "pack:local": "npm run pre-commit && npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
     "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
     "update:node": "npm run pack:local && npm run install:node",
     "dev:full": "npm run pre-commit && npm run pack:local && npm run install:node && npm run restart:n8n",
     "test:env": "./scripts/test-setup.sh",
+
     "// === Production Deployment ===": "",
     "pack:prod": "npm run pre-commit && npm run test:ci",
     "deploy:prod": "npm run pack:prod && ./scripts/deploy-production.sh",
     "rollback:prod": "./scripts/deploy-production.sh --rollback",
     "status:prod": "./scripts/deploy-production.sh --status",
+
     "// === Local n8n Environment Management ===": "",
     "setup:test-env": "./scripts/setup-n8n-test-env.sh",
     "start:n8n": "cd ../n8n-local-test && docker compose up -d",
     "stop:n8n": "cd ../n8n-local-test && docker compose down",
     "restart:n8n": "cd ../n8n-local-test && docker compose restart",
     "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
+    
     "// === n8n Version Management ===": "",
     "update:n8n": "./scripts/update-n8n.sh",
     "update:n8n:local": "./scripts/update-n8n.sh local",

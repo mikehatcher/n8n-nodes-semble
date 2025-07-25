@@ -39,13 +39,13 @@ export async function sembleApiRequest(
   query: string,
   variables: IDataObject = {},
   retryAttempts: number = 3,
-  debugMode: boolean = false
+  debugMode: boolean = false,
 ): Promise<any> {
   const credentials = await this.getCredentials("sembleApi");
 
   if (debugMode) {
-    this.logger?.info('Starting Semble API request', {
-      query: query.substring(0, 100) + '...',
+    this.logger?.info("Starting Semble API request", {
+      query: query.substring(0, 100) + "...",
       variables: Object.keys(variables),
       url: credentials.url || credentials.baseUrl,
     });
@@ -54,8 +54,14 @@ export async function sembleApiRequest(
   // DEBUG: Always log for integration tests
   console.log("🔧 API Request Debug:");
   console.log("- URL:", credentials.url || credentials.baseUrl);
-  console.log("- Token available:", !!(credentials.token || credentials.apiToken));
-  console.log("- Token value preview:", `${(credentials.token || credentials.apiToken || '').toString().substring(0, 20)}...`);
+  console.log(
+    "- Token available:",
+    !!(credentials.token || credentials.apiToken),
+  );
+  console.log(
+    "- Token value preview:",
+    `${(credentials.token || credentials.apiToken || "").toString().substring(0, 20)}...`,
+  );
   console.log("- Full credentials keys:", Object.keys(credentials));
   console.log("- Query preview:", query.substring(0, 200) + "...");
   console.log("- Variables:", JSON.stringify(variables, null, 2));
@@ -84,7 +90,7 @@ export async function sembleApiRequest(
       const response = await this.helpers.httpRequest(options);
 
       if (debugMode) {
-        this.logger?.info('Received API response', {
+        this.logger?.info("Received API response", {
           hasErrors: !!response.errors,
           errorsCount: response.errors?.length || 0,
           dataKeys: response.data ? Object.keys(response.data) : [],
@@ -105,7 +111,7 @@ export async function sembleApiRequest(
       const isRetryableError = error.response?.status >= 500;
 
       if (debugMode) {
-        this.logger?.error('Error during Semble API request', {
+        this.logger?.error("Error during Semble API request", {
           attempt: attempt + 1,
           error: error.message,
           status: error.response?.status,
@@ -115,12 +121,12 @@ export async function sembleApiRequest(
       if (isRetryableError && attempt < retryAttempts) {
         // Simple exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, attempt) * 1000;
-        
+
         this.logger?.warn(
-          `API error (attempt ${attempt + 1}/${retryAttempts + 1}). Retrying in ${delay}ms...`
+          `API error (attempt ${attempt + 1}/${retryAttempts + 1}). Retrying in ${delay}ms...`,
         );
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
 

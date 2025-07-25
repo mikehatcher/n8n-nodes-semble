@@ -82,7 +82,6 @@ describe("SembleTrigger Node", () => {
       expect(propertyNames).toContain("event");
       expect(propertyNames).toContain("datePeriod");
       expect(propertyNames).toContain("additionalOptions");
-      expect(propertyNames).toContain("debugMode");
     });
 
     it("should have correct resource options", () => {
@@ -119,7 +118,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
     });
@@ -176,7 +174,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("unsupported") // resource
         .mockReturnValueOnce("newOrUpdated") // event  
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -200,7 +197,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({ limit: 100, maxPages: 10 }); // additionalOptions
 
@@ -228,7 +224,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
     });
@@ -269,7 +264,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1d") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
     });
@@ -300,7 +294,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("all") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -335,7 +328,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOnly") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -369,7 +361,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -410,7 +401,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -434,7 +424,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -470,7 +459,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -511,7 +499,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -540,54 +527,11 @@ describe("SembleTrigger Node", () => {
     });
   });
 
-  describe("Debug Mode", () => {
-    it("should log debug information when debug mode is enabled", async () => {
-      mockPollFunctions.getNodeParameter
-        .mockReturnValueOnce("patient") // resource
-        .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(true) // debugMode
-        .mockReturnValueOnce("1m") // datePeriod
-        .mockReturnValueOnce({}); // additionalOptions
-
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: [],
-          pageInfo: { hasMore: false },
-        },
-      });
-
-      await triggerNode.poll.call(mockPollFunctions);
-
-      expect(mockPollFunctions.logger.info).toHaveBeenCalled();
-    });
-
-    it("should not log debug information when debug mode is disabled", async () => {
-      mockPollFunctions.getNodeParameter
-        .mockReturnValueOnce("patient") // resource
-        .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
-        .mockReturnValueOnce("1m") // datePeriod
-        .mockReturnValueOnce({}); // additionalOptions
-
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: [],
-          pageInfo: { hasMore: false },
-        },
-      });
-
-      await triggerNode.poll.call(mockPollFunctions);
-
-      expect(mockPollFunctions.logger.info).not.toHaveBeenCalled();
-    });
-  });
-
   describe("Error Handling", () => {
     it("should handle API errors gracefully", async () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
@@ -596,28 +540,6 @@ describe("SembleTrigger Node", () => {
 
       await expect(triggerNode.poll.call(mockPollFunctions)).rejects.toThrow("API Error");
     });
-
-    it("should log error in debug mode when polling fails", async () => {
-      mockPollFunctions.getNodeParameter
-        .mockReturnValueOnce("patient") // resource
-        .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(true) // debugMode
-        .mockReturnValueOnce("1m") // datePeriod
-        .mockReturnValueOnce({}); // additionalOptions
-
-      const apiError = new Error("API Error");
-      mockGenericFunctions.sembleApiRequest.mockRejectedValue(apiError);
-
-      try {
-        await triggerNode.poll.call(mockPollFunctions);
-      } catch (error) {
-        // Expected to throw
-      }
-
-      expect(mockPollFunctions.logger.error).toHaveBeenCalledWith(
-        "[SEMBLE-TRIGGER-DEBUG] Polling failed: API Error"
-      );
-    });
   });
 
   describe("Integration with Shared Components", () => {
@@ -625,7 +547,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({ limit: 25 }); // additionalOptions
 
@@ -648,7 +569,6 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce(false) // debugMode
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 

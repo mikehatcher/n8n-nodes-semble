@@ -26,10 +26,13 @@
     "core/**/*",
     "services/**/*",
     "types/**/*",
+    "components/**/*",
     "test/**/*"
   ],
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "test/components/UIComponents.test.ts",
+    "test/components/ResourceSelector.test.ts"
   ]
 }
