@@ -33,7 +33,7 @@
     "// === Package Management ===": "",
     "preinstall": "npx only-allow pnpm",
     "prepublishOnly": "npm run build",
-    "postinstall": "./scripts/install-hooks.sh",
+    "postinstall": "[ -f ./scripts/install-hooks.sh ] && ./scripts/install-hooks.sh || echo 'Skipping install-hooks (not in dev environment)'",
 
     "// === Build & Development ===": "",
     "clean": "rm -rf dist",

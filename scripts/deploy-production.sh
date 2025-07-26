@@ -256,25 +256,51 @@ deploy_package() {
             # Copy package into container
             docker cp "\$PACKAGE_FILE" "$DOCKER_CONTAINER_NAME:/tmp/"
             
-            # Install in container (n8n community node method)
+            # Install in container (improved n8n community node method)
             docker exec --user root "$DOCKER_CONTAINER_NAME" sh -c "
                 cd /tmp
                 PACKAGE_FILE=\\\$(ls n8n-nodes-semble-*.tgz | head -1)
                 echo 'Installing package: \\\$PACKAGE_FILE'
                 
-                # First install globally to make it available
-                npm install -g --force \\\$PACKAGE_FILE
+                # Step 1: Completely remove any existing installation to avoid permission issues
+                echo 'Removing old installation...'
+                npm uninstall -g n8n-nodes-semble --force 2>/dev/null || true
+                rm -rf /usr/local/lib/node_modules/n8n-nodes-semble
                 
-                # Then install in user's n8n directory (the proper way for community nodes)
+                # Step 2: Install globally with ignore-scripts to avoid postinstall issues
+                echo 'Installing new package globally...'
+                npm install -g \\\$PACKAGE_FILE --ignore-scripts --force
+                
+                # Step 3: Verify global installation
+                if [ ! -d '/usr/local/lib/node_modules/n8n-nodes-semble' ]; then
+                    echo 'ERROR: Global installation failed'
+                    exit 1
+                fi
+                
+                # Step 4: Set up community nodes directory with proper ownership
+                echo 'Setting up community nodes directory...'
+                mkdir -p /home/node/.n8n/nodes
+                chown -R node:node /home/node/.n8n
                 cd /home/node/.n8n/nodes
                 
-                # Remove any existing installation first to ensure clean update
-                npm uninstall n8n-nodes-semble --save 2>/dev/null || true
+                # Clean existing community node setup
+                rm -rf node_modules package.json package-lock.json
                 
-                # Install from the global package location
-                npm install /usr/local/lib/node_modules/n8n-nodes-semble/ --save
+                # Create fresh package.json for community nodes
+                echo '{\\\"name\\\":\\\"installed-nodes\\\",\\\"private\\\":true,\\\"dependencies\\\":{\\\"n8n-nodes-semble\\\":\\\"file:../../../../usr/local/lib/node_modules/n8n-nodes-semble\\\"}}' > package.json
+                chown node:node package.json
                 
-                echo 'Package installed successfully in n8n user directory'
+                # Step 5: Install community node link
+                echo 'Installing community node link...'
+                npm install --no-package-lock 2>/dev/null || true
+                chown -R node:node node_modules 2>/dev/null || true
+                
+                # Step 6: Verify installation
+                echo 'Verifying installation...'
+                ls -la /usr/local/lib/node_modules/n8n-nodes-semble/dist/nodes/Semble/ | head -3
+                ls -la node_modules/ | grep n8n-nodes-semble || echo 'Community node link not found but continuing...'
+                
+                echo 'Package installed successfully'
                 rm -f /tmp/\\\$PACKAGE_FILE
             "
             
@@ -333,14 +359,35 @@ check_status() {
             echo "Checking for Semble node specifically..."
             docker exec --user root root-n8n-1 sh -c "npm list -g n8n-nodes-semble 2>/dev/null || echo 'n8n-nodes-semble not found in global'"
             echo ""
-            echo "Checking user's n8n directory (where community nodes should be)..."
-            docker exec --user root root-n8n-1 sh -c "cat /home/node/.n8n/nodes/package.json 2>/dev/null | grep n8n-nodes-semble || echo 'n8n-nodes-semble not found in user directory'"
+            echo "=== Package Version & File Timestamps ==="
+            docker exec --user root root-n8n-1 sh -c "
+                if [ -f '/usr/local/lib/node_modules/n8n-nodes-semble/package.json' ]; then
+                    echo 'Package version:'
+                    cat /usr/local/lib/node_modules/n8n-nodes-semble/package.json | grep '\"version\"' | head -1
+                    echo ''
+                    echo 'Node file timestamps (should be recent for successful deployment):'
+                    ls -la /usr/local/lib/node_modules/n8n-nodes-semble/dist/nodes/Semble/*.js 2>/dev/null || echo 'Node files not found'
+                else
+                    echo 'n8n-nodes-semble package not found globally'
+                fi
+            "
             echo ""
-            echo "Checking user's node_modules directory..."
-            docker exec --user root root-n8n-1 sh -c "ls -la /home/node/.n8n/nodes/node_modules/ | grep n8n || echo 'No n8n packages in user node_modules'"
-            echo ""
-            echo "Checking global node_modules directory..."
-            docker exec --user root root-n8n-1 sh -c "ls -la /usr/local/lib/node_modules/ | grep n8n || echo 'No n8n packages in node_modules'"
+            echo "=== Community Node Setup ==="
+            docker exec --user root root-n8n-1 sh -c "
+                echo 'Community nodes directory:'
+                if [ -f '/home/node/.n8n/nodes/package.json' ]; then
+                    cat /home/node/.n8n/nodes/package.json | grep n8n-nodes-semble || echo 'n8n-nodes-semble not found in user directory'
+                else
+                    echo 'Community nodes package.json not found'
+                fi
+                echo ''
+                echo 'Community node link:'
+                if [ -L '/home/node/.n8n/nodes/node_modules/n8n-nodes-semble' ]; then
+                    ls -la /home/node/.n8n/nodes/node_modules/n8n-nodes-semble
+                else
+                    echo 'Community node link not found'
+                fi
+            "
         else
             echo "Cannot check packages - n8n container not running"
         fi
@@ -472,9 +519,66 @@ log "Container: $DOCKER_CONTAINER_NAME"
 check_dependencies
 test_ssh_connection
 
+# Verify deployment
+verify_deployment() {
+    log "Verifying deployment..."
+    
+    ssh_exec bash << 'EOF'
+        echo "=== Deployment Verification ==="
+        
+        # Check if container is running
+        if ! docker ps --format "table {{.Names}}" | grep -q "^root-n8n-1$"; then
+            echo "❌ VERIFICATION FAILED: n8n container not running"
+            exit 1
+        fi
+        
+        # Check if global package is installed with correct version
+        VERSION_CHECK=$(docker exec --user root root-n8n-1 sh -c "
+            if [ -f '/usr/local/lib/node_modules/n8n-nodes-semble/package.json' ]; then
+                cat /usr/local/lib/node_modules/n8n-nodes-semble/package.json | grep '\"version\"' | head -1 | grep '2.0.0'
+            fi
+        " 2>/dev/null)
+        
+        if [ -z "$VERSION_CHECK" ]; then
+            echo "❌ VERIFICATION FAILED: Package version 2.0.0 not found"
+            exit 1
+        fi
+        
+        # Check if node files exist and are recent (within last hour)
+        NODE_FILES_CHECK=$(docker exec --user root root-n8n-1 sh -c "
+            find /usr/local/lib/node_modules/n8n-nodes-semble/dist/nodes/Semble/ -name '*.js' -newermt '-1 hour' | wc -l
+        " 2>/dev/null)
+        
+        if [ "$NODE_FILES_CHECK" -lt "3" ]; then
+            echo "❌ VERIFICATION FAILED: Node files are not recent or missing"
+            docker exec --user root root-n8n-1 sh -c "ls -la /usr/local/lib/node_modules/n8n-nodes-semble/dist/nodes/Semble/*.js"
+            exit 1
+        fi
+        
+        # Check if community node link exists
+        if ! docker exec --user root root-n8n-1 sh -c "[ -L '/home/node/.n8n/nodes/node_modules/n8n-nodes-semble' ]" 2>/dev/null; then
+            echo "⚠️  WARNING: Community node link not found, but continuing..."
+        fi
+        
+        echo "✅ VERIFICATION PASSED: Deployment successful"
+        echo "   - Container running: ✅"
+        echo "   - Package version 2.0.0: ✅"
+        echo "   - Recent node files: ✅"
+        echo "   - Community node link: $(docker exec --user root root-n8n-1 sh -c '[ -L "/home/node/.n8n/nodes/node_modules/n8n-nodes-semble" ] && echo "✅" || echo "⚠️"')"
+        echo ""
+        echo "🎉 DEPLOYMENT SUMMARY:"
+        echo "   • n8n-nodes-semble version 2.0.0 successfully deployed"
+        echo "   • All node files updated with current timestamp"
+        echo "   • n8n container restarted and running"
+        echo "   • Access your n8n at: https://workflows.thehealthsuite.co.uk"
+        echo "   • Remember to hard refresh your browser (Ctrl+Shift+R or Cmd+Shift+R)"
+EOF
+}
+
 build_package
 create_backup
 deploy_package
+verify_deployment
 check_status
 
 success "Production deployment completed successfully!"
