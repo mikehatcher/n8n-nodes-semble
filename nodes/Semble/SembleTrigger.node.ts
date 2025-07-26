@@ -356,13 +356,16 @@ export class SembleTrigger implements INodeType {
           "Optional settings to fine-tune the trigger's polling behavior and performance",
         options: [
           {
-            displayName: "Limit",
+            displayName: "Record Limit",
             name: "limit",
             type: "number",
-            default: 50,
-            description: "Max number of results to return",
+            // eslint-disable-next-line n8n-nodes-base/node-param-default-wrong-for-limit
+            default: -1,
+            // eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-limit
+            description:
+              "Max number of results to return. Leave at -1 for unlimited, or set a specific number to limit results.",
             typeOptions: {
-              minValue: 1,
+              minValue: -1,
             },
           },
           {
@@ -371,7 +374,7 @@ export class SembleTrigger implements INodeType {
             type: "number",
             default: 5,
             description:
-              "Maximum number of pages to fetch per polling cycle. Set to 1 for single page, or higher to get more comprehensive results. Higher values increase data coverage but may impact performance.",
+              "Maximum number of API pages to fetch when searching for records. Prevents excessive API calls while ensuring good data coverage. Each page typically contains 100 records.",
             typeOptions: {
               minValue: 1,
               maxValue: 50,
@@ -400,7 +403,7 @@ export class SembleTrigger implements INodeType {
       {},
     ) as IDataObject;
 
-    const limit = (additionalOptions.limit as number) || 50;
+    const limit = (additionalOptions.limit as number) ?? -1; // Default to unlimited
     const maxPages = (additionalOptions.maxPages as number) || 5;
 
     // Emit polling event using Phase 4 Event System
@@ -478,42 +481,117 @@ async function pollResource(
 
   const now = new Date().toISOString();
 
-  // For triggers, we need to fetch multiple pages if there are more results
-  // Build pagination configuration
-  const paginationConfig = buildPaginationConfig({
-    pageSize: limit,
-    returnAll: false,
-  });
+  // Determine if unlimited records are requested
+  const isUnlimited = limit === -1;
 
-  // Collect all items from multiple pages
+  // For API efficiency, use a larger page size (100) rather than the user's limit
+  // This reduces the number of API calls needed
+  const apiPageSize = isUnlimited ? -1 : Math.min(100, limit);
+
+  // If user wants unlimited records, make a single API call with pageSize: -1
+  if (isUnlimited) {
+    const variables: IDataObject = {
+      pagination: {
+        page: 1,
+        pageSize: -1, // This gets ALL records in one call
+      },
+    };
+
+    // Apply server-side filtering based on event type
+    if (event === "newOnly") {
+      variables.options = {
+        createdAt: {
+          start: cutoffDate,
+          end: now,
+        },
+      };
+    } else {
+      variables.options = {
+        updatedAt: {
+          start: cutoffDate,
+          end: now,
+        },
+      };
+    }
+
+    const responseData = await sembleApiRequest.call(
+      this,
+      resourceConfig.query,
+      variables,
+    );
+
+    const allItems: any[] =
+      responseData[resourceConfig.apiResponseKey]?.data || [];
+    const hasNewData = allItems.length > 0;
+
+    // Update workflow static data with current time for next poll
+    workflowStaticData.lastPoll = currentTime.toISOString();
+
+    // Add metadata to items
+    const itemsWithMetadata = allItems.map((item: any) => {
+      const isNew = !item.updatedAt || item.createdAt === item.updatedAt;
+      const isUpdated = !isNew;
+
+      return {
+        json: {
+          ...item,
+          __meta: {
+            resource,
+            event,
+            isNew,
+            isUpdated,
+            pollTime: currentTime.toISOString(),
+          },
+        },
+      };
+    });
+
+    return {
+      data: itemsWithMetadata,
+      hasNewData,
+      pollTime: currentTime.toISOString(),
+      filteredCount: allItems.length,
+      totalCount: allItems.length,
+    };
+  }
+
+  // For limited records, collect items from multiple pages until we reach the limit or maxPages
   const allItems: any[] = [];
   let currentPage = 1;
   let hasMore = true;
 
-  while (hasMore && currentPage <= maxPages) {
-    // Build query variables with dateRange and pagination
+  while (hasMore && currentPage <= maxPages && allItems.length < limit) {
+    // Calculate how many more records we need
+    const remainingRecords = limit - allItems.length;
+
+    // Use the smaller of: remaining records needed, or our standard page size
+    const thisPageSize = Math.min(remainingRecords, apiPageSize);
+
+    // Build query variables with pagination and appropriate server-side date filtering
     const variables: IDataObject = {
       pagination: {
         page: currentPage,
-        pageSize: paginationConfig.pageSize,
+        pageSize: thisPageSize,
       },
     };
 
-    // Add date range filtering for supported resources
-    if (resource !== "product") {
-      // Set appropriate date range based on datePeriod
-      if (datePeriod === "all") {
-        // For "all" records, use a very wide date range
-        variables.dateRange = {
-          start: "1970-01-01",
-          end: currentTime.toISOString().split("T")[0],
-        };
-      } else {
-        variables.dateRange = {
-          start: dateRangeStart.toISOString().split("T")[0], // Format as YYYY-MM-DD
-          end: currentTime.toISOString().split("T")[0], // Format as YYYY-MM-DD
-        };
-      }
+    // Apply server-side filtering based on event type
+    if (event === "newOnly") {
+      // For "newOnly", filter by creation date
+      variables.options = {
+        createdAt: {
+          start: cutoffDate,
+          end: now,
+        },
+      };
+    } else {
+      // For "newOrUpdated", filter by update date (which includes creation date)
+      variables.options = {
+        updatedAt: {
+          start: cutoffDate,
+          end: now,
+        },
+      };
     }
 
     // Execute the query using our GenericFunctions
@@ -527,85 +605,58 @@ async function pollResource(
     const pageItems: any[] =
       responseData[resourceConfig.apiResponseKey]?.data || [];
 
-    // Add items from this page to our collection
-    allItems.push(...pageItems);
+    // Add items from this page to our collection (but don't exceed the limit)
+    const itemsToAdd = pageItems.slice(0, limit - allItems.length);
+    allItems.push(...itemsToAdd);
 
-    // Check if there are more pages
+    // Check if there are more pages and we haven't reached our limit
     hasMore =
       responseData[resourceConfig.apiResponseKey]?.pageInfo?.hasMore || false;
-    currentPage++;
 
-    // If this page returned fewer items than requested, there are likely no more pages
-    if (pageItems.length < paginationConfig.pageSize) {
+    // Stop if we've reached our limit
+    if (allItems.length >= limit) {
       hasMore = false;
     }
+
+    // If this page returned fewer items than requested, there are likely no more pages
+    if (pageItems.length < thisPageSize) {
+      hasMore = false;
+    }
+
+    currentPage++;
   }
 
-  // Filter items based on event type and last poll time
-  let filteredItems = allItems;
+  // Update workflow static data with current time for next poll
+  workflowStaticData.lastPoll = currentTime.toISOString();
 
-  if (event === "newOnly") {
-    // Only include items created after cutoff date
-    filteredItems = allItems.filter((item: IDataObject) => {
-      const createdAt = item.createdAt as string;
-      return createdAt && new Date(createdAt) > new Date(cutoffDate);
-    });
-  } else {
-    // For "newOrUpdated", include items that are either:
-    // 1. Created after cutoff date (new items)
-    // 2. Updated after cutoff date (updated items)
-    filteredItems = allItems.filter((item: IDataObject) => {
-      const createdAt = item.createdAt as string;
-      const updatedAt = item.updatedAt as string;
+  // Since we're using server-side filtering with QueryOptions.updatedAt,
+  // the API already returns only items that match our date criteria.
+  const filteredItems = allItems;
+  const hasNewData = filteredItems.length > 0;
 
-      // Include if created after cutoff (new items)
-      if (createdAt && new Date(createdAt) > new Date(cutoffDate)) {
-        return true;
-      }
+  // Add metadata to items
+  const itemsWithMetadata = filteredItems.map((item: any) => {
+    const isNew = !item.updatedAt || item.createdAt === item.updatedAt;
+    const isUpdated = !isNew;
 
-      // Include if updated after cutoff (updated items)
-      if (updatedAt && new Date(updatedAt) > new Date(cutoffDate)) {
-        return true;
-      }
-
-      return false;
-    });
-  }
-
-  // Convert to execution data with metadata
-  const returnData: INodeExecutionData[] = [];
-  for (const item of filteredItems) {
-    // Determine if this is a newly created item vs an updated item
-    const createdAt = new Date(item.createdAt as string);
-    const cutoffDateTime = new Date(cutoffDate);
-
-    const isNewItem = createdAt > cutoffDateTime;
-
-    // updatedAt is null/blank until the record is actually updated
-    const updatedAt = item.updatedAt as string;
-    const isUpdatedItem = updatedAt && new Date(updatedAt) > cutoffDateTime;
-
-    returnData.push({
+    return {
       json: {
         ...item,
         __meta: {
           resource,
           event,
-          pollTime: now,
-          isNew: isNewItem,
-          isUpdated: !!isUpdatedItem,
+          isNew,
+          isUpdated,
+          pollTime: currentTime.toISOString(),
         },
       },
-    });
-  }
-
-  // Update last poll time
-  workflowStaticData.lastPoll = now;
+    };
+  });
 
   return {
-    data: returnData,
-    hasNewData: returnData.length > 0,
-    pollTime: now,
+    data: itemsWithMetadata,
+    hasNewData,
+    pollTime: currentTime.toISOString(),
     filteredCount: filteredItems.length,
     totalCount: allItems.length,
   };

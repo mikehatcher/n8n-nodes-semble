@@ -42,8 +42,8 @@ describe("SembleTrigger Node", () => {
 
     // Setup default mock returns
     mockPaginationHelpers.buildPaginationConfig.mockReturnValue({
-      pageSize: 50,
-      returnAll: false,
+      pageSize: -1, // Updated to match new unlimited default
+      returnAll: true,
     });
 
     mockGenericFunctions.sembleApiRequest.mockResolvedValue({
@@ -182,40 +182,57 @@ describe("SembleTrigger Node", () => {
       );
     });
 
-    it("should use additional options for limit and maxPages", async () => {
+    it("should use additional options for limit and maxPages with new logic", async () => {
       // Reset mocks for this specific test
       mockPollFunctions.getNodeParameter.mockReset();
       mockGenericFunctions.sembleApiRequest.mockReset();
-      mockPaginationHelpers.buildPaginationConfig.mockReset();
-      
-      // Set up the mock return value after reset
-      mockPaginationHelpers.buildPaginationConfig.mockReturnValue({
-        pageSize: 100,
-        returnAll: false,
-      });
       
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
         .mockReturnValueOnce("1m") // datePeriod
-        .mockReturnValueOnce({ limit: 100, maxPages: 10 }); // additionalOptions
+        .mockReturnValueOnce({ limit: 50, maxPages: 3 }); // additionalOptions
 
       // Mock workflow static data
       mockPollFunctions.getWorkflowStaticData.mockReturnValue({});
 
+      // Mock API response - return exactly 50 items
+      const mockPatients = Array(50).fill(null).map((_, i) => ({ 
+        id: `${i + 1}`, 
+        firstName: `Patient${i + 1}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+
       mockGenericFunctions.sembleApiRequest.mockResolvedValue({
         patients: {
-          data: [],
-          pageInfo: { hasMore: false },
+          data: mockPatients,
+          pageInfo: { hasMore: true },
         },
       });
 
-      await triggerNode.poll.call(mockPollFunctions);
+      const result = await triggerNode.poll.call(mockPollFunctions);
 
-      expect(mockPaginationHelpers.buildPaginationConfig).toHaveBeenCalledWith({
-        pageSize: 100,
-        returnAll: false,
-      });
+      // Should return the data since hasNewData = true
+      expect(result).toHaveLength(1);
+      expect(result![0]).toHaveLength(50); // Exactly the limit
+
+      // Should have made 1 API call since 50 items fit in one page
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledTimes(1);
+      
+      // API call should use pageSize of 50 (min of limit=50 and apiPageSize=100)
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining('patients'),
+        expect.objectContaining({
+          pagination: { page: 1, pageSize: 50 },
+          options: expect.objectContaining({
+            updatedAt: expect.objectContaining({
+              start: expect.any(String),
+              end: expect.any(String),
+            }),
+          }),
+        })
+      );
     });
   });
 
@@ -252,9 +269,13 @@ describe("SembleTrigger Node", () => {
 
       await triggerNode.poll.call(mockPollFunctions);
 
-      expect(mockPaginationHelpers.buildPaginationConfig).toHaveBeenCalledWith({
-        pageSize: 50,
-        returnAll: false,
+      // With the new logic, we call the API directly with pagination parameters
+      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const variables = callArgs[1] as IDataObject;
+      
+      expect(variables.pagination).toEqual({
+        page: 1,
+        pageSize: -1, // Default is now unlimited
       });
     });
   });
@@ -281,9 +302,11 @@ describe("SembleTrigger Node", () => {
       const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
       const variables = callArgs[1] as IDataObject;
 
-      expect(variables.dateRange).toBeDefined();
-      expect((variables.dateRange as IDataObject).start).toBeDefined();
-      expect((variables.dateRange as IDataObject).end).toBeDefined();
+      // New implementation uses options.updatedAt instead of dateRange
+      expect(variables.options).toBeDefined();
+      expect((variables.options as IDataObject).updatedAt).toBeDefined();
+      expect(((variables.options as IDataObject).updatedAt as IDataObject).start).toBeDefined();
+      expect(((variables.options as IDataObject).updatedAt as IDataObject).end).toBeDefined();
     });
 
     it("should handle 'all' date period correctly", async () => {
@@ -312,7 +335,8 @@ describe("SembleTrigger Node", () => {
       const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
       const variables = callArgs[1] as IDataObject;
 
-      expect((variables.dateRange as IDataObject).start).toBe("1970-01-01");
+      // For 'all' period, should use 1970-01-01 as start date
+      expect(((variables.options as IDataObject).updatedAt as IDataObject).start).toBe("1970-01-01T00:00:00.000Z");
     });
   });
 
@@ -331,16 +355,12 @@ describe("SembleTrigger Node", () => {
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
+      // For newOnly, API should only return items created after lastPoll
       const mockPatients = [
         {
           id: "1",
-          createdAt: mockNewDate, // New item
+          createdAt: mockNewDate, // New item (created after lastPoll)
           updatedAt: null,
-        },
-        {
-          id: "2",
-          createdAt: mockOldDate, // Old item
-          updatedAt: mockNewDate, // Updated recently
         },
       ];
 
@@ -352,6 +372,11 @@ describe("SembleTrigger Node", () => {
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
+
+      // Verify API was called with createdAt filter
+      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const variables = callArgs[1] as IDataObject;
+      expect((variables.options as IDataObject).createdAt).toBeDefined();
 
       expect(result![0]).toHaveLength(1);
       expect(result![0][0].json.id).toBe("1");
@@ -364,6 +389,7 @@ describe("SembleTrigger Node", () => {
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
+      // For newOrUpdated, API should return both new and updated items
       const mockPatients = [
         {
           id: "1",
@@ -375,11 +401,6 @@ describe("SembleTrigger Node", () => {
           createdAt: mockOldDate, // Old item
           updatedAt: mockNewDate, // Updated recently
         },
-        {
-          id: "3",
-          createdAt: mockOldDate, // Old item
-          updatedAt: mockOldDate, // Not updated recently
-        },
       ];
 
       mockGenericFunctions.sembleApiRequest.mockResolvedValue({
@@ -390,6 +411,11 @@ describe("SembleTrigger Node", () => {
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
+
+      // Verify API was called with updatedAt filter
+      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const variables = callArgs[1] as IDataObject;
+      expect((variables.options as IDataObject).updatedAt).toBeDefined();
 
       expect(result![0]).toHaveLength(2);
       expect(result![0].map((item) => item.json.id)).toEqual(["1", "2"]);
@@ -427,15 +453,11 @@ describe("SembleTrigger Node", () => {
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
+      // With server-side filtering, API would only return items updated after lastPoll
       const mockPatients = [
         {
           id: "1",
           createdAt: "2025-01-02T00:00:00.000Z", // After lastPoll
-          updatedAt: null,
-        },
-        {
-          id: "2",
-          createdAt: "2024-12-31T00:00:00.000Z", // Before lastPoll
           updatedAt: null,
         },
       ];
@@ -448,6 +470,11 @@ describe("SembleTrigger Node", () => {
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
+
+      // Verify API was called with lastPoll as start date
+      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const variables = callArgs[1] as IDataObject;
+      expect(((variables.options as IDataObject).updatedAt as IDataObject).start).toBe(lastPollDate);
 
       expect(result![0]).toHaveLength(1);
       expect(result![0][0].json.id).toBe("1");
@@ -543,7 +570,7 @@ describe("SembleTrigger Node", () => {
   });
 
   describe("Integration with Shared Components", () => {
-    it("should call buildPaginationConfig with correct parameters", async () => {
+    it("should call sembleApiRequest with correct pagination parameters", async () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
@@ -559,9 +586,13 @@ describe("SembleTrigger Node", () => {
 
       await triggerNode.poll.call(mockPollFunctions);
 
-      expect(mockPaginationHelpers.buildPaginationConfig).toHaveBeenCalledWith({
+      // Verify API was called with correct pagination structure
+      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const variables = callArgs[1] as IDataObject;
+      
+      expect(variables.pagination).toEqual({
+        page: 1,
         pageSize: 25,
-        returnAll: false,
       });
     });
 
@@ -585,7 +616,7 @@ describe("SembleTrigger Node", () => {
         expect.any(String), // GET_PATIENTS_QUERY
         expect.objectContaining({
           pagination: expect.any(Object),
-          dateRange: expect.any(Object),
+          options: expect.any(Object),
         })
       );
     });
