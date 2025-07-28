@@ -287,7 +287,7 @@ deploy_package() {
                 rm -rf node_modules package.json package-lock.json
                 
                 # Create fresh package.json for community nodes
-                echo '{\\\"name\\\":\\\"installed-nodes\\\",\\\"private\\\":true,\\\"dependencies\\\":{\\\"n8n-nodes-semble\\\":\\\"file:../../../../usr/local/lib/node_modules/n8n-nodes-semble\\\"}}' > package.json
+                echo '{\"name\":\"installed-nodes\",\"private\":true,\"dependencies\":{\"n8n-nodes-semble\":\"file:../../../../usr/local/lib/node_modules/n8n-nodes-semble\"}}' > package.json
                 chown node:node package.json
                 
                 # Step 5: Install community node link
@@ -376,16 +376,23 @@ check_status() {
             docker exec --user root root-n8n-1 sh -c "
                 echo 'Community nodes directory:'
                 if [ -f '/home/node/.n8n/nodes/package.json' ]; then
-                    cat /home/node/.n8n/nodes/package.json | grep n8n-nodes-semble || echo 'n8n-nodes-semble not found in user directory'
+                    # Validate JSON format and show content
+                    if cat /home/node/.n8n/nodes/package.json | jq -r '.dependencies | keys[]' 2>/dev/null | grep -q n8n-nodes-semble; then
+                        cat /home/node/.n8n/nodes/package.json | jq -r '.dependencies | to_entries[] | select(.key == \"n8n-nodes-semble\") | \"    \\\"\" + .key + \"\\\": \\\"\" + .value + \"\\\"\"'
+                    else
+                        echo '❌ Invalid JSON or n8n-nodes-semble not found in community nodes package.json'
+                        echo 'Raw content:'
+                        head -3 /home/node/.n8n/nodes/package.json
+                    fi
                 else
-                    echo 'Community nodes package.json not found'
+                    echo '❌ Community nodes package.json not found'
                 fi
                 echo ''
                 echo 'Community node link:'
                 if [ -L '/home/node/.n8n/nodes/node_modules/n8n-nodes-semble' ]; then
                     ls -la /home/node/.n8n/nodes/node_modules/n8n-nodes-semble
                 else
-                    echo 'Community node link not found'
+                    echo '❌ Community node link not found'
                 fi
             "
         else
