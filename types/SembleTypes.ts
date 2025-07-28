@@ -285,6 +285,53 @@ export interface SembleMarketingPreferences {
 	post: boolean;
 }
 
+/**
+ * Product Tax interface - represents tax information for products
+ */
+export interface SembleProductTax {
+	taxName?: string;
+	taxRate?: number;
+	taxCode?: string;
+}
+
+/**
+ * Product Label interface - represents product labels/tags
+ */
+export interface SembleProductLabel {
+	id: string;
+	name?: string;
+	color?: string;
+}
+
+/**
+ * Product interface - represents a product/service in Semble
+ */
+export interface SembleProduct {
+	id: string;
+	status?: string;
+	productType?: string;
+	name: string;
+	itemCode?: string;
+	serialNumber?: string;
+	price?: number;
+	cost?: number;
+	stockLevel?: number;
+	supplierName?: string;
+	supplierDisplayName?: string;
+	isBookable?: boolean;
+	duration?: number;
+	color?: string;
+	isVideoConsultation?: boolean;
+	requiresPayment?: boolean;
+	requiresConfirmation?: boolean;
+	comments?: string;
+	tax?: SembleProductTax;
+	labels?: SembleProductLabel[];
+	appointments?: SembleProduct[];
+	createdAt: string;
+	updatedAt: string;
+}
+
 // =============================================================================
 // GRAPHQL RESPONSE TYPES
 // =============================================================================
@@ -421,6 +468,30 @@ export interface SembleBookingInput {
 }
 
 /**
+ * Product creation/update input
+ */
+export interface SembleProductInput {
+	name: string;
+	itemCode?: string;
+	productType?: string;
+	serialNumber?: string;
+	price?: number;
+	cost?: number;
+	stockLevel?: number;
+	supplierName?: string;
+	supplierDisplayName?: string;
+	isBookable?: boolean;
+	duration?: number;
+	color?: string;
+	isVideoConsultation?: boolean;
+	requiresPayment?: boolean;
+	requiresConfirmation?: boolean;
+	comments?: string;
+	tax?: SembleProductTax;
+	labels?: SembleProductLabel[];
+}
+
+/**
  * Query filters for getting multiple records
  */
 export interface SembleQueryFilters {
@@ -447,7 +518,8 @@ export type SembleResourceType =
 	| 'booking' 
 	| 'doctor' 
 	| 'location' 
-	| 'bookingType';
+	| 'bookingType'
+	| 'product';
 
 /**
  * Map of resource types to their corresponding interfaces
@@ -458,6 +530,7 @@ export interface SembleResourceTypeMap {
 	doctor: SembleDoctor;
 	location: SembleLocation;
 	bookingType: SembleBookingType;
+	product: SembleProduct;
 }
 
 /**
@@ -469,6 +542,7 @@ export interface SembleResourceInputMap {
 	doctor: Partial<SembleDoctor>;
 	location: Partial<SembleLocation>;
 	bookingType: Partial<SembleBookingType>;
+	product: SembleProductInput;
 }
 
 // =============================================================================

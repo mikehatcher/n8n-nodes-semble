@@ -22,6 +22,7 @@ import {
   buildPaginationConfig,
 } from "./shared/PaginationHelpers";
 import { GET_PATIENTS_QUERY } from "./shared/PatientQueries";
+import { GET_PRODUCTS_QUERY } from "./shared/ProductQueries";
 
 // Phase 4 Integration - Core Components
 import {
@@ -95,9 +96,16 @@ const TRIGGER_RESOURCES: { [key: string]: TriggerResourceConfig } = {
     dateField: "updatedAt",
     apiResponseKey: "patients",
   },
+  product: {
+    displayName: "Product",
+    value: "product",
+    description: "Monitor products for changes (create, update)",
+    query: GET_PRODUCTS_QUERY,
+    dateField: "updatedAt",
+    apiResponseKey: "products",
+  },
   // Future resources can be added here:
   // booking: BOOKING_TRIGGER_CONFIG,
-  // product: PRODUCT_TRIGGER_CONFIG,
 };
 
 /**
@@ -270,6 +278,11 @@ export class SembleTrigger implements INodeType {
             name: "Patient",
             value: "patient",
             description: "Monitor patients for changes (create, update)",
+          },
+          {
+            name: "Product",
+            value: "product",
+            description: "Monitor products for changes (create, update)",
           },
           // Future resources:
           // {

@@ -10,6 +10,10 @@
 import { 
 	SemblePatient, 
 	SembleBooking, 
+	SembleProduct,
+	SembleProductTax,
+	SembleProductLabel,
+	SembleProductInput,
 	SembleGraphQLResponse, 
 	SemblePermissionError,
 	SembleResourceType 
@@ -90,6 +94,93 @@ describe('SembleTypes', () => {
 		});
 	});
 
+	describe('SembleProduct', () => {
+		it('should validate required fields', () => {
+			const product: SembleProduct = {
+				id: 'product-123',
+				name: 'Test Product',
+				createdAt: '2025-01-01T00:00:00Z',
+				updatedAt: '2025-01-01T00:00:00Z'
+			};
+
+			expect(product.id).toBe('product-123');
+			expect(product.name).toBe('Test Product');
+			expect(product.createdAt).toBeDefined();
+			expect(product.updatedAt).toBeDefined();
+		});
+
+		it('should allow optional fields', () => {
+			const product: SembleProduct = {
+				id: 'product-123',
+				name: 'Test Product',
+				itemCode: 'TEST001',
+				productType: 'service',
+				price: 99.99,
+				cost: 49.99,
+				stockLevel: 10,
+				isBookable: true,
+				duration: 60,
+				requiresPayment: true,
+				createdAt: '2025-01-01T00:00:00Z',
+				updatedAt: '2025-01-01T00:00:00Z'
+			};
+
+			expect(product.itemCode).toBe('TEST001');
+			expect(product.price).toBe(99.99);
+			expect(product.isBookable).toBe(true);
+		});
+
+		it('should handle complex nested objects', () => {
+			const tax: SembleProductTax = {
+				taxName: 'VAT',
+				taxRate: 0.2,
+				taxCode: 'VAT20'
+			};
+
+			const label: SembleProductLabel = {
+				id: 'label-1',
+				name: 'Premium',
+				color: '#FF0000'
+			};
+
+			const product: SembleProduct = {
+				id: 'product-123',
+				name: 'Test Product',
+				tax,
+				labels: [label],
+				createdAt: '2025-01-01T00:00:00Z',
+				updatedAt: '2025-01-01T00:00:00Z'
+			};
+
+			expect(product.tax?.taxName).toBe('VAT');
+			expect(product.labels?.[0].name).toBe('Premium');
+		});
+	});
+
+	describe('SembleProductInput', () => {
+		it('should validate input requirements', () => {
+			const productInput: SembleProductInput = {
+				name: 'New Product'
+			};
+
+			expect(productInput.name).toBe('New Product');
+		});
+
+		it('should allow all optional fields', () => {
+			const productInput: SembleProductInput = {
+				name: 'Complete Product',
+				itemCode: 'COMP001',
+				price: 199.99,
+				isBookable: true,
+				duration: 90
+			};
+
+			expect(productInput.itemCode).toBe('COMP001');
+			expect(productInput.price).toBe(199.99);
+			expect(productInput.duration).toBe(90);
+		});
+	});
+
 	describe('SembleGraphQLResponse', () => {
 		it('should handle success response', () => {
 			const response: SembleGraphQLResponse<SemblePatient> = {
@@ -142,12 +233,12 @@ describe('SembleTypes', () => {
 	describe('Resource type validation', () => {
 		it('should validate resource types', () => {
 			const validResources: SembleResourceType[] = [
-				'patient', 'booking', 'doctor', 'location', 'bookingType'
+				'patient', 'booking', 'doctor', 'location', 'bookingType', 'product'
 			];
 
 			validResources.forEach(resource => {
 				expect([
-'patient', 'booking', 'doctor', 'location', 'bookingType'
+'patient', 'booking', 'doctor', 'location', 'bookingType', 'product'
 ]).toContain(resource);
 			});
 		});
