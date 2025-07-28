@@ -66,9 +66,10 @@
 
     "// === Local Development & Testing ===": "",
     "pack:local": "npm run pre-commit && npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
+    "pack:local:skip-quality": "npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
     "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
     "update:node": "npm run pack:local && npm run install:node",
-    "dev:full": "npm run pre-commit && npm run pack:local && npm run install:node && npm run restart:n8n",
+    "dev:full": "npm run pre-commit && npm run pack:local:skip-quality && npm run install:node && npm run restart:n8n",
     "test:env": "./scripts/test-setup.sh",
 
     "// === Production Deployment ===": "",

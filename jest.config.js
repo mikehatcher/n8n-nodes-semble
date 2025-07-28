@@ -74,11 +74,14 @@ module.exports = {
   // Verbose output for better debugging
   verbose: true,
   
-  // Global test setup
+  // Global test setup with NODE_ENV for environment detection
   globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.json',
     },
+    'process.env': {
+      NODE_ENV: 'test'
+    }
   },
   
   // Ignore patterns

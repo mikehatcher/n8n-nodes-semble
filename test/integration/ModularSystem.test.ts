@@ -221,14 +221,15 @@ describe('Semble Node Integration - Modular System', () => {
         pageSize: 50,
         returnAll: true,
         search: undefined,
-        options: {}
+        options: {},
+        maxPages: 5 // Limit to prevent memory exhaustion in tests
       };
 
       const result = await SemblePagination.execute(mockExecuteContext as any, config);
 
-      // Should stop at safety limit of 1000 pages
-      expect(result.meta.pagesProcessed).toBe(1000);
-      expect(mockSembleApiRequest).toHaveBeenCalledTimes(1000);
+      // Should stop at maxPages limit of 5 for testing (instead of 1000)
+      expect(result.meta.pagesProcessed).toBe(5);
+      expect(mockSembleApiRequest).toHaveBeenCalledTimes(5);
     });
 
     it('should handle API errors gracefully', async () => {

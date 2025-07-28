@@ -6,7 +6,7 @@
  * @namespace N8nNodesSemble.Tests.Shared
  */
 
-import { IExecuteFunctions, IDataObject, NodeApiError } from 'n8n-workflow';
+import { IExecuteFunctions, IPollFunctions, IDataObject, NodeApiError } from 'n8n-workflow';
 import { MockProxy, mock } from 'jest-mock-extended';
 import { 
   SemblePagination, 
@@ -222,24 +222,75 @@ describe('PaginationHelpers', () => {
         expect(mockSembleApiRequest).toHaveBeenCalledTimes(1);
       });
 
-      it('should stop at safety limit of 1000 pages', async () => {
+      it('should stop at safety limit of 1000 pages when no progress is made', async () => {
         const configWithReturnAll = {
           ...baseConfig,
           returnAll: true
         };
 
-        // Mock response that always has more pages
-        mockSembleApiRequest.mockResolvedValue({
-          patients: {
-            data: [{ id: '1', firstName: 'John', lastName: 'Doe' }],
-            pageInfo: { hasMore: true }
+        // Mock response that has more pages initially, then returns empty data after 1000 pages
+        let callCount = 0;
+        mockSembleApiRequest.mockImplementation(() => {
+          callCount++;
+          if (callCount <= 1000) {
+            return Promise.resolve({
+              patients: {
+                data: [{ id: `${callCount}`, firstName: 'John', lastName: 'Doe' }],
+                pageInfo: { hasMore: true }
+              }
+            });
+          } else {
+            // After 1000 pages, return empty data - this should trigger the safety break
+            return Promise.resolve({
+              patients: {
+                data: [],
+                pageInfo: { hasMore: true }
+              }
+            });
           }
         });
 
         const result = await SemblePagination.execute(mockContext, configWithReturnAll);
 
-        expect(result.meta.pagesProcessed).toBe(1000);
-        expect(mockSembleApiRequest).toHaveBeenCalledTimes(1000);
+        // Should process exactly 1000 pages with data, then stop when empty data is encountered
+        expect(result.meta.pagesProcessed).toBe(1001); // 1000 with data + 1 empty
+        expect(result.data).toHaveLength(1000); // Only the pages with actual data
+        expect(mockSembleApiRequest).toHaveBeenCalledTimes(1001);
+      });
+
+      it('should continue processing beyond 1000 pages when data is still being returned', async () => {
+        const configWithReturnAll = {
+          ...baseConfig,
+          returnAll: true
+        };
+
+        // Mock response that returns data for 1500 pages, then stops
+        let callCount = 0;
+        mockSembleApiRequest.mockImplementation(() => {
+          callCount++;
+          if (callCount <= 1500) {
+            return Promise.resolve({
+              patients: {
+                data: [{ id: `${callCount}`, firstName: 'John', lastName: 'Doe' }],
+                pageInfo: { hasMore: callCount < 1500 }
+              }
+            });
+          } else {
+            return Promise.resolve({
+              patients: {
+                data: [],
+                pageInfo: { hasMore: false }
+              }
+            });
+          }
+        });
+
+        const result = await SemblePagination.execute(mockContext, configWithReturnAll);
+
+        // Should process all 1500 pages because data was being returned
+        expect(result.meta.pagesProcessed).toBe(1500);
+        expect(result.data).toHaveLength(1500);
+        expect(mockSembleApiRequest).toHaveBeenCalledTimes(1500);
       });
 
       it('should handle options parameter', async () => {

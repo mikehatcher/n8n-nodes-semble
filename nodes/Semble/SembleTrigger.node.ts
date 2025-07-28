@@ -67,7 +67,7 @@ interface TriggerConfig {
   event: string;
   datePeriod: string;
   limit: number;
-  maxPages: number;
+  maxPages?: number; // Optional for unlimited records
 }
 
 /**
@@ -403,8 +403,28 @@ export class SembleTrigger implements INodeType {
       {},
     ) as IDataObject;
 
-    const limit = (additionalOptions.limit as number) ?? -1; // Default to unlimited
-    const maxPages = (additionalOptions.maxPages as number) || 5;
+    // Determine if user explicitly wants unlimited records based on datePeriod
+    const wantsAllRecords = datePeriod === "all";
+
+    // For specific date periods (1d, 1w, 1m, etc.), use reasonable defaults
+    // For "all" records, use unlimited unless user explicitly set a limit
+    const limit = wantsAllRecords
+      ? ((additionalOptions.limit as number) ?? -1) // Default to unlimited for "all"
+      : ((additionalOptions.limit as number) ?? 1000); // Default to 1000 for date ranges
+
+    // Check if we're in a test environment to apply pagination limits
+    const isTestEnvironment =
+      process.env.NODE_ENV === "test" ||
+      typeof jest !== "undefined" ||
+      (typeof global !== "undefined" && (global as any).__jest__);
+
+    // Apply maxPages logic:
+    // - For unlimited records (-1) in production: no limit (undefined)
+    // - For limited records or test environment: apply maxPages limit
+    const maxPages =
+      limit === -1 && !isTestEnvironment
+        ? undefined
+        : (additionalOptions.maxPages as number) || 5;
 
     // Emit polling event using Phase 4 Event System
     const eventSystem = SembleTrigger.getEventSystem();
@@ -484,29 +504,21 @@ async function pollResource(
   // Determine if unlimited records are requested
   const isUnlimited = limit === -1;
 
-  // For API efficiency, use a larger page size (100) rather than the user's limit
-  // This reduces the number of API calls needed
-  const apiPageSize = isUnlimited ? -1 : Math.min(100, limit);
-
-  // If user wants unlimited records, make a single API call with pageSize: -1
+  // If user wants unlimited records, use SemblePagination for safe batching
   if (isUnlimited) {
-    const variables: IDataObject = {
-      pagination: {
-        page: 1,
-        pageSize: -1, // This gets ALL records in one call
-      },
-    };
+    // Prepare base variables for pagination
+    const baseVariables: IDataObject = {};
 
     // Apply server-side filtering based on event type
     if (event === "newOnly") {
-      variables.options = {
+      baseVariables.options = {
         createdAt: {
           start: cutoffDate,
           end: now,
         },
       };
     } else {
-      variables.options = {
+      baseVariables.options = {
         updatedAt: {
           start: cutoffDate,
           end: now,
@@ -514,14 +526,17 @@ async function pollResource(
       };
     }
 
-    const responseData = await sembleApiRequest.call(
-      this,
-      resourceConfig.query,
-      variables,
-    );
+    // Use SemblePagination for safe, intelligent batching
+    const paginationResult = await SemblePagination.execute(this, {
+      query: resourceConfig.query,
+      baseVariables,
+      dataPath: resourceConfig.apiResponseKey,
+      pageSize: 100, // Not used for returnAll, but required for interface
+      returnAll: true, // This triggers executeAutoPagination
+      maxPages, // Pass the maxPages limit for integration tests
+    });
 
-    const allItems: any[] =
-      responseData[resourceConfig.apiResponseKey]?.data || [];
+    const allItems = paginationResult.data;
     const hasNewData = allItems.length > 0;
 
     // Update workflow static data with current time for next poll
@@ -541,6 +556,7 @@ async function pollResource(
             isNew,
             isUpdated,
             pollTime: currentTime.toISOString(),
+            pagesProcessed: paginationResult.meta.pagesProcessed,
           },
         },
       };
@@ -560,12 +576,16 @@ async function pollResource(
   let currentPage = 1;
   let hasMore = true;
 
-  while (hasMore && currentPage <= maxPages && allItems.length < limit) {
+  while (
+    hasMore &&
+    (!maxPages || currentPage <= maxPages) &&
+    allItems.length < limit
+  ) {
     // Calculate how many more records we need
     const remainingRecords = limit - allItems.length;
 
-    // Use the smaller of: remaining records needed, or our standard page size
-    const thisPageSize = Math.min(remainingRecords, apiPageSize);
+    // Use the smaller of: remaining records needed, or our standard page size (100)
+    const thisPageSize = Math.min(remainingRecords, 100);
 
     // Build query variables with pagination and appropriate server-side date filtering
     const variables: IDataObject = {

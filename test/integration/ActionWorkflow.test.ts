@@ -222,6 +222,7 @@ describeIntegration('Action Workflow Integration', () => {
             resource: 'patients',
             returnAll: true,
             limit: 100, // Should be ignored when returnAll is true
+            maxPages: 3, // Limit integration test to prevent unlimited pagination
           };
           return params[paramName as keyof typeof params];
         });

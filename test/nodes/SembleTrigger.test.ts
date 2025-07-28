@@ -46,6 +46,17 @@ describe("SembleTrigger Node", () => {
       returnAll: true,
     });
 
+    // Mock SemblePagination class and its static execute method
+    mockPaginationHelpers.SemblePagination = {
+      execute: jest.fn().mockResolvedValue({
+        data: [],
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 0,
+        },
+      }),
+    } as any;
+
     mockGenericFunctions.sembleApiRequest.mockResolvedValue({
       patients: {
         data: [],
@@ -123,16 +134,20 @@ describe("SembleTrigger Node", () => {
     });
 
     it("should return null when no new data is found", async () => {
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+      // For limited records (datePeriod != "all"), mock direct API call
+      (mockGenericFunctions.sembleApiRequest as jest.Mock).mockResolvedValue({
         patients: {
           data: [],
-          pageInfo: { hasMore: false },
-        },
+          pageInfo: { hasMore: false }
+        }
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
 
       expect(result).toBeNull();
+      // Should use direct API call, not SemblePagination
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalled();
+      expect(mockPaginationHelpers.SemblePagination.execute).not.toHaveBeenCalled();
     });
 
     it("should return data when new items are found", async () => {
@@ -146,11 +161,12 @@ describe("SembleTrigger Node", () => {
         },
       ];
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+      // For limited records (datePeriod != "all"), mock direct API call
+      (mockGenericFunctions.sembleApiRequest as jest.Mock).mockResolvedValue({
         patients: {
           data: mockPatients,
-          pageInfo: { hasMore: false },
-        },
+          pageInfo: { hasMore: false }
+        }
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
@@ -165,6 +181,9 @@ describe("SembleTrigger Node", () => {
         isNew: true,
         isUpdated: false,
       });
+      // Should use direct API call, not SemblePagination for date ranges
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalled();
+      expect(mockPaginationHelpers.SemblePagination.execute).not.toHaveBeenCalled();
     });
 
     it("should throw error for unsupported resource", async () => {
@@ -245,7 +264,73 @@ describe("SembleTrigger Node", () => {
         .mockReturnValueOnce({}); // additionalOptions
     });
 
-    it("should fetch data using correct API call", async () => {
+    it("should fetch data using SemblePagination for unlimited records", async () => {
+      // Override setup to use "all" datePeriod for unlimited records
+      mockPollFunctions.getNodeParameter.mockReset();
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("all") // datePeriod - for unlimited records
+        .mockReturnValueOnce({}); // additionalOptions
+
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: [{ id: "1", createdAt: new Date().toISOString() }],
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 1,
+        },
+      });
+
+      const result = await triggerNode.poll.call(mockPollFunctions);
+
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledTimes(1);
+      expect(result![0]).toHaveLength(1);
+    });
+
+    it("should use correct pagination configuration for unlimited records", async () => {
+      // Override setup to use "all" datePeriod for unlimited records
+      mockPollFunctions.getNodeParameter.mockReset();
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("all") // datePeriod - for unlimited records
+        .mockReturnValueOnce({}); // additionalOptions
+
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: [],
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 0,
+        },
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      // With unlimited records (datePeriod: 'all'), we use SemblePagination.execute
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledWith(
+        mockPollFunctions,
+        expect.objectContaining({
+          returnAll: true,
+          pageSize: 100, // SemblePagination uses 100 for efficiency
+          baseVariables: expect.objectContaining({
+            options: expect.objectContaining({
+              updatedAt: expect.any(Object)
+            })
+          })
+        })
+      );
+    });
+
+    it("should use direct API calls for limited records", async () => {
+      // Reset mocks for this specific test
+      mockPollFunctions.getNodeParameter.mockReset();
+      
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce({ limit: 50 }); // additionalOptions with limit
+
       mockGenericFunctions.sembleApiRequest.mockResolvedValue({
         patients: {
           data: [{ id: "1", createdAt: new Date().toISOString() }],
@@ -253,66 +338,60 @@ describe("SembleTrigger Node", () => {
         },
       });
 
-      const result = await triggerNode.poll.call(mockPollFunctions);
-
-      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledTimes(1);
-      expect(result![0]).toHaveLength(1);
-    });
-
-    it("should use correct pagination configuration", async () => {
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: [],
-          pageInfo: { hasMore: false },
-        },
-      });
-
       await triggerNode.poll.call(mockPollFunctions);
 
-      // With the new logic, we call the API directly with pagination parameters
+      // With limited records, we use direct API calls
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledTimes(1);
+      expect(mockPaginationHelpers.SemblePagination.execute).not.toHaveBeenCalled();
+      
       const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
       const variables = callArgs[1] as IDataObject;
       
       expect(variables.pagination).toEqual({
         page: 1,
-        pageSize: -1, // Default is now unlimited
+        pageSize: 50, // Limited to the requested amount
       });
     });
   });
 
   describe("Date Filtering", () => {
-    beforeEach(() => {
+    it("should include dateRange in query variables", async () => {
+      // Use "all" datePeriod to test unlimited records path
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce("1d") // datePeriod
+        .mockReturnValueOnce("all") // datePeriod - for unlimited records
         .mockReturnValueOnce({}); // additionalOptions
-    });
 
-    it("should include dateRange in query variables", async () => {
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: [],
-          pageInfo: { hasMore: false },
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: [],
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 0,
         },
       });
 
       await triggerNode.poll.call(mockPollFunctions);
 
-      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
-      const variables = callArgs[1] as IDataObject;
-
-      // New implementation uses options.updatedAt instead of dateRange
-      expect(variables.options).toBeDefined();
-      expect((variables.options as IDataObject).updatedAt).toBeDefined();
-      expect(((variables.options as IDataObject).updatedAt as IDataObject).start).toBeDefined();
-      expect(((variables.options as IDataObject).updatedAt as IDataObject).end).toBeDefined();
+      // With unlimited records, check SemblePagination.execute call
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledWith(
+        mockPollFunctions,
+        expect.objectContaining({
+          baseVariables: expect.objectContaining({
+            options: expect.objectContaining({
+              updatedAt: expect.objectContaining({
+                start: expect.any(String),
+                end: expect.any(String),
+              })
+            })
+          })
+        })
+      );
     });
 
     it("should handle 'all' date period correctly", async () => {
       // Reset mocks for this specific test
       mockPollFunctions.getNodeParameter.mockReset();
-      mockGenericFunctions.sembleApiRequest.mockReset();
       
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
@@ -323,20 +402,29 @@ describe("SembleTrigger Node", () => {
       // Mock workflow static data
       mockPollFunctions.getWorkflowStaticData.mockReturnValue({});
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: [],
-          pageInfo: { hasMore: false },
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: [],
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 0,
         },
       });
 
       await triggerNode.poll.call(mockPollFunctions);
 
-      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
-      const variables = callArgs[1] as IDataObject;
-
       // For 'all' period, should use 1970-01-01 as start date
-      expect(((variables.options as IDataObject).updatedAt as IDataObject).start).toBe("1970-01-01T00:00:00.000Z");
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledWith(
+        mockPollFunctions,
+        expect.objectContaining({
+          baseVariables: expect.objectContaining({
+            options: expect.objectContaining({
+              updatedAt: expect.objectContaining({
+                start: "1970-01-01T00:00:00.000Z"
+              })
+            })
+          })
+        })
+      );
     });
   });
 
@@ -352,7 +440,7 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOnly") // event
-        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce("all") // datePeriod - for unlimited records
         .mockReturnValueOnce({}); // additionalOptions
 
       // For newOnly, API should only return items created after lastPoll
@@ -364,19 +452,27 @@ describe("SembleTrigger Node", () => {
         },
       ];
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: mockPatients,
-          pageInfo: { hasMore: false },
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: mockPatients,
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 1,
         },
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
 
-      // Verify API was called with createdAt filter
-      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
-      const variables = callArgs[1] as IDataObject;
-      expect((variables.options as IDataObject).createdAt).toBeDefined();
+      // Verify SemblePagination was called with createdAt filter
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledWith(
+        mockPollFunctions,
+        expect.objectContaining({
+          baseVariables: expect.objectContaining({
+            options: expect.objectContaining({
+              createdAt: expect.any(Object)
+            })
+          })
+        })
+      );
 
       expect(result![0]).toHaveLength(1);
       expect(result![0][0].json.id).toBe("1");
@@ -386,7 +482,7 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce("all") // datePeriod - for unlimited records
         .mockReturnValueOnce({}); // additionalOptions
 
       // For newOrUpdated, API should return both new and updated items
@@ -403,22 +499,30 @@ describe("SembleTrigger Node", () => {
         },
       ];
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: mockPatients,
-          pageInfo: { hasMore: false },
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: mockPatients,
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 2,
         },
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
 
-      // Verify API was called with updatedAt filter
-      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
-      const variables = callArgs[1] as IDataObject;
-      expect((variables.options as IDataObject).updatedAt).toBeDefined();
+      // Verify SemblePagination was called with updatedAt filter
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledWith(
+        mockPollFunctions,
+        expect.objectContaining({
+          baseVariables: expect.objectContaining({
+            options: expect.objectContaining({
+              updatedAt: expect.any(Object)
+            })
+          })
+        })
+      );
 
       expect(result![0]).toHaveLength(2);
-      expect(result![0].map((item) => item.json.id)).toEqual(["1", "2"]);
+      expect(result![0].map((item: any) => item.json.id)).toEqual(["1", "2"]);
     });
   });
 
@@ -450,7 +554,7 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce("all") // datePeriod - for unlimited records
         .mockReturnValueOnce({}); // additionalOptions
 
       // With server-side filtering, API would only return items updated after lastPoll
@@ -462,19 +566,33 @@ describe("SembleTrigger Node", () => {
         },
       ];
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: mockPatients,
-          pageInfo: { hasMore: false },
-        },
+      // Mock SemblePagination.execute to return expected data
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: mockPatients,
+        meta: { pagesProcessed: 1 },
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
 
-      // Verify API was called with lastPoll as start date
-      const callArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
-      const variables = callArgs[1] as IDataObject;
-      expect(((variables.options as IDataObject).updatedAt as IDataObject).start).toBe(lastPollDate);
+      // Verify SemblePagination.execute was called with lastPoll as start date
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledWith(
+        mockPollFunctions,
+        {
+          query: expect.any(String),
+          baseVariables: {
+            options: {
+              updatedAt: {
+                start: lastPollDate,
+                end: expect.any(String),
+              },
+            },
+          },
+          dataPath: "patients",
+          pageSize: 100,
+          returnAll: true,
+          maxPages: 5, // Limited in test environment for safety
+        }
+      );
 
       expect(result![0]).toHaveLength(1);
       expect(result![0][0].json.id).toBe("1");
@@ -499,11 +617,12 @@ describe("SembleTrigger Node", () => {
         },
       ];
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+      // For limited records (datePeriod != "all"), mock direct API call
+      (mockGenericFunctions.sembleApiRequest as jest.Mock).mockResolvedValue({
         patients: {
           data: mockPatients,
-          pageInfo: { hasMore: false },
-        },
+          pageInfo: { hasMore: false }
+        }
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
@@ -537,11 +656,12 @@ describe("SembleTrigger Node", () => {
         },
       ];
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+      // For limited records (datePeriod != "all"), mock direct API call
+      (mockGenericFunctions.sembleApiRequest as jest.Mock).mockResolvedValue({
         patients: {
           data: mockPatients,
-          pageInfo: { hasMore: false },
-        },
+          pageInfo: { hasMore: false }
+        }
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
@@ -563,7 +683,8 @@ describe("SembleTrigger Node", () => {
         .mockReturnValueOnce({}); // additionalOptions
 
       const apiError = new Error("API Error");
-      mockGenericFunctions.sembleApiRequest.mockRejectedValue(apiError);
+      // For limited records (datePeriod != "all"), mock direct API call error
+      (mockGenericFunctions.sembleApiRequest as jest.Mock).mockRejectedValue(apiError);
 
       await expect(triggerNode.poll.call(mockPollFunctions)).rejects.toThrow("API Error");
     });
@@ -600,23 +721,28 @@ describe("SembleTrigger Node", () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("patient") // resource
         .mockReturnValueOnce("newOrUpdated") // event
-        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce("all") // datePeriod - for unlimited records
         .mockReturnValueOnce({}); // additionalOptions
 
-      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: [],
-          pageInfo: { hasMore: false },
-        },
+      // Mock SemblePagination.execute for unlimited records
+      (mockPaginationHelpers.SemblePagination.execute as jest.Mock).mockResolvedValue({
+        data: [],
+        meta: { pagesProcessed: 1 },
       });
 
       await triggerNode.poll.call(mockPollFunctions);
 
-      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledWith(
-        expect.any(String), // GET_PATIENTS_QUERY
+      // For unlimited records, verify SemblePagination.execute was called
+      expect(mockPaginationHelpers.SemblePagination.execute).toHaveBeenCalledWith(
+        mockPollFunctions,
         expect.objectContaining({
-          pagination: expect.any(Object),
-          options: expect.any(Object),
+          query: expect.any(String),
+          baseVariables: expect.objectContaining({
+            options: expect.any(Object),
+          }),
+          dataPath: "patients",
+          pageSize: 100,
+          returnAll: true,
         })
       );
     });

@@ -6,7 +6,10 @@
  * @namespace N8nNodesSemble.Nodes.Shared
  */
 
-import { IExecuteFunctions, IDataObject, NodeApiError } from "n8n-workflow";
+import { IExecuteFunctions, IPollFunctions, IDataObject, NodeApiError } from "n8n-workflow";
+// Type for context that works with both execution and polling functions
+type SembleContext = IExecuteFunctions | IPollFunctions;
+
 import { sembleApiRequest } from "../GenericFunctions";
 
 /**
@@ -27,6 +30,8 @@ export interface PaginationConfig {
   search?: string;
   /** Optional additional options */
   options?: IDataObject;
+  /** Maximum pages to process for integration tests (optional) */
+  maxPages?: number;
 }
 
 /**
@@ -56,13 +61,13 @@ export class SemblePagination {
    * Execute a paginated query against the Semble API
    * @static
    * @async
-   * @param {IExecuteFunctions} context - n8n execution context
+   * @param {SembleContext} context - n8n execution context
    * @param {PaginationConfig} config - Pagination configuration
    * @returns {Promise<PaginationResult>} Paginated results with metadata
    * @throws {NodeApiError} When API requests fail
    */
   static async execute(
-    context: IExecuteFunctions,
+    context: SembleContext,
     config: PaginationConfig
   ): Promise<PaginationResult> {
     const { query, baseVariables, dataPath, pageSize, returnAll, search, options } = config;
@@ -86,15 +91,15 @@ export class SemblePagination {
    * @private
    * @static
    * @async
-   * @param {IExecuteFunctions} context - n8n execution context
+   * @param {SembleContext} context - n8n execution context
    * @param {PaginationConfig} config - Pagination configuration
    * @returns {Promise<PaginationResult>} All paginated results
    */
   private static async executeAutoPagination(
-    context: IExecuteFunctions,
+    context: SembleContext,
     config: PaginationConfig
   ): Promise<PaginationResult> {
-    const { query, baseVariables, dataPath, search, options } = config;
+    const { query, baseVariables, dataPath, search, options, maxPages } = config;
     const allData: IDataObject[] = [];
     let currentPage = 1;
     let hasMore = true;
@@ -117,8 +122,14 @@ export class SemblePagination {
         hasMore = responseData.pageInfo?.hasMore || false;
         currentPage++;
         
-        // Safety check to prevent infinite loops
-        if (currentPage > 1000) {
+        // Check maxPages limit for integration tests
+        if (maxPages && currentPage > maxPages) {
+          console.log(`🔒 Stopping pagination at maxPages limit: ${maxPages}`);
+          break;
+        }
+        
+        // Safety check to prevent infinite loops - only break if no progress is being made
+        if (currentPage > 1000 && responseData.data.length === 0) {
           break;
         }
       } else {
@@ -140,12 +151,12 @@ export class SemblePagination {
    * @private
    * @static
    * @async
-   * @param {IExecuteFunctions} context - n8n execution context
+   * @param {SembleContext} context - n8n execution context
    * @param {PaginationConfig} config - Pagination configuration
    * @returns {Promise<PaginationResult>} Single page results
    */
   private static async executeSinglePage(
-    context: IExecuteFunctions,
+    context: SembleContext,
     config: PaginationConfig
   ): Promise<PaginationResult> {
     const { query, baseVariables, dataPath, pageSize, search, options } = config;

@@ -338,14 +338,15 @@ describeIntegration("Patient Operations - Real API Integration", () => {
         const limitedPatients = resultLimited[0];
         
         // Then test returnAll: true with same small page size but should get more records
-        // We'll set a reasonable upper limit by using search to constrain results
+        // We'll set a reasonable upper limit by using search AND maxPages to constrain results
         mockExecuteFunctions.getNodeParameter
           .mockReturnValueOnce("getMany") // action
           .mockReturnValueOnce("patient") // resource
           .mockReturnValueOnce({ // options
             pageSize: 2, // Small page size to test pagination
-            returnAll: true, // This should get more than pageSize but we'll limit via search
-            search: "test" // Search to limit results and avoid overwhelming API
+            returnAll: true, // This should get more than pageSize but we'll limit via search and maxPages
+            search: "test", // Search to limit results and avoid overwhelming API
+            maxPages: 3 // Limit integration test to 3 pages max to prevent unlimited pagination
           });
 
         const resultAll = await sembleNode.execute.call(mockExecuteFunctions);
@@ -353,7 +354,7 @@ describeIntegration("Patient Operations - Real API Integration", () => {
         
         console.log(`📈 ReturnAll Test Results (Rate-Limited):`);
         console.log(`- returnAll: false (pageSize=2) returned ${limitedPatients.length} patients`);
-        console.log(`- returnAll: true (search="test") returned ${allPatients.length} patients`);
+        console.log(`- returnAll: true (search="test", maxPages=3) returned ${allPatients.length} patients`);
         
         // Verify basic pagination behavior
         expect(limitedPatients.length).toBeLessThanOrEqual(2);
@@ -563,13 +564,13 @@ describeIntegration("Patient Operations - Real API Integration", () => {
           .mockReturnValueOnce("newOrUpdated") // event
           .mockReturnValueOnce(false) // debugMode
           .mockReturnValueOnce("all") // datePeriod
-          .mockReturnValueOnce({}); // additionalOptions
+          .mockReturnValueOnce({ maxPages: 3 }); // additionalOptions - limit pages for integration test
 
         const result = await triggerNode.poll.call(mockPollFunctions);
         
         expect(result).toBeDefined();
         
-        console.log(`✅ All-time trigger detected ${result?.length || 0} patients`);
+        console.log(`✅ All-time trigger detected ${result?.length || 0} patients (limited to 3 pages for testing)`);
       });
     });
 
