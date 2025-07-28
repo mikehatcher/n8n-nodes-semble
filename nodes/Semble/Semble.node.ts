@@ -32,6 +32,9 @@ import {
   DELETE_PATIENT_MUTATION,
 } from "./shared/PatientQueries";
 
+// Resource Classes - Action Hooks
+import { ProductResource } from "./resources/ProductResource";
+
 // Phase 4 Integration - Core Components
 import {
   ServiceContainer,
@@ -253,6 +256,12 @@ export class Semble implements INodeType {
             value: "booking",
             description: "Booking management operations",
           },
+          {
+            name: "Product",
+            value: "product",
+            description:
+              "Product management operations (create, read, update, delete)",
+          },
         ],
         default: "patient",
         description: "The resource you want to work with",
@@ -272,6 +281,22 @@ export class Semble implements INodeType {
         default: "",
         placeholder: "e.g., 68740bc493985f7d03d4f8c9",
         description: "The ID of the patient to retrieve or delete",
+      },
+      // Product ID for get, delete and update operations
+      {
+        displayName: "Product ID",
+        name: "productId",
+        type: "string",
+        required: true,
+        displayOptions: {
+          show: {
+            action: ["get", "delete", "update"],
+            resource: ["product"],
+          },
+        },
+        default: "",
+        placeholder: "e.g., 62e2b7d228ec4b0013179e67",
+        description: "The ID of the product to retrieve, update or delete",
       },
       // Patient creation fields
       {
@@ -588,6 +613,349 @@ export class Semble implements INodeType {
                 required: true,
                 default: "",
                 description: "The response value for the custom attribute",
+              },
+            ],
+          },
+        ],
+      },
+      // Product creation fields
+      {
+        displayName: "Product Name",
+        name: "name",
+        type: "string",
+        required: true,
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["product"],
+          },
+        },
+        default: "",
+        description: "Product name (required)",
+      },
+      {
+        displayName: "Additional Fields",
+        name: "additionalFields",
+        type: "collection",
+        placeholder: "Add Field",
+        displayOptions: {
+          show: {
+            action: ["create"],
+            resource: ["product"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "Color",
+            name: "color",
+            type: "color",
+            default: "#000000",
+            description: "Product color for UI display",
+          },
+          {
+            displayName: "Comments",
+            name: "comments",
+            type: "string",
+            default: "",
+            description: "Additional comments about the product",
+          },
+          {
+            displayName: "Cost",
+            name: "cost",
+            type: "number",
+            default: 0,
+            description: "Product cost",
+          },
+          {
+            displayName: "Duration",
+            name: "duration",
+            type: "number",
+            default: 0,
+            description: "Duration in minutes (for bookable products)",
+          },
+          {
+            displayName: "Is Bookable",
+            name: "isBookable",
+            type: "boolean",
+            default: false,
+            description: "Whether this product can be booked",
+          },
+          {
+            displayName: "Is Video Consultation",
+            name: "isVideoConsultation",
+            type: "boolean",
+            default: false,
+            description: "Whether this is a video consultation product",
+          },
+          {
+            displayName: "Item Code",
+            name: "itemCode",
+            type: "string",
+            default: "",
+            description: "Product item code or SKU",
+          },
+          {
+            displayName: "Price",
+            name: "price",
+            type: "number",
+            default: 0,
+            description: "Product price",
+          },
+          {
+            displayName: "Product Type",
+            name: "productType",
+            type: "options",
+            options: [
+              {
+                name: "Service",
+                value: "service",
+              },
+              {
+                name: "Product",
+                value: "product",
+              },
+              {
+                name: "Other",
+                value: "other",
+              },
+            ],
+            default: "service",
+            description: "Type of product",
+          },
+          {
+            displayName: "Requires Confirmation",
+            name: "requiresConfirmation",
+            type: "boolean",
+            default: false,
+            description: "Whether booking confirmation is required",
+          },
+          {
+            displayName: "Requires Payment",
+            name: "requiresPayment",
+            type: "boolean",
+            default: true,
+            description: "Whether payment is required for this product",
+          },
+          {
+            displayName: "Serial Number",
+            name: "serialNumber",
+            type: "string",
+            default: "",
+            description: "Product serial number",
+          },
+          {
+            displayName: "Status",
+            name: "status",
+            type: "options",
+            options: [
+              {
+                name: "Active",
+                value: "active",
+              },
+              {
+                name: "Inactive",
+                value: "inactive",
+              },
+            ],
+            default: "active",
+            description: "Product status",
+          },
+          {
+            displayName: "Stock Level",
+            name: "stockLevel",
+            type: "number",
+            default: 0,
+            description: "Current stock level",
+          },
+          {
+            displayName: "Supplier Display Name",
+            name: "supplierDisplayName",
+            type: "string",
+            default: "",
+            description: "Display name for the supplier",
+          },
+          {
+            displayName: "Supplier Name",
+            name: "supplierName",
+            type: "string",
+            default: "",
+            description: "Name of the supplier",
+          },
+          {
+            displayName: "Tax Information",
+            name: "tax",
+            type: "collection",
+            default: {},
+            description: "Tax information for the product",
+            options: [
+              {
+                displayName: "Tax Code",
+                name: "taxCode",
+                type: "string",
+                default: "NONE",
+                description: "Tax code identifier",
+              },
+              {
+                displayName: "Tax Name",
+                name: "taxName",
+                type: "string",
+                default: "No VAT",
+                description: "Name of the tax",
+              },
+              {
+                displayName: "Tax Rate",
+                name: "taxRate",
+                type: "number",
+                default: 0,
+                description: "Tax rate percentage",
+              },
+            ],
+          },
+        ],
+      },
+      // Product update fields
+      {
+        displayName: "Product ID",
+        name: "productId",
+        type: "string",
+        required: true,
+        displayOptions: {
+          show: {
+            action: ["update"],
+            resource: ["product"],
+          },
+        },
+        default: "",
+        placeholder: "e.g., 62e2b7d228ec4b0013179e67",
+        description: "ID of the product to update",
+      },
+      {
+        displayName: "Update Fields",
+        name: "updateFields",
+        type: "collection",
+        placeholder: "Add Field",
+        displayOptions: {
+          show: {
+            action: ["update"],
+            resource: ["product"],
+          },
+        },
+        default: {},
+        options: [
+          {
+            displayName: "Comments",
+            name: "comments",
+            type: "string",
+            default: "",
+            description: "Additional comments about the product",
+          },
+          {
+            displayName: "Cost",
+            name: "cost",
+            type: "number",
+            default: 0,
+            description: "Product cost",
+          },
+          {
+            displayName: "Item Code",
+            name: "itemCode",
+            type: "string",
+            default: "",
+            description: "Product item code or SKU",
+          },
+          {
+            displayName: "Price",
+            name: "price",
+            type: "number",
+            default: 0,
+            description: "Product price",
+          },
+          {
+            displayName: "Product Name",
+            name: "name",
+            type: "string",
+            default: "",
+          },
+          {
+            displayName: "Product Type",
+            name: "productType",
+            type: "options",
+            options: [
+              {
+                name: "Service",
+                value: "service",
+              },
+              {
+                name: "Product",
+                value: "product",
+              },
+              {
+                name: "Other",
+                value: "other",
+              },
+            ],
+            default: "service",
+            description: "Type of product",
+          },
+          {
+            displayName: "Status",
+            name: "status",
+            type: "options",
+            options: [
+              {
+                name: "Active",
+                value: "active",
+              },
+              {
+                name: "Inactive",
+                value: "inactive",
+              },
+            ],
+            default: "active",
+            description: "Product status",
+          },
+          {
+            displayName: "Stock Level",
+            name: "stockLevel",
+            type: "number",
+            default: 0,
+            description: "Current stock level",
+          },
+          {
+            displayName: "Supplier Name",
+            name: "supplierName",
+            type: "string",
+            default: "",
+            description: "Name of the supplier",
+          },
+          {
+            displayName: "Tax Information",
+            name: "tax",
+            type: "collection",
+            default: {},
+            description: "Tax information for the product",
+            options: [
+              {
+                displayName: "Tax Code",
+                name: "taxCode",
+                type: "string",
+                default: "NONE",
+                description: "Tax code identifier",
+              },
+              {
+                displayName: "Tax Name",
+                name: "taxName",
+                type: "string",
+                default: "No VAT",
+                description: "Name of the tax",
+              },
+              {
+                displayName: "Tax Rate",
+                name: "taxRate",
+                type: "number",
+                default: 0,
+                description: "Tax rate percentage",
               },
             ],
           },
@@ -1371,6 +1739,9 @@ name
                 `Unknown patient action: ${action}`,
               );
           }
+        } else if (resource === "product") {
+          // Handle product resource using ProductResource action hooks
+          responseData = await ProductResource.executeAction(this, action, i);
         } else {
           // Handle other resources
           switch (action) {

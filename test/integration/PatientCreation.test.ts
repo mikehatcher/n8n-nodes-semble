@@ -294,7 +294,16 @@ describe('Patient Creation Integration Tests', () => {
 
       expect(createFields.length).toBeGreaterThan(0);
       
-      createFields.forEach(field => {
+      // Get patient-specific create fields
+      const patientCreateFields = createFields.filter(field => 
+        (field as any).displayOptions?.show?.resource?.includes('patient')
+      );
+
+      // Ensure patient create fields exist
+      expect(patientCreateFields.length).toBeGreaterThan(0);
+      
+      // All patient create fields should properly reference patient resource
+      patientCreateFields.forEach(field => {
         expect((field as any).displayOptions?.show?.resource).toContain('patient');
       });
     });

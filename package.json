@@ -43,7 +43,6 @@
     "// === Code Quality ===": "",
     "lint": "eslint nodes/**/*.ts credentials/**/*.ts",
     "lint:fix": "eslint nodes/**/*.ts credentials/**/*.ts --fix",
-    "lintfix": "npm run lint:fix",
     "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
 
     "// === Testing ===": "",
