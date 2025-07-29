@@ -29,7 +29,7 @@ describe('ResourceSelector Component', () => {
       expect(property.displayName).toBe('Resource');
       expect(property.name).toBe('resource');
       expect(property.type).toBe('options');
-      expect(property.options).toHaveLength(2); // patient and booking are enabled
+      expect(property.options).toHaveLength(3); // patient, booking, and product are enabled
       expect(property.default).toBe('patient');
     });
 
@@ -69,10 +69,12 @@ describe('ResourceSelector Component', () => {
 
       const property = ResourceSelector.create(config);
       
-      expect(property.options).toHaveLength(1);
+      expect(property.options).toHaveLength(2); // patient and product remain
       // Type assertion for testing - we know this is INodePropertyOptions[]
       const options = property.options as Array<{ name: string; value: string; description: string }>;
-      expect(options[0].value).toBe('patient');
+      expect(options.map(opt => opt.value)).toContain('patient');
+      expect(options.map(opt => opt.value)).toContain('product');
+      expect(options.map(opt => opt.value)).not.toContain('booking');
     });
   });
 
@@ -82,10 +84,11 @@ describe('ResourceSelector Component', () => {
       
       expect(property.displayName).toBe('Resource');
       expect(property.description).toContain('monitor');
-      expect(property.options).toHaveLength(1); // Only patient triggers implemented
+      expect(property.options).toHaveLength(2); // Patient and product triggers implemented
       // Type assertion for testing - we know this is INodePropertyOptions[]
       const options = property.options as Array<{ name: string; value: string; description: string }>;
-      expect(options[0].value).toBe('patient');
+      expect(options.map(opt => opt.value)).toContain('patient');
+      expect(options.map(opt => opt.value)).toContain('product');
     });
 
     test('should create action-specific resource selector', () => {
@@ -93,7 +96,7 @@ describe('ResourceSelector Component', () => {
       
       expect(property.displayName).toBe('Resource');
       expect(property.description).toContain('perform actions');
-      expect(property.options).toHaveLength(2); // patient and booking actions implemented
+      expect(property.options).toHaveLength(3); // patient, booking, and product actions implemented
     });
   });
 
@@ -112,12 +115,14 @@ describe('ResourceSelector Component', () => {
       
       expect(types).toContain('patient');
       expect(types).toContain('booking');
+      expect(types).toContain('product');
       expect(types).not.toContain('doctor'); // disabled by default
     });
 
     test('should check resource enabled status', () => {
       expect(ResourceSelector.isResourceEnabled('patient')).toBe(true);
       expect(ResourceSelector.isResourceEnabled('booking')).toBe(true);
+      expect(ResourceSelector.isResourceEnabled('product')).toBe(true);
       expect(ResourceSelector.isResourceEnabled('doctor')).toBe(false);
     });
 

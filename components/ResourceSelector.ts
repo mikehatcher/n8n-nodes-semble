@@ -60,6 +60,13 @@ export class ResourceSelector {
       requiredPermissions: ['bookings:read']
     },
     {
+      name: 'Product',
+      value: 'product',
+      description: 'Product management operations (create, read, update, delete)',
+      isEnabled: true,
+      requiredPermissions: ['products:read']
+    },
+    {
       name: 'Doctor',
       value: 'doctor',
       description: 'Doctor/practitioner management operations',
@@ -126,7 +133,7 @@ export class ResourceSelector {
     const triggerConfig: ResourceSelectorConfig = {
       ...config,
       description: 'The resource you want to monitor for changes',
-      includeResources: ['patient'] // Only patient triggers are currently implemented
+      includeResources: ['patient', 'product'] // Patient and product triggers are implemented
     };
     
     return this.create(triggerConfig);
@@ -141,7 +148,7 @@ export class ResourceSelector {
     const actionConfig: ResourceSelectorConfig = {
       ...config,
       description: 'The resource you want to perform actions on',
-      includeResources: ['patient', 'booking'] // Currently implemented resources
+      includeResources: ['patient', 'booking', 'product'] // Currently implemented resources
     };
     
     return this.create(actionConfig);
