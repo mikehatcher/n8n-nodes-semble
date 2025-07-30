@@ -84,6 +84,10 @@
     "restart:n8n": "cd ../n8n-local-test && docker compose restart",
     "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
     
+    "// === MCP Integration ===": "",
+    "setup:mcp": "node scripts/setup-mcp-copilot.js",
+    "test:mcp": "node scripts/test-mcp-copilot.js",
+    
     "// === n8n Version Management ===": "",
     "update:n8n": "./scripts/update-n8n.sh",
     "update:n8n:local": "./scripts/update-n8n.sh local",
