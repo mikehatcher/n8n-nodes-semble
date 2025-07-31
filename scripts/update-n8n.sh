@@ -80,6 +80,83 @@ make_n8n_api_call() {
     eval $curl_cmd
 }
 
+# Function to check community nodes status
+check_community_nodes() {
+    local env="$1"
+    
+    if [ "$env" = "local" ]; then
+        # For local environment, check Docker container
+        local test_dir="$WORKSPACE_ROOT/n8n-local-test"
+        if [ -d "$test_dir" ]; then
+            cd "$test_dir"
+            # Check if Semble node is accessible in local container
+            local node_check=$(docker compose exec -T n8n sh -c "ls -la /home/node/.n8n/nodes/node_modules/ 2>/dev/null | grep semble || echo 'missing'" 2>/dev/null || echo "error")
+            if [[ "$node_check" == *"semble"* ]]; then
+                echo "present"
+            else
+                echo "missing"
+            fi
+        else
+            echo "no-local-env"
+        fi
+    else
+        # For production environment, check via SSH
+        if [ -n "$N8N_HOST" ] && [ -n "$N8N_HOST_USER" ] && [ -n "$N8N_HOST_PWD" ]; then
+            local node_check=$(sshpass -p "$N8N_HOST_PWD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$N8N_HOST_USER@$N8N_HOST" \
+                "docker exec \$(docker ps --format '{{.Names}}' | grep n8n | head -1) sh -c 'ls -la /home/node/.n8n/nodes/node_modules/ 2>/dev/null | grep semble || echo missing'" 2>/dev/null || echo "error")
+            
+            if [[ "$node_check" == *"semble"* ]]; then
+                echo "present"
+            else
+                echo "missing"
+            fi
+        else
+            echo "no-ssh-config"
+        fi
+    fi
+}
+
+# Function to redeploy community nodes
+redeploy_community_nodes() {
+    local env="$1"
+    
+    print_status "$YELLOW" "🔧 Redeploying community nodes for $env environment..."
+    
+    # Navigate to the Semble node directory
+    local current_dir=$(pwd)
+    local semble_dir="$WORKSPACE_ROOT/n8n-nodes-semble"
+    
+    if [ ! -d "$semble_dir" ]; then
+        print_status "$RED" "❌ Semble node directory not found at $semble_dir"
+        return 1
+    fi
+    
+    cd "$semble_dir"
+    
+    if [ "$env" = "local" ]; then
+        print_status "$BLUE" "🚀 Deploying to local environment..."
+        if npm run deploy:local >/dev/null 2>&1; then
+            print_status "$GREEN" "✅ Local community nodes redeployed successfully"
+        else
+            print_status "$RED" "❌ Failed to redeploy local community nodes"
+            cd "$current_dir"
+            return 1
+        fi
+    else
+        print_status "$BLUE" "🚀 Deploying to production environment..."
+        if npm run deploy:prod >/dev/null 2>&1; then
+            print_status "$GREEN" "✅ Production community nodes redeployed successfully"
+        else
+            print_status "$RED" "❌ Failed to redeploy production community nodes"
+            cd "$current_dir"
+            return 1
+        fi
+    fi
+    
+    cd "$current_dir"
+    return 0
+}
+
 # Function to get current n8n version via API
 get_current_version_api() {
     local env="$1"
@@ -105,22 +182,20 @@ get_current_version_api() {
     fi
 }
 
-# Function to get latest stable n8n version from Docker Hub
+# Function to get latest stable n8n version from GitHub releases
 get_latest_version() {
-    # Get all versions and filter for stable releases only
-    curl -s "https://registry.hub.docker.com/v2/repositories/n8nio/n8n/tags/?page_size=100" | \
-    jq -r '.results[] | select(.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' | \
-    # Sort versions semantically (reverse order to get latest first)
-    sort -V -r | \
-    # Filter out pre-release versions (anything > 1.103.x until stable)
-    awk 'BEGIN{FS="."} {
-        major=$1; minor=$2; patch=$3;
-        # Only include versions 1.103.x and below, or 1.105+ (when stable)
-        if (major==1 && minor<=103) print $0;
-        else if (major==1 && minor>=105) print $0;
-        else if (major>=2) print $0;
-    }' | \
-    head -1 2>/dev/null || echo "latest"
+    # Get the latest stable release (non-prerelease) from GitHub API
+    local latest_tag=$(curl -s "https://api.github.com/repos/n8n-io/n8n/releases" | \
+        jq -r '.[] | select(.prerelease == false) | .tag_name' | \
+        head -1 2>/dev/null)
+    
+    if [ -n "$latest_tag" ] && [ "$latest_tag" != "null" ]; then
+        # Extract version number from tag (remove 'n8n@' prefix)
+        echo "$latest_tag" | sed 's/^n8n@//'
+    else
+        # Fallback to hardcoded stable version if API fails
+        echo "1.104.2"
+    fi
 }
 
 # Function to list available stable versions
@@ -129,18 +204,11 @@ list_available_versions() {
     echo "   latest (latest stable release)"
     echo "   Recent stable releases:"
     
-    curl -s "https://registry.hub.docker.com/v2/repositories/n8nio/n8n/tags/?page_size=50" | \
-    jq -r '.results[] | select(.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' | \
-    sort -V -r | \
-    # Filter out pre-release versions (anything > 1.103.x until stable)
-    awk 'BEGIN{FS="."} {
-        major=$1; minor=$2; patch=$3;
-        # Only include versions 1.103.x and below, or 1.105+ (when stable)
-        if (major==1 && minor<=103) print $0;
-        else if (major==1 && minor>=105) print $0;
-        else if (major>=2) print $0;
-    }' | \
-    head -10 | sed 's/^/   /'
+    # Get stable releases from GitHub API
+    curl -s "https://api.github.com/repos/n8n-io/n8n/releases" | \
+        jq -r '.[] | select(.prerelease == false) | .tag_name' | \
+        sed 's/^n8n@//' | \
+        head -10 | sed 's/^/   /'
 }
 
 # Function to update local Docker environment
@@ -169,6 +237,15 @@ update_local_docker() {
     print_status "$YELLOW" "Current version: $current_version"
     print_status "$YELLOW" "Target version: $version"
     
+    # Check community nodes before update
+    print_status "$BLUE" "🔍 Checking community nodes before update..."
+    local nodes_before=$(check_community_nodes "local")
+    if [ "$nodes_before" = "present" ]; then
+        print_status "$GREEN" "✅ Community nodes detected before update"
+    else
+        print_status "$YELLOW" "⚠️  No community nodes detected before update"
+    fi
+    
     # Update N8N_VERSION in .env file
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "s/^N8N_VERSION=.*/N8N_VERSION=$version/" "$ENV_FILE"
@@ -191,6 +268,24 @@ update_local_docker() {
     while [ $attempt -lt $max_attempts ]; do
         if curl -f http://localhost:5678/healthz >/dev/null 2>&1; then
             print_status "$GREEN" "✅ Local n8n updated successfully to version $version"
+            
+            # Check community nodes after update
+            print_status "$BLUE" "🔍 Checking community nodes after update..."
+            sleep 5  # Give n8n time to fully start
+            local nodes_after=$(check_community_nodes "local")
+            
+            if [ "$nodes_after" = "present" ]; then
+                print_status "$GREEN" "✅ Community nodes still present after update"
+            elif [ "$nodes_before" = "present" ]; then
+                print_status "$YELLOW" "⚠️  Community nodes missing after update - redeploying..."
+                if redeploy_community_nodes "local"; then
+                    print_status "$GREEN" "✅ Community nodes restored successfully"
+                else
+                    print_status "$RED" "❌ Failed to restore community nodes"
+                    print_status "$YELLOW" "💡 Run 'npm run deploy:local' manually to restore community nodes"
+                fi
+            fi
+            
             print_status "$GREEN" "🌐 Access at: http://localhost:5678"
             return 0
         fi
@@ -234,6 +329,15 @@ update_production_docker() {
     if ! sshpass -p "$N8N_HOST_PWD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$N8N_HOST_USER@$N8N_HOST" "echo 'SSH OK'" >/dev/null 2>&1; then
         print_status "$RED" "❌ Cannot connect to production server $N8N_HOST"
         return 1
+    fi
+    
+    # Check community nodes before update
+    print_status "$BLUE" "🔍 Checking community nodes before update..."
+    local nodes_before=$(check_community_nodes "production")
+    if [ "$nodes_before" = "present" ]; then
+        print_status "$GREEN" "✅ Community nodes detected before update"
+    else
+        print_status "$YELLOW" "⚠️  No community nodes detected before update"
     fi
     
     # Get current Docker container info
@@ -298,6 +402,24 @@ EOF
     while [ $attempt -lt $max_attempts ]; do
         if curl -f "https://workflows.thehealthsuite.co.uk/healthz" >/dev/null 2>&1; then
             print_status "$GREEN" "✅ Production n8n updated successfully to version $version"
+            
+            # Check community nodes after update
+            print_status "$BLUE" "🔍 Checking community nodes after update..."
+            sleep 10  # Give production n8n more time to fully start
+            local nodes_after=$(check_community_nodes "production")
+            
+            if [ "$nodes_after" = "present" ]; then
+                print_status "$GREEN" "✅ Community nodes still present after update"
+            elif [ "$nodes_before" = "present" ]; then
+                print_status "$YELLOW" "⚠️  Community nodes missing after update - redeploying..."
+                if redeploy_community_nodes "production"; then
+                    print_status "$GREEN" "✅ Community nodes restored successfully"
+                else
+                    print_status "$RED" "❌ Failed to restore community nodes"
+                    print_status "$YELLOW" "💡 Run 'npm run deploy:prod' manually to restore community nodes"
+                fi
+            fi
+            
             print_status "$GREEN" "🌐 Access at: https://workflows.thehealthsuite.co.uk"
             print_status "$GREEN" "💾 Backup available: n8n-backup-$backup_timestamp"
             
@@ -366,7 +488,13 @@ get_current_version_display() {
 
 # Function to show usage
 show_usage() {
-    echo "🔄 Universal n8n Update Script (API-based)"
+    echo "🔄 Universal n8n Update Script (API-based) with Community Node Protection"
+    echo ""
+    echo "Features:"
+    echo "  • Automatic community node detection before/after updates"
+    echo "  • Auto-redeployment of missing community nodes after n8n updates"
+    echo "  • GitHub API integration for proper stable/pre-release detection"
+    echo "  • Backup creation for production updates"
     echo ""
     echo "Usage:"
     echo "  $0 [local|production] [version]          # Update to specific version"
@@ -379,6 +507,11 @@ show_usage() {
     echo "  $0 local 1.55.3                         # Update local to version 1.55.3"
     echo "  $0 production latest                     # Update production to latest stable"
     echo "  $0 production current                    # Show production version"
+    echo ""
+    echo "Community Node Protection:"
+    echo "  • Checks for Semble community node before update"
+    echo "  • Automatically redeploys if missing after update"
+    echo "  • Provides manual recovery instructions if auto-redeploy fails"
     echo ""
     echo "Environment Configuration:"
     echo "  Local: Uses API at $N8N_LOCAL_HOST"
