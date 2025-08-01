@@ -4,7 +4,7 @@
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Test.Stubs
- * @since Phase 2.1 - Temporary stub for test compatibility
+ * @since Temporary stub for test compatibility
  * @todo Update BaseConfig.test.ts when interface alignment is complete
  */
 

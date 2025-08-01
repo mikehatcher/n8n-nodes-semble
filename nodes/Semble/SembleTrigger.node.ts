@@ -1,6 +1,6 @@
 /**
  * @fileoverview Semble trigger node implementation for n8n (refactored architecture)
- * @description This module provides scheduled polling triggers for Semble practice management system using our Phase 1-2 services
+ * @description This module provides scheduled polling triggers for Semble practice management system using core services and infrastructure components
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Nodes
@@ -23,8 +23,15 @@ import {
 } from "./shared/PaginationHelpers";
 import { GET_PATIENTS_QUERY } from "./shared/PatientQueries";
 import { GET_PRODUCTS_QUERY } from "./shared/ProductQueries";
+import { GET_BOOKINGS_QUERY } from "./shared/BookingQueries";
 
-// Phase 4 Integration - Core Components
+// Field Descriptions
+import {
+  BOOKING_TRIGGER_OPTIONS,
+  EVENT_TYPE_FIELD,
+} from "./descriptions/BookingDescription";
+
+// Core Components - Dependency Injection & Event System
 import {
   ServiceContainer,
   EventSystem,
@@ -36,7 +43,7 @@ import {
   type ISchemaRegistry,
 } from "../../core";
 
-// Phase 2 Services
+// Application Services
 import { CredentialService } from "../../services/CredentialService";
 import { CacheService } from "../../services/CacheService";
 import { SembleQueryService } from "../../services/SembleQueryService";
@@ -103,6 +110,14 @@ const TRIGGER_RESOURCES: { [key: string]: TriggerResourceConfig } = {
     query: GET_PRODUCTS_QUERY,
     dateField: "updatedAt",
     apiResponseKey: "products",
+  },
+  booking: {
+    displayName: "Booking",
+    value: "booking",
+    description: "Monitor bookings for changes (create, update, status)",
+    query: GET_BOOKINGS_QUERY,
+    dateField: "updatedAt",
+    apiResponseKey: "bookings",
   },
   // Future resources can be added here:
   // booking: BOOKING_TRIGGER_CONFIG,
@@ -284,12 +299,12 @@ export class SembleTrigger implements INodeType {
             value: "product",
             description: "Monitor products for changes (create, update)",
           },
-          // Future resources:
-          // {
-          //   name: "Booking",
-          //   value: "booking",
-          //   description: "Monitor bookings for changes (create, update)",
-          // },
+          {
+            name: "Booking",
+            value: "booking",
+            description:
+              "Monitor bookings for changes (create, update, status)",
+          },
         ],
         default: "patient",
         description: "The resource type to monitor for changes",
@@ -395,6 +410,24 @@ export class SembleTrigger implements INodeType {
           },
         ],
       },
+      // Add Event Type selector for bookings
+      {
+        ...EVENT_TYPE_FIELD,
+        displayOptions: {
+          show: {
+            resource: ["booking"],
+          },
+        },
+      },
+      // Add Booking-specific trigger options
+      {
+        ...BOOKING_TRIGGER_OPTIONS,
+        displayOptions: {
+          show: {
+            resource: ["booking"],
+          },
+        },
+      },
     ],
   };
 
@@ -439,7 +472,7 @@ export class SembleTrigger implements INodeType {
         ? undefined
         : (additionalOptions.maxPages as number) || 5;
 
-    // Emit polling event using Phase 4 Event System
+    // Emit polling event using the Event System
     const eventSystem = SembleTrigger.getEventSystem();
     await eventSystem.emit({
       type: "trigger.polled",

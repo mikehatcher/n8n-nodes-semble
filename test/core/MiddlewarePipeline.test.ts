@@ -1,6 +1,6 @@
 /**
  * @fileoverview MiddlewarePipeline.test.ts
- * @description Comprehensive test suite for Phase 4.2 Request/Response Pipeline with middleware chain execution, validation, permission checks, and error handling
+ * @description Comprehensive test suite for Request/Response Pipeline with middleware chain execution, validation, permission checks, and error handling
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Tests.Core.MiddlewarePipeline
@@ -18,7 +18,7 @@ import {
 import { EventSystem } from '../../core/EventSystem';
 import { SembleError } from '../../core/SembleError';
 
-describe('Phase 4.2 Request/Response Pipeline', () => {
+describe('Request/Response Pipeline', () => {
 	let pipeline: MiddlewarePipeline;
 	let eventSystem: EventSystem;
 	let mockExecuteFunctions: jest.Mocked<IExecuteFunctions>;

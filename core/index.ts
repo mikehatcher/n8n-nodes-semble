@@ -1,6 +1,6 @@
 /**
- * @fileoverview Core exports for Phase 4.1 Integration Layer
- * @description Central export point for all dependency injection, event system, and schema registry components
+ * @fileoverview Core exports for Integration Layer
+ * @description Central export point for all core components including dependency injection,
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Core
@@ -70,7 +70,7 @@ export type {
 	PipelineMiddlewareErrorEvent
 } from './MiddlewarePipeline';
 
-// Base Configuration and Error Management (from Phase 1)
+// Base Configuration and Error Management (from core architecture)
 export {
     DEFAULT_CONFIG,
     ConfigFactory,

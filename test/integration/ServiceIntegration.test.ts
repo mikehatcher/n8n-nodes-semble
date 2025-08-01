@@ -1,6 +1,6 @@
 /**
- * @fileoverview Service integration tests for cross-component interactions
- * @description Tests interaction between Phase 2 services and Phase 4 architecture components
+ * @fileoverview Service Integration Test Suite
+ * @description Tests interaction between application services and core architecture components
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Tests.Integration
@@ -48,13 +48,13 @@ describe('Service Integration Tests', () => {
   });
 
   beforeEach(() => {
-    // Initialize Phase 4 core components
+    // Initialize core components
     serviceContainer = new ServiceContainer();
     eventSystem = new EventSystem();
     schemaRegistry = new SchemaRegistry();
     middlewarePipeline = new MiddlewarePipeline();
 
-    // Register Phase 2 services in container
+    // Register application services in container
     registerCoreServices();
   });
 

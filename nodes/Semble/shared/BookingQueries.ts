@@ -1,6 +1,6 @@
 /**
  * @fileoverview Booking-specific GraphQL queries and field definitions
- * @description Example of how to use the modular pagination system for other data types
+ * @description Complete booking operations with CRUD mutations and queries following established patterns
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Nodes.Shared
@@ -8,15 +8,16 @@
 
 /**
  * Complete booking fields for GraphQL queries
- * Example showing how other data types can use the same pagination pattern
+ * Includes all essential booking information and related entities
+ * Updated to match actual API schema
  */
 export const BOOKING_FIELDS = `
   id
   status
-  startTime
-  endTime
+  start
+  end
   duration
-  notes
+  comments
   createdAt
   updatedAt
   patient {
@@ -29,7 +30,7 @@ export const BOOKING_FIELDS = `
     id
     name
   }
-  practitioner {
+  doctor {
     id
     firstName
     lastName
@@ -84,16 +85,65 @@ export const GET_BOOKINGS_QUERY = `
 `;
 
 /**
+ * GraphQL mutation for creating a new booking
+ * Updated to match actual API schema
+ */
+export const CREATE_BOOKING_MUTATION = `
+  mutation CreateBooking(
+    $patient: ID!
+    $location: ID!
+    $bookingType: ID!
+    $doctor: ID!
+    $comments: String
+    $start: Date!
+    $end: Date!
+    $bookingData: BookingDataInput
+  ) {
+    createBooking(
+      patient: $patient
+      location: $location
+      bookingType: $bookingType
+      doctor: $doctor
+      comments: $comments
+      start: $start
+      end: $end
+      bookingData: $bookingData
+    ) {
+      data {
+        ${BOOKING_FIELDS}
+      }
+      error
+    }
+  }
+`;
+
+/**
+ * GraphQL mutation for updating an existing booking
+ * Updated to match actual API schema
+ */
+export const UPDATE_BOOKING_MUTATION = `
+  mutation UpdateBooking($id: ID!, $bookingData: BookingDataInput) {
+    updateBooking(id: $id, bookingData: $bookingData) {
+      data {
+        ${BOOKING_FIELDS}
+      }
+      error
+    }
+  }
+`;
+
+/**
  * GraphQL mutation for deleting a booking
+ * Updated to match actual API schema with sendCancellationMessages
  */
 export const DELETE_BOOKING_MUTATION = `
-  mutation DeleteBooking($id: ID!) {
-    deleteBooking(id: $id) {
+  mutation DeleteBooking($id: ID!, $sendCancellationMessages: Boolean) {
+    deleteBooking(id: $id, sendCancellationMessages: $sendCancellationMessages) {
       data {
         id
         status
-        startTime
-        endTime
+        start
+        end
       }
       error
     }

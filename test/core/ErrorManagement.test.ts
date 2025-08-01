@@ -1,10 +1,10 @@
 /**
- * @fileoverview Comprehensive tests for error management system including SembleError hierarchy and ErrorMapper
- * @description Tests error creation, mapping, translation, and field-level permission handling
+ * @fileoverview Comprehensive Error Management Test Suite
+ * @description Tests all error handling scenarios including error mapping, validation, connection errors, and recovery strategies
  * @author Mike Hatcher
  * @website https://progenious.com
- * @namespace N8nNodesSemble.Test.Core.ErrorManagement
- * @since Phase 1.3 - Error Management System
+ * @since Error Management System
+ * @namespace N8nNodesSemble.Tests.Core
  */
 
 import {

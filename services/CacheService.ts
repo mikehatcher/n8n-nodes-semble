@@ -1,10 +1,10 @@
 /**
- * @fileoverview Cache Management System for Semble n8n Integration
- * @description In-memory cache with TTL, auto-refresh, and thread-safe operations for schema and permission caching
+ * @fileoverview Centralized caching system for n8n Semble node
+ * @description High-performance caching layer with TTL, auto-refresh, and invalidation support for API responses, user sessions, and computed data
  * @author Mike Hatcher
  * @website https://progenious.com
- * @namespace N8nNodesSemble.Services.Cache
- * @since Phase 2.2 - Cache Management System
+ * @since Cache Management System
+ * @namespace N8nNodesSemble.Services
  */
 
 import { CacheConfig, CacheEntryMetadata } from '../types/ConfigTypes';

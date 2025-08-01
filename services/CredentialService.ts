@@ -275,13 +275,13 @@ export class CredentialService {
 			};
 
 			// This is a placeholder for the actual HTTP request
-			// In Phase 2.3, this will be replaced with the actual SembleQueryService
+			// This will be replaced with the actual SembleQueryService
 			const response = await this.performConnectionTest(credentials, testQuery);
 			
 			const responseTime = Date.now() - startTime;
 
 			// TODO: Add permission level detection based on introspection results
-			// This will be implemented in Phase 2.3 with PermissionCheckService
+			// This will be implemented with PermissionCheckService
 
 			return {
 				success: true,
@@ -357,19 +357,19 @@ export class CredentialService {
 	}
 
 	/**
-	 * Perform actual connection test (placeholder for Phase 2.3 integration)
+	 * Perform actual connection test (placeholder for future integration)
 	 * @param credentials - Credentials to use
 	 * @param query - GraphQL query to execute
 	 * @returns Promise resolving to API response
 	 * @private
-	 * @todo Replace with SembleQueryService in Phase 2.3
+	 * @todo Replace with SembleQueryService in future version
 	 */
 	private async performConnectionTest(
 		credentials: ExtendedSembleCredentials,
 		query: object,
 	): Promise<any> {
 		// This is a placeholder implementation
-		// In Phase 2.3, this will be replaced with:
+		// In the future, this will be replaced with:
 		// return await this.sembleQueryService.executeQuery(credentials, query);
 		
 		// For now, simulate a successful connection test

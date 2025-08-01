@@ -1,5 +1,5 @@
 /**
- * @fileoverview Component exports for Phase 3 UI Components
+ * @fileoverview Component exports for UI Components
  * @description Central export point for all n8n UI components
  * @author Mike Hatcher
  * @website https://progenious.com

@@ -34,8 +34,12 @@ import {
 
 // Resource Classes - Action Hooks
 import { ProductResource } from "./resources/ProductResource";
+import { BookingResource } from "./resources/BookingResource";
 
-// Phase 4 Integration - Core Components
+// Field Descriptions
+import { BOOKING_FIELDS } from "./descriptions/BookingDescription";
+
+// Core Components - Dependency Injection & Event System
 import {
   ServiceContainer,
   EventSystem,
@@ -48,7 +52,7 @@ import {
   type NodeExecutedEvent,
 } from "../../core";
 
-// Phase 2 Services
+// Application Services
 import { CredentialService } from "../../services/CredentialService";
 import { CacheService } from "../../services/CacheService";
 import { SembleQueryService } from "../../services/SembleQueryService";
@@ -1320,6 +1324,8 @@ export class Semble implements INodeType {
           },
         ],
       },
+      // Booking Resource Fields
+      ...BOOKING_FIELDS,
     ],
   };
 
@@ -1407,7 +1413,7 @@ name
               const getVariables = { id: getSinglePatientId };
 
               try {
-                // Add validation using Phase 4 services
+                // Add validation using core services
                 const validationService = Semble.getValidationService();
                 const eventSystem = Semble.getEventSystem();
 
@@ -1742,6 +1748,9 @@ name
         } else if (resource === "product") {
           // Handle product resource using ProductResource action hooks
           responseData = await ProductResource.executeAction(this, action, i);
+        } else if (resource === "booking") {
+          // Handle booking resource using BookingResource action hooks
+          responseData = await BookingResource.executeAction(this, action, i);
         } else {
           // Handle other resources
           switch (action) {

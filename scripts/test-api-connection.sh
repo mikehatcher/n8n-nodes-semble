@@ -3,7 +3,7 @@
 ##
 # API Connection Test Script
 # Tests basic connectivity to Semble API with real credentials
-# @fileoverview Simple API connection validation for Phase 2.5
+# @fileoverview Simple API connection validation script
 # @author Mike Hatcher
 # @website https://github.com/mikehatcher/n8n-nodes-semble
 # @namespace n8n-nodes-semble.scripts
@@ -58,7 +58,7 @@ if [ "$HTTP_CODE" = "200" ]; then
         echo -e "${GREEN}📊 Response preview:${NC}"
         echo "$BODY" | jq '.data.patients.edges[0].node // "No patients found"' 2>/dev/null || echo "$BODY"
         echo ""
-        echo -e "${GREEN}🎉 Ready to proceed with Phase 3 development!${NC}"
+        echo -e "${GREEN}🎉 Ready to proceed with development!${NC}"
     else
         echo -e "${RED}❌ Unexpected response format:${NC}"
         echo "$BODY"

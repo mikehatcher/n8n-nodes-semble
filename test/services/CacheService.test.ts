@@ -1,10 +1,10 @@
 /**
- * @fileoverview Test Suite for Cache Management System
- * @description Comprehensive tests for CacheService including TTL, thread-safety, auto-refresh, and manual refresh
+ * @fileoverview Comprehensive test suite for CacheService
+ * @description Tests all caching functionality including TTL, auto-refresh, invalidation, and error handling scenarios
  * @author Mike Hatcher
  * @website https://progenious.com
- * @namespace N8nNodesSemble.Tests.Services.Cache
- * @since Phase 2.2 - Cache Management System
+ * @since Cache Management System
+ * @namespace N8nNodesSemble.Tests.Services
  */
 
 import { 

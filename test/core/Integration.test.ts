@@ -1,6 +1,6 @@
 /**
  * @fileoverview Integration.test.ts
- * @description Comprehensive test suite for Phase 4.1 Integration Layer components: ServiceContainer (dependency injection), EventSystem (event-driven communication), SchemaRegistry (schema management)
+ * @description Comprehensive test suite for Integration Layer components: ServiceContainer (dependency injection), EventSystem (event-driven communication), SchemaRegistry (schema management)
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Tests.Core.Integration
@@ -39,7 +39,7 @@ import {
 
 import { SembleError } from '../../core/SembleError';
 
-describe('Phase 4.1 Integration Layer', () => {
+describe('Integration Layer', () => {
     beforeEach(() => {
         // Clean up before each test
         serviceContainer.clear();
@@ -911,7 +911,7 @@ describe('Phase 4.1 Integration Layer', () => {
         });
 
         describe('Full Integration Scenario', () => {
-            it('should demonstrate complete Phase 4.1 integration', async () => {
+            it('should demonstrate complete integration', async () => {
                 // Setup services with event system integration
                 const mockLogger = { log: jest.fn(), error: jest.fn(), debug: jest.fn() } as any;
                 EventSystemUtils.setupEventLogging(eventSystem, mockLogger);

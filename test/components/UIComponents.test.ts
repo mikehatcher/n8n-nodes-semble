@@ -1,14 +1,6 @@
 /**
- * @fileoverview Simple Component Tests for Phase 4.1 
- * @description Focused tests for comp    test('should create basic event action selector', () => {
-      const property = EventActionSelector.generateProperty();
-      
-      expect(property).toBeDefined();
-      expect(property.displayName).toBe('Action');
-      expect(property.name).toBe('eventAction');
-      expect(property.type).toBe('options');
-      expect(property.default).toBe(EventActionType.WEBHOOK);
-    });ctionality without complex type assertions
+ * @fileoverview Simple Component Tests for UI Components
+ * @description Focused tests for component functionality without complex type assertions
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Tests.Components
@@ -38,7 +30,7 @@ import {
   DatePeriodType,
 } from '../../components/PollTimeSelector';
 
-describe('Phase 4.1 UI Components - Simplified Tests', () => {
+describe('UI Components - Simplified Tests', () => {
   
   describe('ResourceSelector', () => {
     test('should create basic resource selector', () => {
