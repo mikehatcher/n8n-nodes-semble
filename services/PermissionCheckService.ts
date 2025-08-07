@@ -584,6 +584,51 @@ export class PermissionCheckService {
 			config: this.getConfig()
 		};
 	}
+
+	/**
+	 * Check for known permission restrictions based on API testing
+	 * These are hard-coded restrictions discovered through testing
+	 */
+	static getKnownFieldRestrictions(resource: string): { [field: string]: { permission: string; reason: string } } {
+		const restrictions: { [key: string]: { [field: string]: { permission: string; reason: string } } } = {
+			booking: {
+				'doctor.id': { 
+					permission: 'settingsSeeUsers', 
+					reason: 'Doctor information requires user visibility permission' 
+				},
+				'doctor.firstName': { 
+					permission: 'settingsSeeUsers', 
+					reason: 'Doctor information requires user visibility permission' 
+				},
+				'doctor.lastName': { 
+					permission: 'settingsSeeUsers', 
+					reason: 'Doctor information requires user visibility permission' 
+				},
+				'doctor.email': { 
+					permission: 'settingsSeeUsers', 
+					reason: 'Doctor information requires user visibility permission' 
+				}
+			}
+		};
+
+		return restrictions[resource] || {};
+	}
+
+	/**
+	 * Filter booking fields based on known permissions
+	 * Removes doctor fields if user lacks settingsSeeUsers permission
+	 */
+	static filterBookingFields(fields: string, hasUserPermission: boolean = false): string {
+		if (hasUserPermission) {
+			return fields; // Return all fields if user has permission
+		}
+
+		// Remove doctor fields if user lacks permission
+		return fields
+			.replace(/doctor\s*{[^}]*}/g, '') // Remove entire doctor object
+			.replace(/\s+/g, ' ') // Clean up whitespace
+			.trim();
+	}
 }
 
 // =============================================================================

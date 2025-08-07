@@ -25,11 +25,15 @@ import { GET_PATIENTS_QUERY } from "./shared/PatientQueries";
 import { GET_PRODUCTS_QUERY } from "./shared/ProductQueries";
 import { GET_BOOKINGS_QUERY } from "./shared/BookingQueries";
 
+// Import specialized trigger classes - REMOVED BookingTrigger
+// import { BookingTrigger } from "./triggers/BookingTrigger";
+
 // Field Descriptions
-import {
-  BOOKING_TRIGGER_OPTIONS,
-  EVENT_TYPE_FIELD,
-} from "./descriptions/BookingDescription";
+// TEMPORARILY COMMENTED OUT FOR TESTING - SIMPLIFY TO MATCH PATIENT/PRODUCT TRIGGERS
+// import {
+//   BOOKING_TRIGGER_OPTIONS,
+//   EVENT_TYPE_FIELD,
+// } from "./descriptions/BookingDescription";
 
 // Core Components - Dependency Injection & Event System
 import {
@@ -410,24 +414,25 @@ export class SembleTrigger implements INodeType {
           },
         ],
       },
+      // TEMPORARILY COMMENTED OUT FOR TESTING - SIMPLIFY TO MATCH PATIENT/PRODUCT TRIGGERS
       // Add Event Type selector for bookings
-      {
-        ...EVENT_TYPE_FIELD,
-        displayOptions: {
-          show: {
-            resource: ["booking"],
-          },
-        },
-      },
+      // {
+      //   ...EVENT_TYPE_FIELD,
+      //   displayOptions: {
+      //     show: {
+      //       resource: ["booking"],
+      //     },
+      //   },
+      // },
       // Add Booking-specific trigger options
-      {
-        ...BOOKING_TRIGGER_OPTIONS,
-        displayOptions: {
-          show: {
-            resource: ["booking"],
-          },
-        },
-      },
+      // {
+      //   ...BOOKING_TRIGGER_OPTIONS,
+      //   displayOptions: {
+      //     show: {
+      //       resource: ["booking"],
+      //     },
+      //   },
+      // },
     ],
   };
 
@@ -449,6 +454,7 @@ export class SembleTrigger implements INodeType {
       {},
     ) as IDataObject;
 
+    // Continue with original generic logic for all resources (patient, product, booking)
     // Determine if user explicitly wants unlimited records based on datePeriod
     const wantsAllRecords = datePeriod === "all";
 
@@ -555,21 +561,48 @@ async function pollResource(
     // Prepare base variables for pagination
     const baseVariables: IDataObject = {};
 
-    // Apply server-side filtering based on event type
-    if (event === "newOnly") {
-      baseVariables.options = {
-        createdAt: {
-          start: cutoffDate,
-          end: now,
-        },
+    // Apply server-side filtering based on event type and resource
+    if (resource === "booking") {
+      // Bookings use dateRange parameter AND options.createdAt/updatedAt for event filtering
+      baseVariables.dateRange = {
+        start: cutoffDate,
+        end: now,
       };
+
+      // Apply event filtering for bookings using options
+      if (event === "newOnly") {
+        baseVariables.options = {
+          createdAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      } else {
+        // For "newOrUpdated", filter by update date (which includes creation date)
+        baseVariables.options = {
+          updatedAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      }
     } else {
-      baseVariables.options = {
-        updatedAt: {
-          start: cutoffDate,
-          end: now,
-        },
-      };
+      // Other resources (patient, product) use nested options structure
+      if (event === "newOnly") {
+        baseVariables.options = {
+          createdAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      } else {
+        baseVariables.options = {
+          updatedAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      }
     }
 
     // Use SemblePagination for safe, intelligent batching
@@ -641,23 +674,50 @@ async function pollResource(
       },
     };
 
-    // Apply server-side filtering based on event type
-    if (event === "newOnly") {
-      // For "newOnly", filter by creation date
-      variables.options = {
-        createdAt: {
-          start: cutoffDate,
-          end: now,
-        },
+    // Apply server-side filtering based on event type and resource
+    if (resource === "booking") {
+      // Bookings use dateRange parameter AND options.createdAt/updatedAt for event filtering
+      variables.dateRange = {
+        start: cutoffDate,
+        end: now,
       };
+
+      // Apply event filtering for bookings using options
+      if (event === "newOnly") {
+        variables.options = {
+          createdAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      } else {
+        // For "newOrUpdated", filter by update date (which includes creation date)
+        variables.options = {
+          updatedAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      }
     } else {
-      // For "newOrUpdated", filter by update date (which includes creation date)
-      variables.options = {
-        updatedAt: {
-          start: cutoffDate,
-          end: now,
-        },
-      };
+      // Other resources use nested options structure
+      if (event === "newOnly") {
+        // For "newOnly", filter by creation date
+        variables.options = {
+          createdAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      } else {
+        // For "newOrUpdated", filter by update date (which includes creation date)
+        variables.options = {
+          updatedAt: {
+            start: cutoffDate,
+            end: now,
+          },
+        };
+      }
     }
 
     // Execute the query using our GenericFunctions

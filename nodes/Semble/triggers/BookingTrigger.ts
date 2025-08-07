@@ -29,9 +29,6 @@ export class BookingTrigger {
    * @throws NodeApiError when polling fails
    */
   static async poll(pollFunctions: IPollFunctions): Promise<INodeExecutionData[][]> {
-    const triggerOptions = pollFunctions.getNodeParameter("triggerOptions") as IDataObject;
-    const eventType = pollFunctions.getNodeParameter("eventType") as string;
-    
     // Get the last poll time from workflow state or set default
     const workflowStaticData = pollFunctions.getWorkflowStaticData("node");
     const lastPollTime = workflowStaticData.lastPollTime as string;
@@ -41,53 +38,43 @@ export class BookingTrigger {
       // Build base variables for the query
       const baseVariables: IDataObject = {};
 
-      // Add date filtering based on event type
+      // For bookings, we need to structure the variables to match GET_BOOKINGS_QUERY:
+      // query GetBookings($pagination: Pagination, $options: QueryOptions, $dateRange: DateRange)
+      
+      // Set up the date range for filtering 
+      let dateRangeStart: string;
       if (lastPollTime) {
-        switch (eventType) {
-          case "created":
-            baseVariables.createdAfter = lastPollTime;
-            break;
-          case "updated":
-            baseVariables.updatedAfter = lastPollTime;
-            break;
-          case "cancelled":
-            baseVariables.statusChangedAfter = lastPollTime;
-            baseVariables.status = "cancelled";
-            break;
-          case "confirmed":
-            baseVariables.statusChangedAfter = lastPollTime;
-            baseVariables.status = "confirmed";
-            break;
-          case "any":
-          default:
-            baseVariables.modifiedAfter = lastPollTime;
-            break;
-        }
+        dateRangeStart = lastPollTime;
       } else {
-        // First run - get recent bookings from the last hour
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-        baseVariables.modifiedAfter = oneHourAgo;
+        // First run - get recent bookings from the last 7 days to ensure we find some data
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        dateRangeStart = sevenDaysAgo;
       }
 
-      // Add optional filters from trigger options
-      if (triggerOptions.patientId) {
-        baseVariables.patientId = triggerOptions.patientId;
-      }
+      const dateRange = {
+        start: dateRangeStart,
+        end: currentTime,
+      };
 
-      if (triggerOptions.practitionerId) {
-        baseVariables.practitionerId = triggerOptions.practitionerId;
-      }
+      // Set up simple options object (simplified - no complex filtering)
+      const options: IDataObject = {
+        // Use updatedAt as the default filter to catch all changes
+        updatedAt: dateRange,
+      };
 
-      if (triggerOptions.locationId) {
-        baseVariables.locationId = triggerOptions.locationId;
-      }
+      baseVariables.options = options;
+      baseVariables.dateRange = dateRange;
 
-      if (triggerOptions.bookingTypeId) {
-        baseVariables.bookingTypeId = triggerOptions.bookingTypeId;
-      }
+      // Read limit from additionalOptions (matching SembleTrigger node behavior)
+      const additionalOptions = pollFunctions.getNodeParameter(
+        "additionalOptions",
+        {},
+      ) as IDataObject;
+      const limit = (additionalOptions.limit as number) ?? 50;
 
-      // Get the limit from trigger options or use default
-      const limit = (triggerOptions.limit as number) || 50;
+      // DEBUG: Log the actual limit being used
+      console.log(`🔧 BookingTrigger DEBUG: additionalOptions =`, additionalOptions);
+      console.log(`🔧 BookingTrigger DEBUG: using limit =`, limit);
 
       // Execute the query to get changed bookings
       const result = await SemblePagination.execute(pollFunctions, {
@@ -97,10 +84,6 @@ export class BookingTrigger {
         pageSize: limit,
         returnAll: false,
         search: "",
-        options: {
-          orderBy: "updatedAt",
-          orderDirection: "desc",
-        },
       });
 
       // Update the last poll time
@@ -124,8 +107,7 @@ export class BookingTrigger {
             end: booking.end,
             comments: booking.comments,
             doctor: booking.doctor,
-            // Add trigger metadata
-            eventType,
+            // Add trigger metadata (simplified)
             pollTime: currentTime,
             lastPollTime: lastPollTime || null,
           };
@@ -166,10 +148,6 @@ export class BookingTrigger {
         pageSize: 3,
         returnAll: false,
         search: "",
-        options: {
-          orderBy: "updatedAt",
-          orderDirection: "desc",
-        },
       });
 
       const executionData: INodeExecutionData[][] = [[]];

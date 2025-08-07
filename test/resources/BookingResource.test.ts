@@ -22,6 +22,7 @@ import {
   CREATE_BOOKING_MUTATION,
   UPDATE_BOOKING_MUTATION,
   DELETE_BOOKING_MUTATION,
+  UPDATE_BOOKING_JOURNEY_MUTATION,
 } from "../../nodes/Semble/shared/BookingQueries";
 
 // Mock dependencies
@@ -186,13 +187,15 @@ describe("BookingResource", () => {
       expect(mockPagination).toHaveBeenCalledWith(mockExecuteFunctions, {
         query: GET_BOOKINGS_QUERY,
         baseVariables: {
-          startDate: "2024-01-01",
-          endDate: "2024-01-31",
+          dateRange: {
+            start: "2024-01-01",
+            end: "2024-01-31",
+          },
+          options: {},
         },
         dataPath: "bookings",
         pageSize: mockPaginationConfig.pageSize,
         returnAll: mockPaginationConfig.returnAll,
-        search: mockPaginationConfig.search,
         options: {},
       });
       expect(result).toEqual(mockBookingsData);
@@ -361,6 +364,105 @@ describe("BookingResource", () => {
     });
   });
 
+  describe("updateJourney method", () => {
+    it("should update booking journey stage successfully", async () => {
+      const bookingId = "booking123";
+      const journeyStage = "arrived";
+      const customDate = true;
+      const date = "2024-01-15";
+      const mockJourneyResponse = {
+        updateBookingJourney: {
+          success: true,
+          data: { id: bookingId },
+          error: null,
+        },
+      };
+
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce(bookingId)
+        .mockReturnValueOnce(journeyStage)
+        .mockReturnValueOnce(customDate)
+        .mockReturnValueOnce(date);
+      
+      mockSembleApiRequest.mockResolvedValue(mockJourneyResponse);
+
+      const result = await BookingResource.updateJourney(mockExecuteFunctions, 0);
+
+      expect(mockSembleApiRequest).toHaveBeenCalledWith(
+        UPDATE_BOOKING_JOURNEY_MUTATION,
+        {
+          id: bookingId,
+          journeyStage: journeyStage,
+          date: date,
+        },
+        3,
+        false,
+      );
+      expect(result).toEqual(mockJourneyResponse.updateBookingJourney.data);
+    });
+
+    it("should use current timestamp when no custom date provided", async () => {
+      const bookingId = "booking123";
+      const journeyStage = "consultation";
+      const customDate = false;
+      const mockJourneyResponse = {
+        updateBookingJourney: {
+          success: true,
+          data: { id: bookingId },
+          error: null,
+        },
+      };
+
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce(bookingId)
+        .mockReturnValueOnce(journeyStage)
+        .mockReturnValueOnce(customDate);
+
+      mockSembleApiRequest.mockResolvedValue(mockJourneyResponse);
+
+      const result = await BookingResource.updateJourney(mockExecuteFunctions, 0);
+
+      expect(mockSembleApiRequest).toHaveBeenCalledWith(
+        UPDATE_BOOKING_JOURNEY_MUTATION,
+        {
+          id: bookingId,
+          journeyStage: journeyStage,
+          date: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
+        },
+        3,
+        false,
+      );
+      expect(result).toEqual(mockJourneyResponse.updateBookingJourney.data);
+    });
+
+    it("should throw error when booking ID is missing", async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce("") // Empty booking ID
+        .mockReturnValueOnce("arrived")
+        .mockReturnValueOnce(false);
+
+      await expect(
+        BookingResource.updateJourney(mockExecuteFunctions, 0)
+      ).rejects.toThrow(NodeOperationError);
+    });
+
+    it("should handle API errors gracefully", async () => {
+      const bookingId = "booking123";
+      const journeyStage = "departed";
+
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce(bookingId)
+        .mockReturnValueOnce(journeyStage)
+        .mockReturnValueOnce("");
+
+      mockSembleApiRequest.mockRejectedValue(new Error("API Error"));
+
+      await expect(
+        BookingResource.updateJourney(mockExecuteFunctions, 0)
+      ).rejects.toThrow("API Error");
+    });
+  });
+
   describe("delete method", () => {
     it("should delete a booking successfully", async () => {
       const bookingId = "booking123";
@@ -412,11 +514,15 @@ describe("BookingResource", () => {
 
   describe("executeAction method", () => {
     it("should route to correct methods based on action", async () => {
-      const actions = ["get", "getMany", "create", "update", "delete"];
+      const actions = ["get", "getMany", "create", "update", "delete", "updateJourney"];
       
       // Mock all required parameters for different actions
       mockExecuteFunctions.getNodeParameter.mockImplementation((paramName) => {
         if (paramName === "bookingId") return "booking123";
+        if (paramName === "id") return "booking123";
+        if (paramName === "journeyStage") return "arrived";
+        if (paramName === "customDate") return false;
+        if (paramName === "date") return "2024-01-15";
         if (paramName === "patient") return "patient123";
         if (paramName === "doctor") return "practitioner123";
         if (paramName === "location") return "location123";
@@ -437,6 +543,7 @@ describe("BookingResource", () => {
         createBooking: { data: { id: "booking123" }, error: null },
         updateBooking: { data: { id: "booking123" }, error: null },
         deleteBooking: { data: { id: "booking123" }, error: null },
+        updateBookingJourney: { success: true, data: { id: "booking123" }, error: null },
       });
 
       mockBuildPaginationConfig.mockReturnValue({

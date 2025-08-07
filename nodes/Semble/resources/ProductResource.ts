@@ -55,6 +55,32 @@ export class ProductResource {
       );
     }
 
+    // Handle special appointment types that are not actual products
+    if (productId === "unavailable" || productId === "blocked" || productId === "break") {
+      return {
+        id: productId,
+        name: productId === "unavailable" ? "Out of office" : productId,
+        description: `System appointment type: ${productId}`,
+        price: null,
+        duration: null,
+        category: "system",
+        isSystemAppointment: true,
+      };
+    }
+
+    // Validate MongoDB ObjectId format (24 hex characters)
+    if (!/^[0-9a-fA-F]{24}$/.test(productId)) {
+      return {
+        id: productId,
+        name: "Unknown Product",
+        description: `Invalid product ID format: ${productId}`,
+        price: null,
+        duration: null,
+        category: "unknown",
+        isSystemAppointment: false,
+      };
+    }
+
     const variables = { id: productId };
 
     try {
@@ -67,14 +93,40 @@ export class ProductResource {
       );
 
       if (!response.product) {
-        throw new NodeApiError(executeFunctions.getNode(), {
-          message: `Product with ID ${productId} not found`,
-          description: "The specified product ID does not exist",
-        });
+        // Return a placeholder product instead of throwing an error
+        return {
+          id: productId,
+          name: "Unknown Product",
+          description: `Product with ID ${productId} not found`,
+          price: null,
+          duration: null,
+          category: "unknown",
+          isSystemAppointment: false,
+        };
       }
 
       return response.product;
     } catch (error) {
+      // Check if it's a GraphQL error about product validation or existence
+      const errorMessage = (error as Error).message;
+      if (
+        errorMessage.includes("Product must exist") || 
+        errorMessage.includes("not found") ||
+        errorMessage.includes("must be at least 24 characters") ||
+        errorMessage.includes("Invalid ObjectId")
+      ) {
+        // Return a placeholder product instead of throwing an error
+        return {
+          id: productId,
+          name: "Unknown Product",
+          description: `Product with ID ${productId} not found or invalid`,
+          price: null,
+          duration: null,
+          category: "unknown",
+          isSystemAppointment: false,
+        };
+      }
+
       if (error instanceof NodeApiError) {
         throw error;
       }

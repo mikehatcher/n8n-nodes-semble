@@ -584,92 +584,192 @@ export const BOOKING_FIELDS: INodeProperties[] = [
 /**
  * Booking trigger options for the trigger node
  * @constant {INodeProperties}
+ * TEMPORARILY COMMENTED OUT FOR TESTING - SIMPLIFY TO MATCH PATIENT/PRODUCT TRIGGERS
  */
-export const BOOKING_TRIGGER_OPTIONS: INodeProperties = {
-  displayName: "Trigger Options",
-  name: "triggerOptions",
-  type: "collection",
-  placeholder: "Add Option",
-  default: {},
-  options: [
-    {
-      displayName: "Patient ID",
-      name: "patientId",
-      type: "string",
-      default: "",
-      description: "Only trigger for bookings of a specific patient",
-    },
-    {
-      displayName: "Practitioner ID",
-      name: "practitionerId",
-      type: "string",
-      default: "",
-      description: "Only trigger for bookings of a specific practitioner",
-    },
-    {
-      displayName: "Location ID",
-      name: "locationId",
-      type: "string",
-      default: "",
-      description: "Only trigger for bookings at a specific location",
-    },
-    {
-      displayName: "Booking Type ID",
-      name: "bookingTypeId",
-      type: "string",
-      default: "",
-      description: "Only trigger for bookings of a specific type",
-    },
-    {
-      displayName: "Limit",
-      name: "limit",
-      type: "number",
-      typeOptions: {
-        minValue: 1,
-        maxValue: 100,
-      },
-      default: 50,
-      description: "Maximum number of bookings to process per trigger",
-    },
-  ],
-  description: "Additional options for the booking trigger",
-};
+// export const BOOKING_TRIGGER_OPTIONS: INodeProperties = {
+//   displayName: "Trigger Options",
+//   name: "triggerOptions",
+//   type: "collection",
+//   placeholder: "Add Option",
+//   default: {},
+//   options: [
+//     {
+//       displayName: "Patient ID",
+//       name: "patientId",
+//       type: "string",
+//       default: "",
+//       description: "Only trigger for bookings of a specific patient",
+//     },
+//     {
+//       displayName: "Practitioner ID",
+//       name: "practitionerId",
+//       type: "string",
+//       default: "",
+//       description: "Only trigger for bookings of a specific practitioner",
+//     },
+//     {
+//       displayName: "Location ID",
+//       name: "locationId",
+//       type: "string",
+//       default: "",
+//       description: "Only trigger for bookings at a specific location",
+//     },
+//     {
+//       displayName: "Booking Type ID",
+//       name: "bookingTypeId",
+//       type: "string",
+//       default: "",
+//       description: "Only trigger for bookings of a specific type",
+//     },
+//     {
+//       displayName: "Limit",
+//       name: "limit",
+//       type: "number",
+//       typeOptions: {
+//         minValue: 1,
+//         maxValue: 100,
+//       },
+//       default: 50,
+//       description: "Maximum number of bookings to process per trigger",
+//     },
+//   ],
+//   description: "Additional options for the booking trigger",
+// };
 
 /**
  * Event type selector for booking trigger
  * @constant {INodeProperties}
+ * TEMPORARILY COMMENTED OUT FOR TESTING - SIMPLIFY TO MATCH PATIENT/PRODUCT TRIGGERS
  */
-export const EVENT_TYPE_FIELD: INodeProperties = {
-  displayName: "Event Type",
-  name: "eventType",
+// export const EVENT_TYPE_FIELD: INodeProperties = {
+//   displayName: "Event Type",
+//   name: "eventType",
+//   type: "options",
+//   options: [
+//     {
+//       name: "Any Change",
+//       value: "any",
+//       description: "Trigger on any booking change (created, updated, status changed)",
+//     },
+//     {
+//       name: "Created",
+//       value: "created",
+//       description: "Trigger only when new bookings are created",
+//     },
+//     {
+//       name: "Updated",
+//       value: "updated",
+//       description: "Trigger only when bookings are updated",
+//     },
+//     {
+//       name: "Confirmed",
+//       value: "confirmed",
+//       description: "Trigger only when bookings are confirmed",
+//     },
+//     {
+//       name: "Cancelled",
+//       value: "cancelled",
+//       description: "Trigger only when bookings are cancelled",
+//     },
+//   ],
+//   default: "any",
+//   description: "The type of booking event to trigger on",
+// };
+
+/**
+ * Journey Stage field for updating booking journey
+ * @constant {INodeProperties}
+ */
+export const JOURNEY_STAGE_FIELD: INodeProperties = {
+  displayName: "Journey Stage",
+  name: "journeyStage",
   type: "options",
+  required: true,
+  displayOptions: {
+    show: {
+      action: ["updateJourney"],
+      resource: ["booking"],
+    },
+  },
   options: [
     {
-      name: "Any Change",
-      value: "any",
-      description: "Trigger on any booking change (created, updated, status changed)",
+      name: "Arrived",
+      value: "arrived",
+      description: "Patient has arrived for their appointment",
     },
     {
-      name: "Created",
-      value: "created",
-      description: "Trigger only when new bookings are created",
+      name: "In Consultation",
+      value: "consultation",
+      description: "Patient is currently in consultation",
     },
     {
-      name: "Updated",
-      value: "updated",
-      description: "Trigger only when bookings are updated",
+      name: "Departed",
+      value: "departed",
+      description: "Patient has left after consultation",
     },
     {
-      name: "Confirmed",
-      value: "confirmed",
-      description: "Trigger only when bookings are confirmed",
-    },
-    {
-      name: "Cancelled",
-      value: "cancelled",
-      description: "Trigger only when bookings are cancelled",
+      name: "Did Not Attend (DNA)",
+      value: "dna",
+      description: "Patient did not attend their appointment",
     },
   ],
-  default: "any",
-  description: "The type of booking event to trigger on",
+  default: "arrived",
+  description: "The stage to update the booking journey to",
+};
+
+/**
+ * Custom Date field for journey updates
+ * @constant {INodeProperties}
+ */
+export const CUSTOM_DATE_FIELD: INodeProperties = {
+  displayName: "Use Custom Date",
+  name: "customDate",
+  type: "boolean",
+  displayOptions: {
+    show: {
+      action: ["updateJourney"],
+      resource: ["booking"],
+    },
+  },
+  default: false,
+  description: "Whether to specify a custom date/time for the journey stage",
+};
+
+/**
+ * Date field for journey updates
+ * @constant {INodeProperties}
+ */
+export const JOURNEY_DATE_FIELD: INodeProperties = {
+  displayName: "Date",
+  name: "date",
+  type: "dateTime",
+  displayOptions: {
+    show: {
+      action: ["updateJourney"],
+      resource: ["booking"],
+      customDate: [true],
+    },
+  },
+  default: "",
+  description: "The date/time to record for this journey stage (defaults to current time if not specified)",
+};
+
+/**
+ * Booking ID field for journey updates
+ * @constant {INodeProperties}
+ */
+export const JOURNEY_BOOKING_ID_FIELD: INodeProperties = {
+  displayName: "Booking ID",
+  name: "bookingId",
+  type: "string",
+  required: true,
+  displayOptions: {
+    show: {
+      action: ["updateJourney"],
+      resource: ["booking"],
+    },
+  },
+  default: "",
+  placeholder: "e.g., 62e2b7d228ec4b0013179e67",
+  description: "The ID of the booking to update journey for",
 };

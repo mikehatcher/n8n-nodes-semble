@@ -21,6 +21,8 @@ import {
   CREATE_BOOKING_MUTATION,
   UPDATE_BOOKING_MUTATION,
   DELETE_BOOKING_MUTATION,
+  UPDATE_BOOKING_JOURNEY_MUTATION,
+  BOOKING_FIELDS,
 } from "../shared/BookingQueries";
 
 /**
@@ -85,32 +87,34 @@ export class BookingResource {
    */
   static async getMany(executeFunctions: IExecuteFunctions, itemIndex: number): Promise<IDataObject[]> {
     const options = executeFunctions.getNodeParameter("options", itemIndex) as IDataObject;
-    const paginationConfig = buildPaginationConfig(options);
 
     try {
+      // If patientId is provided, use the more efficient patient.bookings approach
+      if (options.patientId) {
+        return await BookingResource.getPatientBookings(executeFunctions, itemIndex);
+      }
+
+      // Original approach for general booking queries
+      const paginationConfig = buildPaginationConfig(options);
       const baseVariables: IDataObject = {};
 
-      // Add date filtering if provided
-      if (options.startDate) {
-        baseVariables.startDate = options.startDate;
-      }
-      if (options.endDate) {
-        baseVariables.endDate = options.endDate;
-      }
-
-      // Add status filtering if provided
-      if (options.status) {
-        baseVariables.status = options.status;
+      // Add date filtering if provided - bookings API expects dateRange object
+      if (options.startDate || options.endDate) {
+        baseVariables.dateRange = {} as IDataObject;
+        if (options.startDate) {
+          (baseVariables.dateRange as IDataObject).start = options.startDate;
+        }
+        if (options.endDate) {
+          (baseVariables.dateRange as IDataObject).end = options.endDate;
+        }
       }
 
-      // Add patient filtering if provided
-      if (options.patientId) {
-        baseVariables.patientId = options.patientId;
-      }
+      // Initialize options object with supported QueryOptions fields
+      baseVariables.options = {} as IDataObject;
 
-      // Add practitioner filtering if provided
-      if (options.practitionerId) {
-        baseVariables.practitionerId = options.practitionerId;
+      // Add includeDeleted if provided (only supported field in QueryOptions for bookings)
+      if (options.includeDeleted !== undefined) {
+        (baseVariables.options as IDataObject).includeDeleted = options.includeDeleted;
       }
 
       const result = await SemblePagination.execute(executeFunctions, {
@@ -119,7 +123,6 @@ export class BookingResource {
         dataPath: "bookings",
         pageSize: paginationConfig.pageSize,
         returnAll: paginationConfig.returnAll,
-        search: paginationConfig.search,
         options: {},
       });
 
@@ -127,6 +130,105 @@ export class BookingResource {
     } catch (error) {
       throw new NodeApiError(executeFunctions.getNode(), {
         message: "Failed to retrieve bookings",
+        description: (error as Error).message || "An unexpected error occurred",
+      });
+    }
+  }
+
+  /**
+   * Get bookings for a specific patient using the patient.bookings field
+   * This is more efficient than filtering all bookings client-side
+   * @param executeFunctions - The execution functions context
+   * @param itemIndex - The index of the current item being processed
+   * @returns Promise resolving to array of booking data for the patient
+   * @throws NodeApiError when patient not found or API errors occur
+   */
+  static async getPatientBookings(executeFunctions: IExecuteFunctions, itemIndex: number): Promise<IDataObject[]> {
+    const options = executeFunctions.getNodeParameter("options", itemIndex) as IDataObject;
+    const patientId = options.patientId as string;
+
+    if (!patientId) {
+      throw new NodeOperationError(
+        executeFunctions.getNode(),
+        "Patient ID is required for patient booking queries",
+        { itemIndex }
+      );
+    }
+
+    try {
+      let startDate: string;
+      let endDate: string;
+
+      // Check if we have explicit date range from options
+      if (options.startDate && options.endDate) {
+        startDate = options.startDate as string;
+        endDate = options.endDate as string;
+      } else {
+        // Try to get the trigger's pollTime to calculate appropriate date range
+        const inputData = executeFunctions.getInputData();
+        const itemData = inputData[itemIndex]?.json as IDataObject;
+        const metaData = itemData?.__meta as IDataObject;
+        const triggerPollTime = metaData?.pollTime as string;
+        
+        if (triggerPollTime) {
+          // Calculate date range based on trigger timeframe
+          const triggerTime = new Date(triggerPollTime);
+          const now = new Date();
+          
+          // For bookings, we want:
+          // 1. Appointments from the last 24 hours (or since trigger period started)
+          // 2. All future appointments
+          
+          // Calculate 24 hours before the trigger time as the start
+          const triggerStart = new Date(triggerTime.getTime() - (24 * 60 * 60 * 1000));
+          
+          // Start from 24 hours before trigger time (for recent bookings)
+          startDate = triggerStart.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+          
+          // End date should be far in the future to capture all future bookings
+          const futureDate = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year from now
+          endDate = futureDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        } else {
+          // Fallback to explicit range if provided, or very broad range
+          startDate = options.startDate as string || "2020-01-01";
+          endDate = options.endDate as string || "2030-12-31";
+        }
+      }
+
+      // Build the query to get patient with their bookings
+      const query = `
+        query GetPatientBookings($id: ID!, $start: Date!, $end: Date!) {
+          patient(id: $id) {
+            id
+            firstName
+            lastName
+            email
+            bookings(start: $start, end: $end) {
+              ${BOOKING_FIELDS}
+            }
+          }
+        }
+      `;
+
+      const variables = {
+        id: patientId,
+        start: startDate,
+        end: endDate,
+      };
+
+      const response = await sembleApiRequest.call(executeFunctions, query, variables, 3, false);
+
+      if (!response.patient) {
+        throw new NodeApiError(executeFunctions.getNode(), {
+          message: `Patient with ID ${patientId} not found`,
+          description: "Please verify the patient ID is correct",
+        });
+      }
+
+      return response.patient.bookings || [];
+    } catch (error) {
+      throw new NodeApiError(executeFunctions.getNode(), {
+        message: "Failed to retrieve patient bookings",
         description: (error as Error).message || "An unexpected error occurred",
       });
     }
@@ -345,6 +447,68 @@ export class BookingResource {
   }
 
   /**
+   * Update booking journey stage (e.g., mark patient as arrived, in consultation, departed)
+   * @param executeFunctions - The execution functions context
+   * @param itemIndex - The index of the item being processed
+   * @returns Promise resolving to the updated booking
+   * @throws NodeApiError if the API request fails
+   */
+  static async updateJourney(executeFunctions: IExecuteFunctions, itemIndex: number): Promise<IDataObject> {
+    const bookingId = executeFunctions.getNodeParameter("bookingId", itemIndex) as string;
+    const journeyStage = executeFunctions.getNodeParameter("journeyStage", itemIndex) as string;
+    const customDate = executeFunctions.getNodeParameter("customDate", itemIndex, false) as boolean;
+    
+    if (!bookingId) {
+      throw new NodeOperationError(executeFunctions.getNode(), "Booking ID is required for journey update");
+    }
+    
+    const variables: IDataObject = {
+      id: bookingId,
+      journeyStage: journeyStage, // API expects lowercase enum values
+    };
+
+    // Always include a date - either custom or current
+    if (customDate) {
+      const date = executeFunctions.getNodeParameter("date", itemIndex) as string;
+      variables.date = date;
+    } else {
+      // Use current date/time if no custom date specified
+      variables.date = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+    }
+
+    try {
+      const response = await sembleApiRequest.call(
+        executeFunctions,
+        UPDATE_BOOKING_JOURNEY_MUTATION,
+        variables,
+        3,
+        false
+      );
+
+      if (response.updateBookingJourney.error) {
+        throw new NodeApiError(executeFunctions.getNode(), {
+          message: response.updateBookingJourney.error,
+          description: response.updateBookingJourney.error,
+        });
+      }
+
+      if (!response.updateBookingJourney.data) {
+        throw new NodeApiError(executeFunctions.getNode(), {
+          message: "No data returned from booking journey update",
+          description: "No data returned from booking journey update",
+        });
+      }
+
+      return response.updateBookingJourney.data;
+    } catch (error) {
+      throw new NodeApiError(executeFunctions.getNode(), {
+        message: `Failed to update booking journey: ${(error as Error).message}`,
+        description: (error as Error).message,
+      });
+    }
+  }
+
+  /**
    * Execute the specified booking action
    * @param executeFunctions - The execution functions context
    * @param action - The action to execute (get, getMany, create, update, delete)
@@ -366,6 +530,8 @@ export class BookingResource {
         return await BookingResource.create(executeFunctions, itemIndex);
       case "update":
         return await BookingResource.update(executeFunctions, itemIndex);
+      case "updateJourney":
+        return await BookingResource.updateJourney(executeFunctions, itemIndex);
       case "delete":
         return await BookingResource.delete(executeFunctions, itemIndex);
       default:

@@ -105,12 +105,16 @@ export class SemblePagination {
     let hasMore = true;
 
     while (hasMore) {
-      const variables = {
+      const variables: IDataObject = {
         ...baseVariables,
         pagination: { page: currentPage, pageSize: 100 }, // Use larger page size for efficiency
-        search: search || undefined,
         options: options || {}
       };
+
+      // Only add search if it's provided and not empty/undefined
+      if (search) {
+        variables.search = search;
+      }
 
       const response = await sembleApiRequest.call(context, query, variables, 3, false);
       const responseData = response[dataPath];
@@ -161,12 +165,16 @@ export class SemblePagination {
   ): Promise<PaginationResult> {
     const { query, baseVariables, dataPath, pageSize, search, options } = config;
 
-    const variables = {
+    const variables: IDataObject = {
       ...baseVariables,
       pagination: { page: 1, pageSize },
-      search: search || undefined,
       options: options || {}
     };
+
+    // Only add search if it's provided and not empty/undefined
+    if (search) {
+      variables.search = search;
+    }
 
     const response = await sembleApiRequest.call(context, query, variables, 3, false);
     const responseData = response[dataPath];

@@ -8,18 +8,24 @@
 
 /**
  * Complete booking fields for GraphQL queries
- * Includes all essential booking information and related entities
- * Updated to match actual API schema
+ * Includes ALL verified accessible booking fields from Semble API
+ * Updated with actual API testing to confirm field availability and permissions
  */
 export const BOOKING_FIELDS = `
   id
-  status
+  deleted
+  cancellationReason
+  doctorName
   start
   end
-  duration
-  comments
   createdAt
   updatedAt
+  videoUrl
+  comments
+  reference
+  billed
+  patientId
+  onlineBookingPaymentStatus
   patient {
     id
     firstName
@@ -30,15 +36,99 @@ export const BOOKING_FIELDS = `
     id
     name
   }
+  appointment {
+    id
+    title
+    duration
+    price
+  }
+  bookingJourney {
+    arrived
+    consultation
+    departed
+    dna
+  }
+  patientMessagesSent {
+    confirmation
+    reminder
+    followup
+    cancellation
+  }
+`;
+
+/**
+ * Booking fields with doctor information (requires settingsSeeUsers permission)
+ * Use this when the user has appropriate permissions to see doctor details
+ */
+export const BOOKING_FIELDS_WITH_DOCTOR = `
+  id
+  deleted
+  cancellationReason
+  doctorName
   doctor {
     id
     firstName
     lastName
+    email
   }
-  bookingType {
+  start
+  end
+  createdAt
+  updatedAt
+  videoUrl
+  comments
+  reference
+  billed
+  patientId
+  onlineBookingPaymentStatus
+  patient {
+    id
+    firstName
+    lastName
+    email
+  }
+  location {
     id
     name
+  }
+  appointment {
+    id
+    title
     duration
+    price
+  }
+  bookingJourney {
+    arrived
+    consultation
+    departed
+    dna
+  }
+  patientMessagesSent {
+    confirmation
+    reminder
+    followup
+    cancellation
+  }
+`;
+
+/**
+ * Basic booking fields for minimal permission levels
+ * Includes only essential booking information
+ */
+export const BOOKING_FIELDS_BASIC = `
+  id
+  start
+  end
+  createdAt
+  updatedAt
+  patient {
+    id
+    firstName
+    lastName
+  }
+  location {
+    id
+    name
   }
 `;
 
@@ -59,20 +149,21 @@ export const GET_BOOKING_QUERY = `
  * 
  * const paginationResult = await SemblePagination.execute(this, {
  *   query: GET_BOOKINGS_QUERY,
- *   baseVariables: {},
+ *   baseVariables: { 
+ *     dateRange: { start: '2024-01-01', end: '2024-12-31' },
+ *     options: {}
+ *   },
  *   dataPath: 'bookings',
  *   pageSize: paginationConfig.pageSize,
- *   returnAll: paginationConfig.returnAll,
- *   search: paginationConfig.search,
- *   options: { startDate: '2024-01-01', endDate: '2024-12-31' }
+ *   returnAll: paginationConfig.returnAll
  * });
  */
 export const GET_BOOKINGS_QUERY = `
-  query GetBookings($pagination: Pagination, $search: String, $options: QueryOptions) {
+  query GetBookings($pagination: Pagination, $options: QueryOptions, $dateRange: DateRange) {
     bookings(
       pagination: $pagination
-      search: $search
       options: $options
+      dateRange: $dateRange
     ) {
       data {
         ${BOOKING_FIELDS}
@@ -144,6 +235,27 @@ export const DELETE_BOOKING_MUTATION = `
         status
         start
         end
+      }
+      error
+    }
+  }
+`;
+
+/**
+ * GraphQL mutation for updating a booking's journey stage
+ * High priority - commonly used for patient flow management
+ */
+export const UPDATE_BOOKING_JOURNEY_MUTATION = `
+  mutation UpdateBookingJourney($id: ID!, $journeyStage: JourneyStage!, $date: Date) {
+    updateBookingJourney(
+      id: $id, 
+      bookingJourneyInput: {
+        journeyStage: $journeyStage,
+        date: $date
+      }
+    ) {
+      data {
+        ${BOOKING_FIELDS}
       }
       error
     }

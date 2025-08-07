@@ -10,13 +10,16 @@ import { IPollFunctions, INodeExecutionData, IDataObject } from "n8n-workflow";
 import { SembleTrigger } from "../../nodes/Semble/SembleTrigger.node";
 import * as GenericFunctions from "../../nodes/Semble/GenericFunctions";
 import * as PaginationHelpers from "../../nodes/Semble/shared/PaginationHelpers";
+import { BookingTrigger } from "../../nodes/Semble/triggers/BookingTrigger";
 
 // Mock the dependencies
 jest.mock("../../nodes/Semble/GenericFunctions");
 jest.mock("../../nodes/Semble/shared/PaginationHelpers");
+jest.mock("../../nodes/Semble/triggers/BookingTrigger");
 
 const mockGenericFunctions = GenericFunctions as jest.Mocked<typeof GenericFunctions>;
 const mockPaginationHelpers = PaginationHelpers as jest.Mocked<typeof PaginationHelpers>;
+const mockBookingTrigger = BookingTrigger as jest.Mocked<typeof BookingTrigger>;
 
 describe("SembleTrigger Node", () => {
   let triggerNode: SembleTrigger;
@@ -745,6 +748,77 @@ describe("SembleTrigger Node", () => {
           returnAll: true,
         })
       );
+    });
+  });
+
+  describe("Resource Handling - All Resources Use Same Logic", () => {
+    beforeEach(() => {
+      // Mock BookingTrigger.poll to return sample data
+      mockBookingTrigger.poll = jest.fn().mockResolvedValue([
+        [
+          {
+            json: {
+              id: "booking1",
+              patientId: "patient123",
+              status: "confirmed",
+              eventType: "any",
+              pollTime: new Date().toISOString(),
+            },
+          },
+        ],
+      ]);
+    });
+
+    it("should use generic logic for all resources including booking", async () => {
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("booking") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        bookings: {
+          data: [{ id: "booking1", patientId: "patient123", status: "confirmed" }],
+          pageInfo: { hasMore: false },
+        },
+      });
+
+      const result = await triggerNode.poll.call(mockPollFunctions);
+
+      // Should NOT delegate to BookingTrigger (no longer exists)
+      expect(mockBookingTrigger.poll).not.toHaveBeenCalled();
+      
+      // Should use the generic polling logic for all resources
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(result![0]).toHaveLength(1);
+      expect(result![0][0].json.id).toBe("booking1");
+    });
+
+    it("should still use generic logic for non-booking resources", async () => {
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource (NOT booking)
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [{ id: "patient1", firstName: "John" }],
+          pageInfo: { hasMore: false },
+        },
+      });
+
+      const result = await triggerNode.poll.call(mockPollFunctions);
+
+      // Should NOT delegate to BookingTrigger
+      expect(mockBookingTrigger.poll).not.toHaveBeenCalled();
+      
+      // Should use the generic polling logic
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(result![0]).toHaveLength(1);
+      expect(result![0][0].json.id).toBe("patient1");
     });
   });
 });

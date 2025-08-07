@@ -37,7 +37,13 @@ import { ProductResource } from "./resources/ProductResource";
 import { BookingResource } from "./resources/BookingResource";
 
 // Field Descriptions
-import { BOOKING_FIELDS } from "./descriptions/BookingDescription";
+import {
+  BOOKING_FIELDS,
+  JOURNEY_STAGE_FIELD,
+  CUSTOM_DATE_FIELD,
+  JOURNEY_DATE_FIELD,
+  JOURNEY_BOOKING_ID_FIELD,
+} from "./descriptions/BookingDescription";
 
 // Core Components - Dependency Injection & Event System
 import {
@@ -238,6 +244,12 @@ export class Semble implements INodeType {
             value: "update",
             description: "Update existing records in Semble",
             action: "Update existing records in semble",
+          },
+          {
+            name: "Update Journey",
+            value: "updateJourney",
+            description: "Update booking journey stage (booking only)",
+            action: "Update booking journey stage",
           },
         ],
         default: "get",
@@ -1326,6 +1338,11 @@ export class Semble implements INodeType {
       },
       // Booking Resource Fields
       ...BOOKING_FIELDS,
+      // Booking Journey Update Fields
+      JOURNEY_BOOKING_ID_FIELD,
+      JOURNEY_STAGE_FIELD,
+      CUSTOM_DATE_FIELD,
+      JOURNEY_DATE_FIELD,
     ],
   };
 
@@ -1389,6 +1406,14 @@ name
 
     const action = this.getNodeParameter("action", 0) as string;
     const resource = this.getNodeParameter("resource", 0) as string;
+
+    // Validate resource-specific actions
+    if (action === "updateJourney" && resource !== "booking") {
+      throw new NodeOperationError(
+        this.getNode(),
+        `The 'updateJourney' action is only available for booking resources`,
+      );
+    }
 
     for (let i = 0; i < length; i++) {
       try {

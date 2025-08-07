@@ -8,30 +8,37 @@
 
 import {
   BOOKING_FIELDS,
+  BOOKING_FIELDS_WITH_DOCTOR,
+  BOOKING_FIELDS_BASIC,
   GET_BOOKING_QUERY,
   GET_BOOKINGS_QUERY,
   CREATE_BOOKING_MUTATION,
   UPDATE_BOOKING_MUTATION,
   DELETE_BOOKING_MUTATION,
+  UPDATE_BOOKING_JOURNEY_MUTATION,
 } from "../../nodes/Semble/shared/BookingQueries";
 
 describe("Booking Queries", () => {
   describe("BOOKING_FIELDS", () => {
-    it("should contain all essential booking fields", () => {
+    it("should contain all expanded booking fields", () => {
       const requiredFields = [
         "id",
-        "status", 
+        "deleted",
+        "cancellationReason",
+        "doctorName",
         "start", 
-        "end", 
-        "duration",
-        "comments",
+        "end",
         "createdAt",
         "updatedAt",
-        "patient",
-        "location",
-        "doctor",
-        "bookingType",
-      ];      requiredFields.forEach((field) => {
+        "videoUrl",
+        "comments",
+        "reference",
+        "billed",
+        "patientId",
+        "onlineBookingPaymentStatus",
+      ];
+      
+      requiredFields.forEach((field) => {
         expect(BOOKING_FIELDS).toContain(field);
       });
     });
@@ -44,10 +51,88 @@ describe("Booking Queries", () => {
       });
     });
 
-    it("should include location and practitioner fields", () => {
+    it("should include nested appointment fields", () => {
+      const appointmentFields = ["id", "title", "duration", "price"];
+      
+      appointmentFields.forEach((field) => {
+        expect(BOOKING_FIELDS).toContain(field);
+      });
+    });
+
+    it("should include booking journey fields", () => {
+      const journeyFields = ["arrived", "consultation", "departed", "dna"];
+      
+      journeyFields.forEach((field) => {
+        expect(BOOKING_FIELDS).toContain(field);
+      });
+    });
+
+    it("should include patient messages sent fields", () => {
+      const messageFields = ["confirmation", "reminder", "followup", "cancellation"];
+      
+      messageFields.forEach((field) => {
+        expect(BOOKING_FIELDS).toContain(field);
+      });
+    });
+
+    it("should include location fields", () => {
       expect(BOOKING_FIELDS).toContain("location {");
-      expect(BOOKING_FIELDS).toContain("doctor {");
-      expect(BOOKING_FIELDS).toContain("bookingType {");
+      expect(BOOKING_FIELDS).toContain("id");
+      expect(BOOKING_FIELDS).toContain("name");
+    });
+  });
+
+  describe("BOOKING_FIELDS_WITH_DOCTOR", () => {
+    it("should include all doctor fields for privileged users", () => {
+      const doctorFields = ["firstName", "lastName", "email"]; // Note: phone not included in current implementation
+      
+      doctorFields.forEach((field) => {
+        expect(BOOKING_FIELDS_WITH_DOCTOR).toContain(field);
+      });
+    });
+
+    it("should include all standard booking fields", () => {
+      expect(BOOKING_FIELDS_WITH_DOCTOR).toContain("id");
+      expect(BOOKING_FIELDS_WITH_DOCTOR).toContain("start");
+      expect(BOOKING_FIELDS_WITH_DOCTOR).toContain("end");
+      expect(BOOKING_FIELDS_WITH_DOCTOR).toContain("comments");
+    });
+
+    it("should have more content than basic fields", () => {
+      expect(BOOKING_FIELDS_WITH_DOCTOR.length).toBeGreaterThan(BOOKING_FIELDS_BASIC.length);
+    });
+  });
+
+  describe("BOOKING_FIELDS_BASIC", () => {
+    it("should include essential fields without doctor details", () => {
+      const basicFields = ["id", "start", "end", "createdAt", "updatedAt"]; // Note: patientId not in BASIC fields
+      
+      basicFields.forEach((field) => {
+        expect(BOOKING_FIELDS_BASIC).toContain(field);
+      });
+    });
+
+    it("should not include detailed doctor fields", () => {
+      expect(BOOKING_FIELDS_BASIC).not.toContain("doctor { firstName");
+      expect(BOOKING_FIELDS_BASIC).not.toContain("doctor { lastName");
+      expect(BOOKING_FIELDS_BASIC).not.toContain("doctor { email");
+    });
+  });
+
+  describe("UPDATE_BOOKING_JOURNEY_MUTATION", () => {
+    it("should be a valid GraphQL mutation", () => {
+      expect(UPDATE_BOOKING_JOURNEY_MUTATION).toContain("mutation UpdateBookingJourney");
+      expect(UPDATE_BOOKING_JOURNEY_MUTATION).toContain("$id: ID!");
+      expect(UPDATE_BOOKING_JOURNEY_MUTATION).toContain("$journeyStage: JourneyStage!");
+      expect(UPDATE_BOOKING_JOURNEY_MUTATION).toContain("$date: Date");
+    });
+
+    it("should include data response field", () => {
+      expect(UPDATE_BOOKING_JOURNEY_MUTATION).toContain("data {");
+    });
+
+    it("should include error response field", () => {
+      expect(UPDATE_BOOKING_JOURNEY_MUTATION).toContain("error");
     });
   });
 
@@ -74,8 +159,8 @@ describe("Booking Queries", () => {
 
     it("should include pagination parameters", () => {
       expect(GET_BOOKINGS_QUERY).toContain("$pagination: Pagination");
-      expect(GET_BOOKINGS_QUERY).toContain("$search: String");
       expect(GET_BOOKINGS_QUERY).toContain("$options: QueryOptions");
+      expect(GET_BOOKINGS_QUERY).toContain("$dateRange: DateRange");
     });
 
     it("should use booking fields in data section", () => {

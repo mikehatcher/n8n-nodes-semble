@@ -72,9 +72,9 @@ describe('Semble Node - Product Operations Integration', () => {
       );
     });
 
-    it('should throw error when product not found', async () => {
+    it('should return placeholder object when product not found', async () => {
       const testProductId = 'nonexistent-product-id';
-
+      
       (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
         switch (param) {
           case 'action': return 'get';
@@ -84,17 +84,47 @@ describe('Semble Node - Product Operations Integration', () => {
         }
       });
 
-      mockSembleApiRequest.mockResolvedValue({
-        product: null
-      });
-
-      await expect(sembleNode.execute.call(mockContext)).rejects.toThrow(NodeApiError);
-      await expect(sembleNode.execute.call(mockContext)).rejects.toThrow(
-        'Product with ID nonexistent-product-id not found'
-      );
+      const result = await sembleNode.execute.call(mockContext);
+      
+      expect(result).toEqual([[{
+        json: {
+          id: 'nonexistent-product-id',
+          name: 'Unknown Product',
+          description: 'Invalid product ID format: nonexistent-product-id',
+          category: 'unknown',
+          price: null,
+          duration: null,
+          isSystemAppointment: false,
+        }
+      }]]);
     });
 
-    it('should throw error when product ID is missing', async () => {
+    it('should handle system appointment types', async () => {
+      const testProductId = 'unavailable';
+      
+      (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+        switch (param) {
+          case 'action': return 'get';
+          case 'resource': return 'product';
+          case 'productId': return testProductId;
+          default: return undefined;
+        }
+      });
+
+      const result = await sembleNode.execute.call(mockContext);
+      
+      expect(result).toEqual([[{
+        json: {
+          id: 'unavailable',
+          name: 'Out of office',
+          description: 'System appointment type: unavailable',
+          category: 'system',
+          price: null,
+          duration: null,
+          isSystemAppointment: true,
+        }
+      }]]);
+    });    it('should throw error when product ID is missing', async () => {
       (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
         switch (param) {
           case 'action': return 'get';
@@ -587,7 +617,7 @@ describe('Semble Node - Product Operations Integration', () => {
       );
     });
 
-    it('should continue on fail when configured for product operations', async () => {
+    it('should handle invalid product IDs gracefully', async () => {
       (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
         switch (param) {
           case 'action': return 'get';
@@ -597,14 +627,18 @@ describe('Semble Node - Product Operations Integration', () => {
         }
       });
 
-      mockContext.continueOnFail.mockReturnValue(true);
-      mockSembleApiRequest.mockRejectedValue(new Error('API Error'));
-
       const result = await sembleNode.execute.call(mockContext);
 
       expect(result[0]).toHaveLength(1);
-      expect(result[0][0].json).toHaveProperty('error');
-      expect(result[0][0].json.error).toContain('Failed to get product');
+      expect(result[0][0].json).toEqual({
+        id: 'test-id',
+        name: 'Unknown Product',
+        description: 'Invalid product ID format: test-id',
+        price: null,
+        duration: null,
+        category: 'unknown',
+        isSystemAppointment: false,
+      });
     });
 
     it('should handle missing required fields appropriately', async () => {

@@ -99,15 +99,20 @@ describe("ProductResource", () => {
       expect(mockSembleApiRequest).not.toHaveBeenCalled();
     });
 
-    it("should throw error when product not found", async () => {
-      const productId = "nonexistent";
-      
-      mockExecuteFunctions.getNodeParameter.mockReturnValue(productId);
-      mockSembleApiRequest.mockResolvedValue({ product: null });
+    it('should return placeholder object when product not found', async () => {
+      mockExecuteFunctions.getNodeParameter.mockReturnValue('nonexistent');
 
-      await expect(
-        ProductResource.get(mockExecuteFunctions, 0)
-      ).rejects.toThrow(NodeApiError);
+      const result = await ProductResource.get(mockExecuteFunctions, 0);
+      
+      expect(result).toEqual({
+        id: 'nonexistent',
+        name: 'Unknown Product',
+        description: 'Invalid product ID format: nonexistent',
+        category: 'unknown',
+        price: null,
+        duration: null,
+        isSystemAppointment: false,
+      });
     });
 
     it("should handle API errors gracefully", async () => {
@@ -529,9 +534,10 @@ describe("ProductResource", () => {
   describe("executeAction method", () => {
     it("should route to correct action methods", async () => {
       // Mock successful responses for each action
-      const mockProduct = { id: "test", name: "Test Product" };
+      const validProductId = "62e2b7d228ec4b0013179e67"; // Valid 24-character MongoDB ObjectId
+      const mockProduct = { id: validProductId, name: "Test Product" };
       
-      mockExecuteFunctions.getNodeParameter.mockReturnValue("test-id");
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(validProductId);
       mockBuildPaginationConfig.mockReturnValue({
         pageSize: 50,
         returnAll: false,

@@ -750,4 +750,111 @@ describe('PermissionCheckService', () => {
 			expect(result3.cacheHit).toBe(false);
 		});
 	});
+
+	// =============================================================================
+	// NEW FIELD FILTERING TESTS
+	// =============================================================================
+
+	describe('getKnownFieldRestrictions', () => {
+		test('should return known field restrictions for bookings', () => {
+			const restrictions = PermissionCheckService.getKnownFieldRestrictions('booking');
+
+			expect(restrictions['doctor.id']).toBeDefined();
+			expect(restrictions['doctor.firstName']).toBeDefined();
+			expect(restrictions['doctor.lastName']).toBeDefined();
+			expect(restrictions['doctor.email']).toBeDefined();
+			
+			// All doctor fields should require settingsSeeUsers permission
+			expect(restrictions['doctor.firstName'].permission).toBe('settingsSeeUsers');
+			expect(restrictions['doctor.lastName'].permission).toBe('settingsSeeUsers');
+			expect(restrictions['doctor.email'].permission).toBe('settingsSeeUsers');
+			expect(restrictions['doctor.id'].permission).toBe('settingsSeeUsers');
+		});
+
+		test('should return empty object for unknown resources', () => {
+			const restrictions = PermissionCheckService.getKnownFieldRestrictions('unknownResource');
+
+			expect(restrictions).toEqual({});
+		});
+	});
+
+	describe('filterBookingFields', () => {
+		const sampleBookingFields = `
+			id
+			start
+			end
+			patientId
+			comments
+			doctor {
+				firstName
+				lastName
+				email
+				phone
+			}
+			location {
+				id
+				name
+			}
+		`;
+
+		test('should remove doctor fields when user lacks permissions', () => {
+			const result = PermissionCheckService.filterBookingFields(sampleBookingFields, false);
+
+			// Should not contain doctor field expansions
+			expect(result).not.toContain('doctor {');
+			expect(result).not.toContain('firstName');
+			expect(result).not.toContain('lastName');
+			expect(result).not.toContain('email');
+			expect(result).not.toContain('phone');
+
+			// Should contain other booking fields
+			expect(result).toContain('id');
+			expect(result).toContain('start');
+			expect(result).toContain('end');
+			expect(result).toContain('patientId');
+			expect(result).toContain('location');
+		});
+
+		test('should keep all fields when user has permissions', () => {
+			const result = PermissionCheckService.filterBookingFields(sampleBookingFields, true);
+
+			// Should contain doctor field expansions
+			expect(result).toContain('doctor {');
+			expect(result).toContain('firstName');
+			expect(result).toContain('lastName');
+			expect(result).toContain('email');
+			expect(result).toContain('phone');
+
+			// Should contain all other booking fields
+			expect(result).toContain('id');
+			expect(result).toContain('start');
+			expect(result).toContain('end');
+			expect(result).toContain('patientId');
+			expect(result).toContain('location');
+		});
+
+		test('should handle empty or malformed fields gracefully', () => {
+			expect(PermissionCheckService.filterBookingFields('', false)).toBe('');
+			expect(PermissionCheckService.filterBookingFields('id start end', false)).toBe('id start end');
+			expect(PermissionCheckService.filterBookingFields('doctor { }', false)).toBe('');
+		});
+
+		test('should clean up whitespace properly', () => {
+			const messyFields = `
+				id    
+				start     end
+				doctor   {    firstName     lastName    }
+				comments
+			`;
+
+			const result = PermissionCheckService.filterBookingFields(messyFields, false);
+			
+			// Should not have excessive whitespace
+			expect(result).not.toMatch(/\s{2,}/);
+			expect(result).not.toContain('doctor');
+			expect(result).toContain('id');
+			expect(result).toContain('start');
+			expect(result).toContain('comments');
+		});
+	});
 });
