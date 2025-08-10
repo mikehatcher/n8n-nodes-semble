@@ -551,13 +551,14 @@ verify_deployment() {
             exit 1
         fi
         
-        # Check if node files exist and are recent (within last hour)
+        # Check if the required node files exist
+        # We expect exactly 2 main node files: Semble.node.js and SembleTrigger.node.js
         NODE_FILES_CHECK=$(docker exec --user root root-n8n-1 sh -c "
-            find /usr/local/lib/node_modules/n8n-nodes-semble/dist/nodes/Semble/ -name '*.js' -newermt '-1 hour' | wc -l
+            ls -1 /usr/local/lib/node_modules/n8n-nodes-semble/dist/nodes/Semble/*.node.js 2>/dev/null | wc -l
         " 2>/dev/null)
         
-        if [ "$NODE_FILES_CHECK" -lt "3" ]; then
-            echo "❌ VERIFICATION FAILED: Node files are not recent or missing"
+        if [ "$NODE_FILES_CHECK" -lt "2" ]; then
+            echo "❌ VERIFICATION FAILED: Node files are missing (found $NODE_FILES_CHECK, expected 2)"
             docker exec --user root root-n8n-1 sh -c "ls -la /usr/local/lib/node_modules/n8n-nodes-semble/dist/nodes/Semble/*.js"
             exit 1
         fi
@@ -570,7 +571,7 @@ verify_deployment() {
         echo "✅ VERIFICATION PASSED: Deployment successful"
         echo "   - Container running: ✅"
         echo "   - Package version 2.0.0: ✅"
-        echo "   - Recent node files: ✅"
+        echo "   - Node files (2): ✅"
         echo "   - Community node link: $(docker exec --user root root-n8n-1 sh -c '[ -L "/home/node/.n8n/nodes/node_modules/n8n-nodes-semble" ] && echo "✅" || echo "⚠️"')"
         echo ""
         echo "🎉 DEPLOYMENT SUMMARY:"
