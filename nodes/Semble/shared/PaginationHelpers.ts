@@ -222,7 +222,8 @@ export function buildPaginationConfig(options: IDataObject): {
   search?: string;
 } {
   return {
-    pageSize: (options.pageSize as number) || 50,
+    // Support both 'limit' (UI field) and 'pageSize' (legacy), with proper default
+    pageSize: (options.limit as number) || (options.pageSize as number) || 50,
     returnAll: (options.returnAll as boolean) || false,
     search: (options.search as string) || undefined,
   };

@@ -385,6 +385,36 @@ describe('PaginationHelpers', () => {
         search: undefined
       });
     });
+
+    it('should handle limit field from UI (booking options)', () => {
+      const options: IDataObject = {
+        limit: 75,  // This is what BookingDescription UI sends
+        returnAll: false,
+        search: 'test'
+      };
+      const config = buildPaginationConfig(options);
+
+      expect(config).toEqual({
+        pageSize: 75,  // Should use limit as pageSize
+        returnAll: false,
+        search: 'test'
+      });
+    });
+
+    it('should prefer limit over pageSize when both provided', () => {
+      const options: IDataObject = {
+        limit: 100,      // UI field
+        pageSize: 25,    // Legacy field
+        returnAll: true
+      };
+      const config = buildPaginationConfig(options);
+
+      expect(config).toEqual({
+        pageSize: 100,   // Should prefer limit
+        returnAll: true,
+        search: undefined
+      });
+    });
   });
 
   describe('PAGINATION_FIELDS', () => {
