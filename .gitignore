@@ -51,5 +51,4 @@ pids/
 # Temporary files
 *.tmp
 *.temp
-old/
 docs/
