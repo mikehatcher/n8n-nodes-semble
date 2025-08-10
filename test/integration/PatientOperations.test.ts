@@ -156,6 +156,7 @@ describeIntegration("Patient Operations - Real API Integration", () => {
         }),
       },
       getWorkflowStaticData: jest.fn().mockReturnValue({}),
+      getTimezone: jest.fn().mockReturnValue('UTC'),
     } as unknown as jest.Mocked<IPollFunctions>;
   });
 

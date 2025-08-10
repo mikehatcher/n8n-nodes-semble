@@ -131,28 +131,124 @@ const TRIGGER_RESOURCES: { [key: string]: TriggerResourceConfig } = {
  * Calculates the start date for the date range based on the selected period
  * @function calculateDateRangeStart
  * @param {string} period - The date period (1d, 1w, 1m, 3m, 6m, 12m, all)
- * @returns {Date} The calculated start date
+ * @param {string} timezone - The workflow timezone (e.g., 'America/New_York', 'Europe/London', 'UTC')
+ * @returns {Date} The calculated start date as UTC Date object
  */
-function calculateDateRangeStart(period: string): Date {
+function calculateDateRangeStart(
+  period: string,
+  timezone: string = "UTC",
+): Date {
   const now = new Date();
 
   switch (period) {
     case "all":
-      return new Date("1970-01-01"); // Very old date to get all records
+      return new Date("1970-01-01T00:00:00.000Z"); // Very old date to get all records
     case "1d":
-      return new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000); // 1 day
+      // Yesterday: start of yesterday (00:00:00)
+      const yesterday = new Date(now);
+      if (timezone === "UTC") {
+        yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+        yesterday.setUTCHours(0, 0, 0, 0);
+      } else {
+        // For non-UTC timezones, use toLocaleString to handle DST properly
+        const nowInTZ = new Date(
+          now.toLocaleString("sv-SE", { timeZone: timezone }),
+        );
+        nowInTZ.setDate(nowInTZ.getDate() - 1);
+        nowInTZ.setHours(0, 0, 0, 0);
+        return nowInTZ;
+      }
+      return yesterday;
     case "1w":
-      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days
+      // Last week: start of 7 days ago (00:00:00)
+      const weekAgo = new Date(now);
+      if (timezone === "UTC") {
+        weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
+        weekAgo.setUTCHours(0, 0, 0, 0);
+      } else {
+        const nowInTZ = new Date(
+          now.toLocaleString("sv-SE", { timeZone: timezone }),
+        );
+        nowInTZ.setDate(nowInTZ.getDate() - 7);
+        nowInTZ.setHours(0, 0, 0, 0);
+        return nowInTZ;
+      }
+      return weekAgo;
     case "1m":
-      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days
+      // Last month: start of 1 month ago (00:00:00)
+      const monthAgo = new Date(now);
+      if (timezone === "UTC") {
+        monthAgo.setUTCMonth(monthAgo.getUTCMonth() - 1);
+        monthAgo.setUTCHours(0, 0, 0, 0);
+      } else {
+        const nowInTZ = new Date(
+          now.toLocaleString("sv-SE", { timeZone: timezone }),
+        );
+        nowInTZ.setMonth(nowInTZ.getMonth() - 1);
+        nowInTZ.setHours(0, 0, 0, 0);
+        return nowInTZ;
+      }
+      return monthAgo;
     case "3m":
-      return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000); // 90 days
+      // 3 months ago: start of 3 months ago (00:00:00)
+      const threeMonthsAgo = new Date(now);
+      if (timezone === "UTC") {
+        threeMonthsAgo.setUTCMonth(threeMonthsAgo.getUTCMonth() - 3);
+        threeMonthsAgo.setUTCHours(0, 0, 0, 0);
+      } else {
+        const nowInTZ = new Date(
+          now.toLocaleString("sv-SE", { timeZone: timezone }),
+        );
+        nowInTZ.setMonth(nowInTZ.getMonth() - 3);
+        nowInTZ.setHours(0, 0, 0, 0);
+        return nowInTZ;
+      }
+      return threeMonthsAgo;
     case "6m":
-      return new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000); // 180 days
+      // 6 months ago: start of 6 months ago (00:00:00)
+      const sixMonthsAgo = new Date(now);
+      if (timezone === "UTC") {
+        sixMonthsAgo.setUTCMonth(sixMonthsAgo.getUTCMonth() - 6);
+        sixMonthsAgo.setUTCHours(0, 0, 0, 0);
+      } else {
+        const nowInTZ = new Date(
+          now.toLocaleString("sv-SE", { timeZone: timezone }),
+        );
+        nowInTZ.setMonth(nowInTZ.getMonth() - 6);
+        nowInTZ.setHours(0, 0, 0, 0);
+        return nowInTZ;
+      }
+      return sixMonthsAgo;
     case "12m":
-      return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 365 days
+      // 1 year ago: start of 1 year ago (00:00:00)
+      const yearAgo = new Date(now);
+      if (timezone === "UTC") {
+        yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
+        yearAgo.setUTCHours(0, 0, 0, 0);
+      } else {
+        const nowInTZ = new Date(
+          now.toLocaleString("sv-SE", { timeZone: timezone }),
+        );
+        nowInTZ.setFullYear(nowInTZ.getFullYear() - 1);
+        nowInTZ.setHours(0, 0, 0, 0);
+        return nowInTZ;
+      }
+      return yearAgo;
     default:
-      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Default to 30 days
+      // Default to 1 month ago
+      const defaultMonthAgo = new Date(now);
+      if (timezone === "UTC") {
+        defaultMonthAgo.setUTCMonth(defaultMonthAgo.getUTCMonth() - 1);
+        defaultMonthAgo.setUTCHours(0, 0, 0, 0);
+      } else {
+        const nowInTZ = new Date(
+          now.toLocaleString("sv-SE", { timeZone: timezone }),
+        );
+        nowInTZ.setMonth(nowInTZ.getMonth() - 1);
+        nowInTZ.setHours(0, 0, 0, 0);
+        return nowInTZ;
+      }
+      return defaultMonthAgo;
   }
 }
 
@@ -340,32 +436,32 @@ export class SembleTrigger implements INodeType {
           {
             name: "1 Day",
             value: "1d",
-            description: "Monitor items from the last 24 hours",
+            description: "Monitor items from yesterday (calendar day)",
           },
           {
             name: "1 Month",
             value: "1m",
-            description: "Monitor items from the last 30 days",
+            description: "Monitor items from the last calendar month",
           },
           {
             name: "1 Week",
             value: "1w",
-            description: "Monitor items from the last 7 days",
+            description: "Monitor items from the last 7 calendar days",
           },
           {
             name: "12 Months",
             value: "12m",
-            description: "Monitor items from the last 365 days",
+            description: "Monitor items from the last calendar year",
           },
           {
             name: "3 Months",
             value: "3m",
-            description: "Monitor items from the last 90 days",
+            description: "Monitor items from the last 3 calendar months",
           },
           {
             name: "6 Months",
             value: "6m",
-            description: "Monitor items from the last 180 days",
+            description: "Monitor items from the last 6 calendar months",
           },
           {
             name: "All Records",
@@ -538,9 +634,12 @@ async function pollResource(
   const workflowStaticData = this.getWorkflowStaticData("node");
   const lastPoll = workflowStaticData.lastPoll as string;
 
-  // Calculate date range based on the selected period
+  // Get the workflow timezone for accurate date calculations
+  const workflowTimezone = this.getTimezone();
+
+  // Calculate date range based on the selected period using workflow timezone
   const currentTime = new Date();
-  const dateRangeStart = calculateDateRangeStart(datePeriod);
+  const dateRangeStart = calculateDateRangeStart(datePeriod, workflowTimezone);
 
   // Calculate the cutoff date for filtering (use lastPoll if available, otherwise use date range start)
   let cutoffDate: string;
@@ -551,7 +650,7 @@ async function pollResource(
     cutoffDate = dateRangeStart.toISOString();
   }
 
-  const now = new Date().toISOString();
+  const now = currentTime.toISOString();
 
   // Determine if unlimited records are requested
   const isUnlimited = limit === -1;

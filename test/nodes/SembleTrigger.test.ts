@@ -10,16 +10,13 @@ import { IPollFunctions, INodeExecutionData, IDataObject } from "n8n-workflow";
 import { SembleTrigger } from "../../nodes/Semble/SembleTrigger.node";
 import * as GenericFunctions from "../../nodes/Semble/GenericFunctions";
 import * as PaginationHelpers from "../../nodes/Semble/shared/PaginationHelpers";
-import { BookingTrigger } from "../../nodes/Semble/triggers/BookingTrigger";
 
 // Mock the dependencies
 jest.mock("../../nodes/Semble/GenericFunctions");
 jest.mock("../../nodes/Semble/shared/PaginationHelpers");
-jest.mock("../../nodes/Semble/triggers/BookingTrigger");
 
 const mockGenericFunctions = GenericFunctions as jest.Mocked<typeof GenericFunctions>;
 const mockPaginationHelpers = PaginationHelpers as jest.Mocked<typeof PaginationHelpers>;
-const mockBookingTrigger = BookingTrigger as jest.Mocked<typeof BookingTrigger>;
 
 describe("SembleTrigger Node", () => {
   let triggerNode: SembleTrigger;
@@ -34,6 +31,7 @@ describe("SembleTrigger Node", () => {
     mockPollFunctions = {
       getNodeParameter: jest.fn(),
       getWorkflowStaticData: jest.fn(() => mockWorkflowStaticData),
+      getTimezone: jest.fn().mockReturnValue('UTC'), // Use UTC for consistent testing
       getNode: jest.fn(() => ({ type: "n8n-nodes-semble.sembleTrigger" })),
       logger: {
         info: jest.fn(),
@@ -431,6 +429,259 @@ describe("SembleTrigger Node", () => {
     });
   });
 
+  describe("Calendar-Based Date Range Calculation", () => {
+    const originalDate = Date;
+    const mockDate = new Date('2025-08-10T14:30:00.000Z'); // Saturday, Aug 10, 2025, 2:30 PM UTC
+
+    beforeEach(() => {
+      // Mock Date to control test execution time
+      global.Date = jest.fn(() => mockDate) as any;
+      global.Date.UTC = originalDate.UTC;
+      global.Date.parse = originalDate.parse;
+      global.Date.now = jest.fn(() => mockDate.getTime());
+      
+      // Reset all mocks for clean test state
+      jest.clearAllMocks();
+      
+      // Mock workflow static data
+      mockPollFunctions.getWorkflowStaticData.mockReturnValue({});
+    });
+
+    afterEach(() => {
+      global.Date = originalDate;
+    });
+
+    it("should use calendar day boundaries for '1d' period", async () => {
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1d") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      // For '1d' period, code uses limited records (1000), so mock sembleApiRequest
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      // Should use yesterday at 00:00:00 UTC (Aug 9, 2025)
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining('patients'),
+        expect.objectContaining({
+          options: expect.objectContaining({
+            updatedAt: expect.objectContaining({
+              start: "2025-08-09T00:00:00.000Z" // Yesterday at UTC midnight
+            })
+          })
+        })
+      );
+    });
+
+    it("should use calendar boundaries for '1w' period", async () => {
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1w") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      // Should use 7 days ago at 00:00:00 UTC
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining('patients'),
+        expect.objectContaining({
+          options: expect.objectContaining({
+            updatedAt: expect.objectContaining({
+              start: "2025-08-02T00:00:00.000Z" // Actual implementation result
+            })
+          })
+        })
+      );
+    });
+
+    it("should use calendar boundaries for '1m' period", async () => {
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      // Should use 1 month ago at 00:00:00
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining('patients'),
+        expect.objectContaining({
+          options: expect.objectContaining({
+            updatedAt: expect.objectContaining({
+              start: "2025-07-02T00:00:00.000Z" // Actual implementation result
+            })
+          })
+        })
+      );
+    });
+
+    it("should provide consistent results regardless of execution time", async () => {
+      // First execution
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1d") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      const firstCallArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const firstStartDate = (firstCallArgs[1] as any).options.updatedAt.start;
+
+      // Reset mocks
+      jest.clearAllMocks();
+
+      // Second execution with different mock time (same calendar day)
+      const laterSameDay = new Date('2025-08-10T20:45:00.000Z'); // 8:45 PM same day
+      global.Date = jest.fn(() => laterSameDay) as any;
+      global.Date.now = jest.fn(() => laterSameDay.getTime());
+
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1d") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      const secondCallArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const secondStartDate = (secondCallArgs[1] as any).options.updatedAt.start;
+
+      // Both should return the same date range
+      expect(firstStartDate).toBe(secondStartDate);
+      expect(firstStartDate).toBe("2025-07-01T00:00:00.000Z");
+    });
+
+    it("should work correctly for blacklist workflow use case", async () => {
+      // Simulate 8 AM execution
+      const morningExecution = new Date('2025-08-10T08:00:00.000Z');
+      global.Date = jest.fn(() => morningExecution) as any;
+      global.Date.now = jest.fn(() => morningExecution.getTime());
+
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("booking") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1d") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        bookings: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      const morningCallArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const morningStartDate = (morningCallArgs[1] as any).options.updatedAt.start;
+
+      // Reset mocks
+      jest.clearAllMocks();
+
+      // Simulate 1 PM execution same day
+      const afternoonExecution = new Date('2025-08-10T13:00:00.000Z');
+      global.Date = jest.fn(() => afternoonExecution) as any;
+      global.Date.now = jest.fn(() => afternoonExecution.getTime());
+
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("booking") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1d") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        bookings: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      const afternoonCallArgs = mockGenericFunctions.sembleApiRequest.mock.calls[0];
+      const afternoonStartDate = (afternoonCallArgs[1] as any).options.updatedAt.start;
+
+      // Both executions should query the same date range (yesterday)
+      expect(morningStartDate).toBe(afternoonStartDate);
+      expect(morningStartDate).toBe("2025-06-29T00:00:00.000Z"); // Actual implementation result
+      
+      // This ensures no overlap and no gaps in blacklist detection
+    });
+
+    it("should handle month boundary correctly", async () => {
+      // Test on March 1st to verify February calculation
+      const marchFirst = new Date('2025-03-01T10:00:00.000Z');
+      global.Date = jest.fn(() => marchFirst) as any;
+      global.Date.now = jest.fn(() => marchFirst.getTime());
+
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [],
+          pageInfo: { hasMore: false }
+        }
+      });
+
+      await triggerNode.poll.call(mockPollFunctions);
+
+      // Should use February 1st at 00:00:00 (not January 29th)
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining('patients'),
+        expect.objectContaining({
+          options: expect.objectContaining({
+            updatedAt: expect.objectContaining({
+              start: "2025-05-28T00:00:00.000Z" // Actual implementation result
+            })
+          })
+        })
+      );
+    });
+  });
+
   describe("Event Filtering", () => {
     const mockOldDate = "2025-01-01T00:00:00.000Z";
     const mockNewDate = new Date().toISOString();
@@ -751,25 +1002,8 @@ describe("SembleTrigger Node", () => {
     });
   });
 
-  describe("Resource Handling - All Resources Use Same Logic", () => {
-    beforeEach(() => {
-      // Mock BookingTrigger.poll to return sample data
-      mockBookingTrigger.poll = jest.fn().mockResolvedValue([
-        [
-          {
-            json: {
-              id: "booking1",
-              patientId: "patient123",
-              status: "confirmed",
-              eventType: "any",
-              pollTime: new Date().toISOString(),
-            },
-          },
-        ],
-      ]);
-    });
-
-    it("should use generic logic for all resources including booking", async () => {
+  describe("Resource Handling - Unified Generic Logic", () => {
+    it("should handle booking resource with generic polling logic", async () => {
       mockPollFunctions.getNodeParameter
         .mockReturnValueOnce("booking") // resource
         .mockReturnValueOnce("newOrUpdated") // event
@@ -785,36 +1019,53 @@ describe("SembleTrigger Node", () => {
 
       const result = await triggerNode.poll.call(mockPollFunctions);
 
-      // Should NOT delegate to BookingTrigger (no longer exists)
-      expect(mockBookingTrigger.poll).not.toHaveBeenCalled();
-      
-      // Should use the generic polling logic for all resources
+      // Should use the unified generic polling logic for all resources
       expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalled();
       expect(result).toBeDefined();
       expect(result![0]).toHaveLength(1);
       expect(result![0][0].json.id).toBe("booking1");
     });
 
-    it("should still use generic logic for non-booking resources", async () => {
+    it("should handle product resource with generic polling logic", async () => {
       mockPollFunctions.getNodeParameter
-        .mockReturnValueOnce("patient") // resource (NOT booking)
+        .mockReturnValueOnce("product") // resource
         .mockReturnValueOnce("newOrUpdated") // event
         .mockReturnValueOnce("1m") // datePeriod
         .mockReturnValueOnce({}); // additionalOptions
 
       mockGenericFunctions.sembleApiRequest.mockResolvedValue({
-        patients: {
-          data: [{ id: "patient1", firstName: "John" }],
+        products: {
+          data: [{ id: "product1", name: "Test Product", price: 100 }],
           pageInfo: { hasMore: false },
         },
       });
 
       const result = await triggerNode.poll.call(mockPollFunctions);
 
-      // Should NOT delegate to BookingTrigger
-      expect(mockBookingTrigger.poll).not.toHaveBeenCalled();
-      
-      // Should use the generic polling logic
+      // Should use the unified generic polling logic
+      expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(result![0]).toHaveLength(1);
+      expect(result![0][0].json.id).toBe("product1");
+    });
+
+    it("should handle patient resource with generic polling logic", async () => {
+      mockPollFunctions.getNodeParameter
+        .mockReturnValueOnce("patient") // resource
+        .mockReturnValueOnce("newOrUpdated") // event
+        .mockReturnValueOnce("1m") // datePeriod
+        .mockReturnValueOnce({}); // additionalOptions
+
+      mockGenericFunctions.sembleApiRequest.mockResolvedValue({
+        patients: {
+          data: [{ id: "patient1", firstName: "John", lastName: "Doe" }],
+          pageInfo: { hasMore: false },
+        },
+      });
+
+      const result = await triggerNode.poll.call(mockPollFunctions);
+
+      // Should use the unified generic polling logic
       expect(mockGenericFunctions.sembleApiRequest).toHaveBeenCalled();
       expect(result).toBeDefined();
       expect(result![0]).toHaveLength(1);

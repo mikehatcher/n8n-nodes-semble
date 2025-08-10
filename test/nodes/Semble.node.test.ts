@@ -1318,4 +1318,356 @@ describe('Semble Node - Patient Operations', () => {
       });
     });
   });
+
+  describe('Product Operations via executeAction', () => {
+    describe('Product List Operation', () => {
+      it('should list products successfully via executeAction', async () => {
+        const mockProductData = [
+          {
+            id: 'product1',
+            name: 'Product 1',
+            type: 'service',
+            price: 100
+          },
+          {
+            id: 'product2',
+            name: 'Product 2', 
+            type: 'product',
+            price: 50
+          }
+        ];
+
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'getMany';
+            case 'resource': return 'product';
+            case 'options': return {};
+            default: return undefined;
+          }
+        });
+
+        mockSemblePagination.execute.mockResolvedValue({
+          data: mockProductData,
+          meta: {
+            pagesProcessed: 1,
+            totalRecords: 2,
+            hasMore: false
+          }
+        });
+
+        const result = await sembleNode.execute.call(mockContext);
+
+        expect(result[0]).toHaveLength(2);
+        expect(result[0][0].json).toEqual(mockProductData[0]);
+        expect(result[0][1].json).toEqual(mockProductData[1]);
+        expect(mockSemblePagination.execute).toHaveBeenCalled();
+      });
+
+      it('should get single product successfully via executeAction', async () => {
+        const validProductId = '507f1f77bcf86cd799439011'; // Valid MongoDB ObjectId
+        const mockProductData = {
+          id: validProductId,
+          name: 'Product 1',
+          type: 'service',
+          price: 100,
+          description: 'Test product'
+        };
+
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'get';
+            case 'resource': return 'product';
+            case 'productId': return validProductId;
+            default: return undefined;
+          }
+        });
+
+        mockSembleApiRequest.mockResolvedValue({
+          product: mockProductData
+        });
+
+        const result = await sembleNode.execute.call(mockContext);
+
+        expect(result[0]).toHaveLength(1);
+        expect(result[0][0].json).toEqual(mockProductData);
+        expect(mockSembleApiRequest).toHaveBeenCalled();
+      });
+
+      it('should handle product API errors', async () => {
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'getMany';
+            case 'resource': return 'product';
+            case 'options': return {};
+            default: return undefined;
+          }
+        });
+
+        mockSemblePagination.execute.mockRejectedValue(new Error('Product API Error'));
+
+        await expect(sembleNode.execute.call(mockContext)).rejects.toThrow('Product API Error');
+      });
+
+      it('should handle product continueOnFail scenario', async () => {
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'getMany';
+            case 'resource': return 'product';
+            case 'options': return {};
+            default: return undefined;
+          }
+        });
+
+        mockContext.continueOnFail.mockReturnValue(true);
+        mockSemblePagination.execute.mockRejectedValue(new Error('Product API Error'));
+
+        const result = await sembleNode.execute.call(mockContext);
+
+        expect(result[0]).toHaveLength(1);
+        expect(result[0][0].json).toHaveProperty('error');
+        expect(result[0][0].json.error).toContain('Product API Error');
+      });
+    });
+  });
+
+  describe('Booking Operations via executeAction', () => {
+    describe('Booking List Operation', () => {
+      it('should list bookings successfully via executeAction', async () => {
+        const mockBookingData = [
+          {
+            id: 'booking1',
+            patientId: 'patient1',
+            appointmentType: 'consultation',
+            status: 'confirmed',
+            date: '2024-01-15T10:00:00Z'
+          },
+          {
+            id: 'booking2',
+            patientId: 'patient2',
+            appointmentType: 'follow-up',
+            status: 'pending',
+            date: '2024-01-16T14:00:00Z'
+          }
+        ];
+
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'getMany';
+            case 'resource': return 'booking';
+            case 'options': return {};
+            default: return undefined;
+          }
+        });
+
+        mockSemblePagination.execute.mockResolvedValue({
+          data: mockBookingData,
+          meta: {
+            pagesProcessed: 1,
+            totalRecords: 2,
+            hasMore: false
+          }
+        });
+
+        const result = await sembleNode.execute.call(mockContext);
+
+        expect(result[0]).toHaveLength(2);
+        expect(result[0][0].json).toEqual(mockBookingData[0]);
+        expect(result[0][1].json).toEqual(mockBookingData[1]);
+        expect(mockSemblePagination.execute).toHaveBeenCalled();
+      });
+
+      it('should get single booking successfully via executeAction', async () => {
+        const mockBookingData = {
+          id: 'booking1',
+          patientId: 'patient1',
+          appointmentType: 'consultation',
+          status: 'confirmed',
+          date: '2024-01-15T10:00:00Z',
+          duration: 30,
+          notes: 'Initial consultation'
+        };
+
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'get';
+            case 'resource': return 'booking';
+            case 'bookingId': return 'booking1';
+            default: return undefined;
+          }
+        });
+
+        mockSembleApiRequest.mockResolvedValue({
+          booking: mockBookingData
+        });
+
+        const result = await sembleNode.execute.call(mockContext);
+
+        expect(result[0]).toHaveLength(1);
+        expect(result[0][0].json).toEqual(mockBookingData);
+        expect(mockSembleApiRequest).toHaveBeenCalled();
+      });
+
+      it('should handle booking API errors', async () => {
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'getMany';
+            case 'resource': return 'booking';
+            case 'options': return {};
+            default: return undefined;
+          }
+        });
+
+        mockSemblePagination.execute.mockRejectedValue(new Error('Booking API Error'));
+
+        await expect(sembleNode.execute.call(mockContext)).rejects.toThrow('Failed to retrieve bookings');
+      });
+
+      it('should handle booking continueOnFail scenario', async () => {
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'getMany';
+            case 'resource': return 'booking';
+            case 'options': return {};
+            default: return undefined;
+          }
+        });
+
+        mockContext.continueOnFail.mockReturnValue(true);
+        mockSemblePagination.execute.mockRejectedValue(new Error('Booking validation failed'));
+
+        const result = await sembleNode.execute.call(mockContext);
+
+        expect(result[0]).toHaveLength(1);
+        expect(result[0][0].json).toHaveProperty('error');
+        expect(result[0][0].json.error).toContain('Failed to retrieve bookings');
+      });
+
+      it('should create booking successfully via executeAction', async () => {
+        const mockCreatedBooking = {
+          id: 'new-booking-123',
+          patientId: 'patient1',
+          appointmentType: 'consultation',
+          status: 'confirmed',
+          date: '2024-02-01T09:00:00Z',
+          duration: 60
+        };
+
+        (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+          switch (param) {
+            case 'action': return 'create';
+            case 'resource': return 'booking';
+            case 'patient': return 'patient1';
+            case 'doctor': return 'doctor1';
+            case 'location': return 'location1';
+            case 'bookingType': return 'consultation';
+            case 'start': return '2024-02-01T09:00:00Z';
+            case 'end': return '2024-02-01T10:00:00Z';
+            default: return undefined;
+          }
+        });
+
+        mockSembleApiRequest.mockResolvedValue({
+          createBooking: {
+            data: mockCreatedBooking,
+            error: null
+          }
+        });
+
+        const result = await sembleNode.execute.call(mockContext);
+
+        expect(result[0]).toHaveLength(1);
+        expect(result[0][0].json).toEqual(mockCreatedBooking);
+        expect(mockSembleApiRequest).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Resource Routing', () => {
+    it('should route to inline patient operations', async () => {
+      (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+        switch (param) {
+          case 'resource': return 'patient';
+          case 'action': return 'get';
+          case 'patientId': return 'patient1';
+          default: return undefined;
+        }
+      });
+
+      mockSembleApiRequest.mockResolvedValue({
+        patient: { id: 'patient1', firstName: 'Test' }
+      });
+
+      const result = await sembleNode.execute.call(mockContext);
+
+      expect(result[0]).toHaveLength(1);
+      expect(mockSembleApiRequest).toHaveBeenCalled();
+    });
+
+    it('should route to ProductResource.executeAction for product operations', async () => {
+      (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+        switch (param) {
+          case 'resource': return 'product';
+          case 'action': return 'getMany';
+          case 'options': return {};
+          default: return undefined;
+        }
+      });
+
+      mockSemblePagination.execute.mockResolvedValue({
+        data: [{ id: 'product1' }],
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 1,
+          hasMore: false
+        }
+      });
+
+      const result = await sembleNode.execute.call(mockContext);
+
+      expect(mockSemblePagination.execute).toHaveBeenCalled();
+      expect(result[0]).toHaveLength(1);
+    });
+
+    it('should route to BookingResource.executeAction for booking operations', async () => {
+      (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+        switch (param) {
+          case 'resource': return 'booking';
+          case 'action': return 'getMany';
+          case 'options': return {};
+          default: return undefined;
+        }
+      });
+
+      mockSemblePagination.execute.mockResolvedValue({
+        data: [{ id: 'booking1' }],
+        meta: {
+          pagesProcessed: 1,
+          totalRecords: 1,
+          hasMore: false
+        }
+      });
+
+      const result = await sembleNode.execute.call(mockContext);
+
+      expect(mockSemblePagination.execute).toHaveBeenCalled();
+      expect(result[0]).toHaveLength(1);
+    });
+
+    it('should handle unsupported resource with placeholder response', async () => {
+      (mockContext.getNodeParameter as any).mockImplementation((param: string) => {
+        switch (param) {
+          case 'resource': return 'unsupported';
+          case 'action': return 'get';
+          default: return undefined;
+        }
+      });
+
+      const result = await sembleNode.execute.call(mockContext);
+
+      expect(result[0]).toHaveLength(1);
+      expect(result[0][0].json).toEqual({
+        message: "Get action not yet implemented"
+      });
+    });
+  });
 });

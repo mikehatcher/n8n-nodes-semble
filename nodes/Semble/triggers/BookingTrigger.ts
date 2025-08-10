@@ -72,10 +72,6 @@ export class BookingTrigger {
       ) as IDataObject;
       const limit = (additionalOptions.limit as number) ?? 50;
 
-      // DEBUG: Log the actual limit being used
-      console.log(`🔧 BookingTrigger DEBUG: additionalOptions =`, additionalOptions);
-      console.log(`🔧 BookingTrigger DEBUG: using limit =`, limit);
-
       // Execute the query to get changed bookings
       const result = await SemblePagination.execute(pollFunctions, {
         query: GET_BOOKINGS_QUERY,
