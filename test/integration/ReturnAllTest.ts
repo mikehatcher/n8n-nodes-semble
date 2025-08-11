@@ -15,7 +15,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { SemblePagination, buildPaginationConfig } from '../../nodes/Semble/shared/PaginationHelpers';
 
 describe('Return All Functionality', () => {
-  if (!process.env.SEMBLE_API_KEY || !process.env.SEMBLE_API_URL) {
+  if (!process.env.SEMBLE_TOKEN || !process.env.SEMBLE_API_URL) {
     console.log('⚠️ Skipping returnAll tests - API credentials not found');
     test.skip('Integration tests require API credentials', () => {});
     return;

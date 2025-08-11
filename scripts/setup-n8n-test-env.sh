@@ -26,7 +26,7 @@ echo "📝 Creating docker-compose.yml..."
 cat > docker-compose.yml << 'EOF'
 services:
   n8n:
-    image: n8nio/n8n:${N8N_VERSION:-latest}
+    image: n8nio/n8n:${N8N_LOCAL_VERSION:-latest}
     container_name: n8n-semble-test
     restart: always
     ports:
@@ -113,7 +113,7 @@ ENV_EXAMPLE_FILE="$WORKSPACE_ROOT/n8n-nodes-semble/.env.example"
 
 # Function to ensure .env file exists with required n8n configuration
 ensure_env_file() {
-    local required_vars=("N8N_ADMIN_EMAIL" "N8N_ADMIN_PASSWORD" "N8N_ADMIN_FIRST_NAME" "N8N_ADMIN_LAST_NAME")
+    local required_vars=("N8N_LOCAL_ADMIN_EMAIL" "N8N_LOCAL_ADMIN_PASSWORD" "N8N_LOCAL_ADMIN_FIRST_NAME" "N8N_LOCAL_ADMIN_LAST_NAME")
     local missing_vars=()
     local existing_vars=()
     
@@ -145,7 +145,7 @@ ensure_env_file() {
         
         # Check if any variables have default values that need updating
         local needs_update=false
-        local email=$(get_env_var "N8N_ADMIN_EMAIL")
+        local email=$(get_env_var "N8N_LOCAL_ADMIN_EMAIL")
         if [ "$email" = "admin@example.com" ] || [ "$email" = "your_email_here" ]; then
             needs_update=true
         fi
@@ -245,8 +245,8 @@ setup_n8n_credentials() {
     local email password first_name last_name
     
     # Check if credentials already exist
-    if env_var_exists "N8N_ADMIN_EMAIL" && env_var_exists "N8N_ADMIN_PASSWORD"; then
-        email=$(get_env_var "N8N_ADMIN_EMAIL")
+    if env_var_exists "N8N_LOCAL_ADMIN_EMAIL" && env_var_exists "N8N_LOCAL_ADMIN_PASSWORD"; then
+        email=$(get_env_var "N8N_LOCAL_ADMIN_EMAIL")
         if [ "$email" != "admin@example.com" ] && [ "$email" != "your_email_here" ] && [ -n "$email" ]; then
             echo "✅ n8n credentials already configured for: $email"
             return 0
@@ -285,10 +285,10 @@ setup_n8n_credentials() {
     last_name=${last_name:-User}
     
     # Save to .env file
-    set_env_var "N8N_ADMIN_EMAIL" "$email"
-    set_env_var "N8N_ADMIN_PASSWORD" "$password"
-    set_env_var "N8N_ADMIN_FIRST_NAME" "$first_name"
-    set_env_var "N8N_ADMIN_LAST_NAME" "$last_name"
+    set_env_var "N8N_LOCAL_ADMIN_EMAIL" "$email"
+    set_env_var "N8N_LOCAL_ADMIN_PASSWORD" "$password"
+    set_env_var "N8N_LOCAL_ADMIN_FIRST_NAME" "$first_name"
+    set_env_var "N8N_LOCAL_ADMIN_LAST_NAME" "$last_name"
     
     echo "✅ n8n credentials saved to .env file"
 }
@@ -307,12 +307,12 @@ load_env() {
 
 # Function to validate n8n credentials are set
 validate_n8n_credentials() {
-    if [ -z "$N8N_ADMIN_EMAIL" ] || [ -z "$N8N_ADMIN_PASSWORD" ]; then
+    if [ -z "$N8N_LOCAL_ADMIN_EMAIL" ] || [ -z "$N8N_LOCAL_ADMIN_PASSWORD" ]; then
         echo "❌ n8N credentials not found in environment"
         return 1
     fi
     
-    if [ "$N8N_ADMIN_EMAIL" = "admin@example.com" ] || [ "$N8N_ADMIN_EMAIL" = "your_email_here" ]; then
+    if [ "$N8N_LOCAL_ADMIN_EMAIL" = "admin@example.com" ] || [ "$N8N_LOCAL_ADMIN_EMAIL" = "your_email_here" ]; then
         echo "❌ Please configure your n8n credentials (email is still set to default)"
         return 1
     fi
@@ -360,15 +360,15 @@ echo "✅ n8n is ready! Creating owner account..."
 RESPONSE=$(curl -s -X POST http://localhost:5678/rest/owner/setup \
   -H "Content-Type: application/json" \
   -d "{
-    \"email\": \"$N8N_ADMIN_EMAIL\",
-    \"password\": \"$N8N_ADMIN_PASSWORD\",
-    \"firstName\": \"$N8N_ADMIN_FIRST_NAME\",
-    \"lastName\": \"$N8N_ADMIN_LAST_NAME\"
+    \"email\": \"$N8N_LOCAL_ADMIN_EMAIL\",
+    \"password\": \"$N8N_LOCAL_ADMIN_PASSWORD\",
+    \"firstName\": \"$N8N_LOCAL_ADMIN_FIRST_NAME\",
+    \"lastName\": \"$N8N_LOCAL_ADMIN_LAST_NAME\"
   }")
 
 if echo "$RESPONSE" | grep -q '"id"'; then
     echo "✅ Owner account created successfully!"
-    echo "   Email: $N8N_ADMIN_EMAIL"
+    echo "   Email: $N8N_LOCAL_ADMIN_EMAIL"
     echo "   Password: [CONFIGURED]"
     echo "   URL: http://localhost:5678"
 else

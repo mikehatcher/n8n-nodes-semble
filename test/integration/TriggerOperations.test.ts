@@ -15,7 +15,7 @@ import * as path from "path";
 dotenv.config({ path: path.join(__dirname, "../../.env") });
 
 // Skip these tests if no real API credentials are available
-const skipIntegrationTests = !process.env.SEMBLE_API_KEY || !process.env.SEMBLE_API_URL;
+const skipIntegrationTests = !process.env.SEMBLE_TOKEN || !process.env.SEMBLE_API_URL;
 
 const describeIntegration = skipIntegrationTests ? describe.skip : describe;
 
@@ -26,11 +26,11 @@ describeIntegration("Trigger Operations - Real API Integration", () => {
   beforeAll(() => {
     console.log("🚀 Starting Trigger Operations Integration Tests");
     console.log(`API URL: ${process.env.SEMBLE_API_URL}`);
-    console.log(`Token available: ${!!process.env.SEMBLE_API_KEY}`);
+    console.log(`Token available: ${!!process.env.SEMBLE_TOKEN}`);
     
     if (skipIntegrationTests) {
       console.log("⚠️  Skipping integration tests - no credentials available");
-      console.log("   Set SEMBLE_API_KEY and SEMBLE_API_URL to enable");
+      console.log("   Set SEMBLE_TOKEN and SEMBLE_API_URL to enable");
     }
   });
 
@@ -40,7 +40,7 @@ describeIntegration("Trigger Operations - Real API Integration", () => {
     // Mock poll functions with real credentials
     mockPollFunctions = {
       getCredentials: jest.fn().mockResolvedValue({
-        token: process.env.SEMBLE_API_KEY,
+        token: process.env.SEMBLE_TOKEN,
         url: process.env.SEMBLE_API_URL,
       }),
       getNodeParameter: jest.fn(),

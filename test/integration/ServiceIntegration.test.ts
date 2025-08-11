@@ -31,7 +31,7 @@ import * as path from 'path';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // Skip tests requiring real API if credentials not available
-const skipIntegrationTests = !process.env.SEMBLE_API_KEY || !process.env.SEMBLE_API_URL;
+const skipIntegrationTests = !process.env.SEMBLE_TOKEN || !process.env.SEMBLE_API_URL;
 const describeIntegration = skipIntegrationTests ? describe.skip : describe;
 
 describe('Service Integration Tests', () => {
@@ -294,7 +294,7 @@ describe('Service Integration Tests', () => {
 
       // Test credentials
       const credentials = {
-        token: process.env.SEMBLE_API_KEY!,
+        token: process.env.SEMBLE_TOKEN!,
         url: process.env.SEMBLE_API_URL!,
       };
 

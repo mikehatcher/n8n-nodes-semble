@@ -19,11 +19,11 @@ dotenv.config({ path: path.join(__dirname, "../../../.env") });
 console.log("🔍 Environment Debug:");
 console.log("- .env path:", path.join(__dirname, "../../../.env"));
 console.log("- SEMBLE_API_URL:", process.env.SEMBLE_API_URL);
-console.log("- SEMBLE_API_KEY available:", !!process.env.SEMBLE_API_KEY);
-console.log("- Skip tests:", !process.env.SEMBLE_API_KEY || !process.env.SEMBLE_API_URL);
+console.log("- SEMBLE_TOKEN available:", !!process.env.SEMBLE_TOKEN);
+console.log("- Skip tests:", !process.env.SEMBLE_TOKEN || !process.env.SEMBLE_API_URL);
 
 // Skip these tests if no real API credentials are available
-const skipIntegrationTests = !process.env.SEMBLE_API_KEY || !process.env.SEMBLE_API_URL;
+const skipIntegrationTests = !process.env.SEMBLE_TOKEN || !process.env.SEMBLE_API_URL;
 
 const describeIntegration = skipIntegrationTests ? describe.skip : describe;
 
@@ -37,11 +37,11 @@ describeIntegration("Patient Operations - Real API Integration", () => {
   beforeAll(() => {
     console.log("🚀 Starting Patient Operations Integration Tests");
     console.log(`API URL: ${process.env.SEMBLE_API_URL}`);
-    console.log(`Token available: ${!!process.env.SEMBLE_API_KEY}`);
+    console.log(`Token available: ${!!process.env.SEMBLE_TOKEN}`);
     
     if (skipIntegrationTests) {
       console.log("⚠️  Skipping integration tests - no credentials available");
-      console.log("   Set SEMBLE_API_KEY and SEMBLE_API_URL to enable");
+      console.log("   Set SEMBLE_TOKEN and SEMBLE_API_URL to enable");
     }
   });
 
@@ -52,7 +52,7 @@ describeIntegration("Patient Operations - Real API Integration", () => {
     // Mock execution functions with real credentials
     mockExecuteFunctions = {
       getCredentials: jest.fn().mockResolvedValue({
-        token: process.env.SEMBLE_API_KEY,
+        token: process.env.SEMBLE_TOKEN,
         url: process.env.SEMBLE_API_URL,
       }),
       getNodeParameter: jest.fn(),
@@ -107,7 +107,7 @@ describeIntegration("Patient Operations - Real API Integration", () => {
     // Mock poll functions with real credentials
     mockPollFunctions = {
       getCredentials: jest.fn().mockResolvedValue({
-        token: process.env.SEMBLE_API_KEY,
+        token: process.env.SEMBLE_TOKEN,
         url: process.env.SEMBLE_API_URL,
       }),
       getNodeParameter: jest.fn(),

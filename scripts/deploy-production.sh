@@ -12,14 +12,14 @@
 #   ./scripts/deploy-production.sh --status   # Check deployment status
 #
 # Setup required:
-#   1. Set N8N_HOST, N8N_HOST_USER, SSH_KEY_PATH in your .env file
+#   1. Set N8N_PROD_HOST, N8N_PROD_USER, SSH_KEY_PATH in your .env file
 #   2. Ensure SSH key access to your production VPS  
 #   3. Ensure n8n is running in Docker on the production server
 #
 # Environment variables (set in .env file):
-#   N8N_HOST          - Your production VPS IP/hostname
-#   N8N_HOST_USER     - SSH username (usually root)
-#   N8N_HOST_PWD      - SSH password (optional, if not using key auth)
+#   N8N_PROD_HOST     - Your production VPS IP/hostname
+#   N8N_PROD_USER     - SSH username (usually root)
+#   N8N_PROD_PWD      - SSH password (optional, if not using key auth)
 #   SSH_KEY_PATH      - Path to SSH private key (without .pub extension)
 ##############################################################################
 
@@ -41,9 +41,9 @@ elif [ -f "../../.env" ]; then
 fi
 
 # Production server details - loaded from environment or defaults
-PROD_HOST="${N8N_HOST:-your-server.example.com}"    # Your production VPS hostname/IP
-PROD_USER="${N8N_HOST_USER:-root}"                  # SSH user (usually root on VPS)
-PROD_PWD="${N8N_HOST_PWD:-}"                        # SSH password (optional)
+PROD_HOST="${N8N_PROD_HOST:-your-server.example.com}"    # Your production VPS hostname/IP
+PROD_USER="${N8N_PROD_USER:-root}"                  # SSH user (usually root on VPS)
+PROD_PWD="${N8N_PROD_PWD:-}"                        # SSH password (optional)
 
 # SSH key path - remove .pub extension if present (we need private key for SSH)
 if [ -n "$SSH_KEY_PATH" ]; then
@@ -511,7 +511,7 @@ esac
 
 # Validate configuration
 if [ "$PROD_HOST" = "your-server.example.com" ]; then
-    error "Please configure N8N_HOST in your .env file"
+    error "Please configure N8N_PROD_HOST in your .env file"
 fi
 
 if [ ! -f "$PROD_SSH_KEY" ]; then

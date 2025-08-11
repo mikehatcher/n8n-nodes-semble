@@ -43,8 +43,8 @@ get_api_config() {
     local env="$1"
     
     if [ "$env" = "production" ]; then
-        API_ENDPOINT="$N8N_HOST_API_ENDPOINT"
-        API_KEY="$N8N_HOST_API_KEY"
+        API_ENDPOINT="$N8N_PROD_API_ENDPOINT"
+        API_KEY="$N8N_PROD_API_KEY"
         HOST_URL="https://workflows.thehealthsuite.co.uk"
     else
         API_ENDPOINT="$N8N_LOCAL_API_ENDPOINT"
@@ -101,8 +101,8 @@ check_community_nodes() {
         fi
     else
         # For production environment, check via SSH
-        if [ -n "$N8N_HOST" ] && [ -n "$N8N_HOST_USER" ] && [ -n "$N8N_HOST_PWD" ]; then
-            local node_check=$(sshpass -p "$N8N_HOST_PWD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$N8N_HOST_USER@$N8N_HOST" \
+        if [ -n "$N8N_PROD_HOST" ] && [ -n "$N8N_PROD_USER" ] && [ -n "$N8N_PROD_PWD" ]; then
+            local node_check=$(sshpass -p "$N8N_PROD_PWD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$N8N_PROD_USER@$N8N_PROD_HOST" \
                 "docker exec \$(docker ps --format '{{.Names}}' | grep n8n | head -1) sh -c 'ls -la /home/node/.n8n/nodes/node_modules/ 2>/dev/null | grep semble || echo missing'" 2>/dev/null || echo "error")
             
             if [[ "$node_check" == *"semble"* ]]; then
@@ -246,11 +246,11 @@ update_local_docker() {
         print_status "$YELLOW" "⚠️  No community nodes detected before update"
     fi
     
-    # Update N8N_VERSION in .env file
+    # Update N8N_LOCAL_VERSION in .env file
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/^N8N_VERSION=.*/N8N_VERSION=$version/" "$ENV_FILE"
+        sed -i '' "s/^N8N_LOCAL_VERSION=.*/N8N_LOCAL_VERSION=$version/" "$ENV_FILE"
     else
-        sed -i "s/^N8N_VERSION=.*/N8N_VERSION=$version/" "$ENV_FILE"
+        sed -i "s/^N8N_LOCAL_VERSION=.*/N8N_LOCAL_VERSION=$version/" "$ENV_FILE"
     fi
     
     print_status "$BLUE" "📥 Pulling n8nio/n8n:$version..."
@@ -305,9 +305,9 @@ update_production_docker() {
     local version="$1"
     
     # Validate SSH credentials
-    if [ -z "$N8N_HOST" ] || [ -z "$N8N_HOST_USER" ] || [ -z "$N8N_HOST_PWD" ]; then
+    if [ -z "$N8N_PROD_HOST" ] || [ -z "$N8N_PROD_USER" ] || [ -z "$N8N_PROD_PWD" ]; then
         print_status "$RED" "❌ Production SSH credentials not configured"
-        echo "   Required: N8N_HOST, N8N_HOST_USER, N8N_HOST_PWD"
+        echo "   Required: N8N_PROD_HOST, N8N_PROD_USER, N8N_PROD_PWD"
         return 1
     fi
     
@@ -326,8 +326,8 @@ update_production_docker() {
     
     # Check SSH connection
     print_status "$YELLOW" "🔍 Checking SSH connection to production server..."
-    if ! sshpass -p "$N8N_HOST_PWD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$N8N_HOST_USER@$N8N_HOST" "echo 'SSH OK'" >/dev/null 2>&1; then
-        print_status "$RED" "❌ Cannot connect to production server $N8N_HOST"
+    if ! sshpass -p "$N8N_PROD_PWD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$N8N_PROD_USER@$N8N_PROD_HOST" "echo 'SSH OK'" >/dev/null 2>&1; then
+        print_status "$RED" "❌ Cannot connect to production server $N8N_PROD_HOST"
         return 1
     fi
     
@@ -341,7 +341,7 @@ update_production_docker() {
     fi
     
     # Get current Docker container info
-    local container_info=$(sshpass -p "$N8N_HOST_PWD" ssh -o StrictHostKeyChecking=no "$N8N_HOST_USER@$N8N_HOST" \
+    local container_info=$(sshpass -p "$N8N_PROD_PWD" ssh -o StrictHostKeyChecking=no "$N8N_PROD_USER@$N8N_PROD_HOST" \
         "docker ps --format 'table {{.Names}}\t{{.Image}}' | grep n8n" 2>/dev/null || echo "")
     
     if [ -z "$container_info" ]; then
@@ -358,7 +358,7 @@ update_production_docker() {
     # Update production
     print_status "$BLUE" "🔄 Updating production n8n to version $version..."
     
-    sshpass -p "$N8N_HOST_PWD" ssh -o StrictHostKeyChecking=no "$N8N_HOST_USER@$N8N_HOST" << EOF
+    sshpass -p "$N8N_PROD_PWD" ssh -o StrictHostKeyChecking=no "$N8N_PROD_USER@$N8N_PROD_HOST" << EOF
         set -e
         
         # Find the current n8n container
@@ -425,9 +425,9 @@ EOF
             
             # Update production version in .env
             if [[ "$OSTYPE" == "darwin"* ]]; then
-                sed -i '' "s/^N8N_PRODUCTION_VERSION=.*/N8N_PRODUCTION_VERSION=$version/" "$ENV_FILE"
+                sed -i '' "s/^N8N_PROD_VERSION=.*/N8N_PROD_VERSION=$version/" "$ENV_FILE"
             else
-                sed -i "s/^N8N_PRODUCTION_VERSION=.*/N8N_PRODUCTION_VERSION=$version/" "$ENV_FILE"
+                sed -i "s/^N8N_PROD_VERSION=.*/N8N_PROD_VERSION=$version/" "$ENV_FILE"
             fi
             
             return 0
