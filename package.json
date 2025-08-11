@@ -78,7 +78,9 @@
     "status:prod": "./scripts/deploy-production.sh --status",
 
     "// === Local n8n Environment Management ===": "",
-    "setup:test-env": "./scripts/setup-n8n-test-env.sh",
+    "setup": "cd ../n8n-local-test && ./setup.sh",
+    "setup:env": "cd ../n8n-local-test && ./setup-env.sh",
+    "setup:test-env": "cd ../n8n-local-test && ./setup-test-env.sh",
     "start:n8n": "cd ../n8n-local-test && docker compose up -d",
     "stop:n8n": "cd ../n8n-local-test && docker compose down",
     "restart:n8n": "cd ../n8n-local-test && docker compose restart",
