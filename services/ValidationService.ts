@@ -11,27 +11,73 @@ import { ValidationError } from '../core/SembleError';
 import { FIELD_CONSTANTS, VALIDATION_PATTERNS } from '../core/Constants';
 
 /**
- * Validation result for a single field
+ * Result interface for individual field validation operations
+ * 
+ * Contains detailed validation results for a single field including
+ * validation status, error/warning messages, and normalized values.
+ * 
+ * @example
+ * ```typescript
+ * const fieldResult: FieldValidationResult = {
+ *   isValid: false,
+ *   fieldName: 'email',
+ *   value: 'invalid-email',
+ *   errorMessage: 'Invalid email format',
+ *   normalizedValue: null
+ * };
+ * ```
+ * 
  * @interface FieldValidationResult
+ * @since 2.0.0
  */
 export interface FieldValidationResult {
+  /** Whether the field value passed validation */
   isValid: boolean;
+  /** Name of the field that was validated */
   fieldName: string;
+  /** The original value that was validated */
   value: any;
+  /** Error message if validation failed */
   errorMessage?: string;
+  /** Warning message for non-critical issues */
   warningMessage?: string;
+  /** Normalized/cleaned value after validation */
   normalizedValue?: any;
 }
 
 /**
- * Validation result for multiple fields
+ * Comprehensive validation result interface for multiple field validation
+ * 
+ * Aggregates validation results from multiple fields providing overall
+ * validation status, detailed field results, and normalized output data.
+ * 
+ * @example
+ * ```typescript
+ * const validationResult: ValidationResult = {
+ *   isValid: false,
+ *   fieldResults: [
+ *     { isValid: true, fieldName: 'firstName', value: 'John' },
+ *     { isValid: false, fieldName: 'email', value: 'invalid', errorMessage: 'Invalid email' }
+ *   ],
+ *   errorCount: 1,
+ *   warningCount: 0,
+ *   normalizedData: { firstName: 'John' }
+ * };
+ * ```
+ * 
  * @interface ValidationResult
+ * @since 2.0.0
  */
 export interface ValidationResult {
+  /** Whether all fields passed validation */
   isValid: boolean;
+  /** Individual validation results for each field */
   fieldResults: FieldValidationResult[];
+  /** Total number of validation errors */
   errorCount: number;
+  /** Total number of validation warnings */
   warningCount: number;
+  /** Object containing normalized/cleaned field values */
   normalizedData: IDataObject;
 }
 

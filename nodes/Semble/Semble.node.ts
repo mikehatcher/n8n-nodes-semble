@@ -69,9 +69,38 @@ import { CacheConfig } from "../../types/ConfigTypes";
 import { SembleQueryConfig } from "../../services/SembleQueryService";
 
 /**
- * Main Semble node class for n8n
+ * Main Semble node implementation for n8n integration
+ * 
+ * Provides comprehensive CRUD operations for the Semble practice management system
+ * using a resource-based architecture. Supports patients, bookings, appointments,
+ * products, and other Semble entities with built-in caching, error handling,
+ * and pagination.
+ * 
+ * Features:
+ * - Multi-resource support (Patients, Bookings, Products, Appointments)
+ * - Advanced field discovery and dynamic form generation
+ * - Intelligent caching with TTL and auto-refresh
+ * - Comprehensive error handling and retry logic
+ * - Paginated data retrieval with auto-pagination options
+ * - Event-driven architecture for extensibility
+ * 
+ * @example
+ * ```typescript
+ * // Node configuration in n8n workflow
+ * {
+ *   "node": "n8n-nodes-semble.semble",
+ *   "operation": "getAll",
+ *   "resource": "patient",
+ *   "returnAll": true,
+ *   "additionalFields": {
+ *     "firstName": "John"
+ *   }
+ * }
+ * ```
+ * 
  * @class Semble
  * @implements {INodeType}
+ * @since 2.0.0
  * @description Action/trigger-based node architecture for Semble API access
  */
 export class Semble implements INodeType {
@@ -1391,12 +1420,35 @@ name
 
   /**
    * Main execution method for the Semble node
+   * 
+   * Handles all CRUD operations across different Semble resources using an
+   * action-based approach. Processes input data, validates parameters,
+   * executes the appropriate resource operation, and returns structured results.
+   * 
+   * The method supports:
+   * - Resource operations: Patient, Booking, Product, Appointment management
+   * - CRUD actions: create, update, delete, get, getAll
+   * - Special actions: updateJourney (booking-specific)
+   * - Batch processing: handles multiple input items
+   * - Error handling: comprehensive error mapping and reporting
+   * 
+   * @example
+   * ```typescript
+   * // Executed automatically by n8n when node runs
+   * // Node parameters determine the operation:
+   * // - action: "getAll"
+   * // - resource: "patient" 
+   * // - returnAll: true
+   * // - filters: { firstName: "John" }
+   * ```
+   * 
    * @async
    * @method execute
-   * @param {IExecuteFunctions} this - n8n execution context
-   * @returns {Promise<INodeExecutionData[][]>} Array of execution data
-   * @throws {NodeOperationError} When action is not supported or parameters are invalid
-   * @throws {NodeApiError} When API requests fail
+   * @param this - n8n execution context providing access to parameters and utilities
+   * @returns Promise resolving to array of execution data for output
+   * @throws {NodeOperationError} When action is unsupported or parameters are invalid
+   * @throws {NodeApiError} When API requests fail or authentication is invalid
+   * @since 2.0.0
    * @description Handles all CRUD operations using action-based approach
    */
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {

@@ -51,4 +51,13 @@ pids/
 # Temporary files
 *.tmp
 *.temp
-docs/
+
+# Documentation build output
+docs/api/
+site/
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc

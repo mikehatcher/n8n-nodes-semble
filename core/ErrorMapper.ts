@@ -430,14 +430,60 @@ export class ErrorMapper {
 export const defaultErrorMapper = new ErrorMapper();
 
 /**
- * Convenience function for quick error mapping
+ * Convenience function for quick error mapping with context
+ * 
+ * Provides a simple interface to the default error mapper for transforming
+ * raw errors into structured Semble errors with appropriate context and
+ * user-friendly messages.
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   await sembleApi.getPatients();
+ * } catch (error) {
+ *   const mappedError = mapError(error, {
+ *     operation: 'patient_retrieval',
+ *     resource: 'patients',
+ *     userId: 'user123'
+ *   });
+ *   throw mappedError;
+ * }
+ * ```
+ * 
+ * @param error - The raw error to map (can be any type)
+ * @param context - Additional context for error mapping
+ * @returns Structured SembleError with proper type and messaging
+ * @since 2.0.0
  */
 export function mapError(error: any, context: ErrorContext = {}): SembleError {
     return defaultErrorMapper.mapError(error, context);
 }
 
 /**
- * Convenience function for processing field permissions
+ * Convenience function for processing field permissions from GraphQL responses
+ * 
+ * Processes GraphQL response data and errors to handle field-level permissions,
+ * removing or masking fields that the user doesn't have access to while
+ * preserving accessible data.
+ * 
+ * @example
+ * ```typescript
+ * const response = await sembleApi.query(patientQuery);
+ * 
+ * // Process response to handle permission errors
+ * const processedData = processFieldPermissions(
+ *   response.data,
+ *   response.errors || []
+ * );
+ * 
+ * // processedData now has inaccessible fields removed/masked
+ * return processedData;
+ * ```
+ * 
+ * @param data - The GraphQL response data to process
+ * @param errors - Array of GraphQL errors that may include permission errors
+ * @returns Processed data with permission restrictions applied
+ * @since 2.0.0
  */
 export function processFieldPermissions(data: any, errors: SembleGraphQLError[] = []): any {
     return defaultErrorMapper.processFieldPermissions(data, errors);

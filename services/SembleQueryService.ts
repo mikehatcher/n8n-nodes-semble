@@ -30,40 +30,124 @@ import { BaseServiceConfig } from '../types/ConfigTypes';
 // =============================================================================
 
 /**
- * Query execution result with metadata
+ * Result interface for GraphQL query execution with comprehensive metadata
+ * 
+ * Provides structured results from GraphQL query execution including data,
+ * errors, and detailed execution metadata for monitoring and debugging.
+ * 
+ * @example
+ * ```typescript
+ * const result: QueryResult<Patient[]> = await queryService.executeQuery(query);
+ * 
+ * if (result.data) {
+ *   console.log('Patients:', result.data);
+ *   console.log('Execution time:', result.metadata.executionTime, 'ms');
+ *   console.log('Rate limit remaining:', result.metadata.rateLimitRemaining);
+ * }
+ * 
+ * if (result.errors) {
+ *   console.error('GraphQL errors:', result.errors);
+ * }
+ * ```
+ * 
+ * @template T - The expected type of the query result data
+ * @interface QueryResult
+ * @since 2.0.0
  */
 export interface QueryResult<T = any> {
+	/** The query result data, null if errors occurred */
 	data: T | null;
+	/** Array of GraphQL errors if any occurred */
 	errors?: GraphQLError[];
+	/** Additional metadata from the GraphQL response */
 	extensions?: any;
+	/** Execution metadata for monitoring and debugging */
 	metadata: {
+		/** Total execution time in milliseconds */
 		executionTime: number;
+		/** Number of retry attempts made */
 		retryCount: number;
+		/** Whether the result was served from cache */
 		fromCache: boolean;
+		/** Remaining API requests in current rate limit window */
 		rateLimitRemaining?: number;
+		/** Timestamp when rate limit window resets */
 		rateLimitReset?: number;
 	};
 }
 
 /**
- * Query builder interface for constructing GraphQL queries
+ * Interface for building structured GraphQL queries programmatically
+ * 
+ * Provides a structured way to construct GraphQL queries with support for
+ * fragments, directives, variables, and different operation types.
+ * 
+ * @example
+ * ```typescript
+ * const queryBuilder: QueryBuilder = {
+ *   resource: 'patients',
+ *   operation: 'query',
+ *   fields: ['id', 'firstName', 'lastName', 'dateOfBirth'],
+ *   variables: {
+ *     limit: 20,
+ *     offset: 0
+ *   },
+ *   fragments: {
+ *     PatientInfo: 'on Patient { contactDetails { email phone } }'
+ *   },
+ *   directives: {
+ *     include: { if: '$includeDetails' }
+ *   }
+ * };
+ * 
+ * const query = queryService.buildQuery(queryBuilder);
+ * ```
+ * 
+ * @interface QueryBuilder
+ * @since 2.0.0
  */
 export interface QueryBuilder {
+	/** The GraphQL resource/type to query (e.g., 'patients', 'bookings') */
 	resource: string;
+	/** The type of GraphQL operation to perform */
 	operation: 'query' | 'mutation' | 'subscription';
+	/** Array of field names to include in the query */
 	fields: string[];
+	/** Optional variables to pass to the query */
 	variables?: Record<string, any>;
+	/** Optional GraphQL fragments to include */
 	fragments?: Record<string, string>;
+	/** Optional GraphQL directives to apply */
 	directives?: Record<string, any>;
 }
 
 /**
- * Rate limiting configuration
+ * Configuration interface for API rate limiting behavior
+ * 
+ * Defines parameters for controlling the rate of API requests to respect
+ * Semble API limits and prevent throttling or blocking.
+ * 
+ * @example
+ * ```typescript
+ * const rateLimitConfig: RateLimitConfig = {
+ *   maxRequests: 120,        // 120 requests per window
+ *   windowMs: 60000,         // 1 minute window
+ *   delayMs: 500,            // 500ms delay between requests
+ *   enabled: true            // Enable rate limiting
+ * };
+ * ```
+ * 
+ * @interface RateLimitConfig
+ * @since 2.0.0
  */
 export interface RateLimitConfig {
+	/** Maximum number of requests allowed per time window */
 	maxRequests: number;
+	/** Time window duration in milliseconds */
 	windowMs: number;
+	/** Minimum delay between requests in milliseconds */
 	delayMs: number;
+	/** Whether rate limiting is enabled */
 	enabled: boolean;
 }
 
@@ -142,21 +226,63 @@ export class SembleQueryService {
 	// =============================================================================
 
 	/**
-	 * Set credentials for API authentication
+	 * Set authentication credentials for Semble API access
+	 * 
+	 * Configures the service with the necessary credentials for authenticating
+	 * with the Semble API. Credentials must be set before executing any queries.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const queryService = new SembleQueryService(config);
+	 * 
+	 * queryService.setCredentials({
+	 *   token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+	 *   baseUrl: 'https://api.semble.io/graphql',
+	 *   organizationId: 'org_123456',
+	 *   environment: 'production'
+	 * });
+	 * 
+	 * // Now ready to execute queries
+	 * const result = await queryService.executeQuery(query);
+	 * ```
+	 * 
+	 * @param credentials - The Semble API credentials object
+	 * @since 2.0.0
 	 */
 	setCredentials(credentials: SembleCredentials): void {
 		this.credentials = credentials;
 	}
 
 	/**
-	 * Get current credentials
+	 * Get the currently configured credentials
+	 * 
+	 * Returns the credentials object that was set via setCredentials().
+	 * Used for debugging and credential validation.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const queryService = new SembleQueryService(config);
+	 * queryService.setCredentials({ token: 'abc123', baseUrl: 'https://api.semble.io' });
+	 * const creds = queryService.getCredentials();
+	 * console.log('Base URL:', creds?.baseUrl);
+	 * ```
+	 * 
+	 * @returns Current credentials object or null if none set
+	 * @since 2.0.0
 	 */
 	getCredentials(): SembleCredentials | null {
 		return this.credentials;
 	}
 
 	/**
-	 * Validate that credentials are set and valid
+	 * Validate that credentials are properly configured
+	 * 
+	 * Internal method that ensures credentials are set and contain
+	 * required authentication information before making API calls.
+	 * 
+	 * @throws {SembleAuthError} When credentials are missing or invalid
+	 * @internal
+	 * @since 2.0.0
 	 */
 	private validateCredentials(): void {
 		if (!this.credentials) {
@@ -183,7 +309,30 @@ export class SembleQueryService {
 	// =============================================================================
 
 	/**
-	 * Build a GraphQL query string from a query builder
+	 * Build a GraphQL query string from a query builder configuration
+	 * 
+	 * Constructs a complete GraphQL query including fragments, directives,
+	 * and proper variable handling. Supports complex query structures.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const queryService = new SembleQueryService(config);
+	 * 
+	 * const builder: QueryBuilder = {
+	 *   resource: 'patients',
+	 *   operation: 'query',
+	 *   fields: ['id', 'firstName', 'lastName'],
+	 *   variables: { limit: 10 }
+	 * };
+	 * 
+	 * const query = queryService.buildQuery(builder);
+	 * // Result: "query($limit: Int) { patients(limit: $limit) { id firstName lastName } }"
+	 * ```
+	 * 
+	 * @param builder - Query builder configuration object
+	 * @returns Complete GraphQL query string
+	 * @throws {SembleValidationError} When builder configuration is invalid
+	 * @since 2.0.0
 	 */
 	buildQuery(builder: QueryBuilder): string {
 		try {
@@ -258,7 +407,40 @@ export class SembleQueryService {
 	// =============================================================================
 
 	/**
-	 * Execute a GraphQL query with retry logic and rate limiting
+	 * Execute a GraphQL query with comprehensive error handling and retry logic
+	 * 
+	 * This is the main method for executing GraphQL queries against the Semble API.
+	 * Includes automatic retry logic, rate limiting, response validation, and
+	 * detailed error reporting.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const queryService = new SembleQueryService(config);
+	 * queryService.setCredentials(credentials);
+	 * 
+	 * const result = await queryService.executeQuery<Patient[]>(
+	 *   `query GetPatients($limit: Int) {
+	 *     patients(limit: $limit) {
+	 *       data { id firstName lastName }
+	 *       pageInfo { hasNextPage }
+	 *     }
+	 *   }`,
+	 *   { limit: 10 },
+	 *   { timeout: 30000 }
+	 * );
+	 * 
+	 * console.log('Patients:', result.data);
+	 * ```
+	 * 
+	 * @param query - The GraphQL query string
+	 * @param variables - Optional variables for the query
+	 * @param options - Query execution options (timeout, retry settings, etc.)
+	 * @returns Promise resolving to query result with data and metadata
+	 * @throws {SembleAuthError} When authentication fails
+	 * @throws {SembleValidationError} When query validation fails
+	 * @throws {SembleRateLimitError} When rate limits are exceeded
+	 * @throws {SembleError} For other API errors
+	 * @since 2.0.0
 	 */
 	async executeQuery<T = any>(
 		query: string, 

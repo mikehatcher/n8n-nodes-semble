@@ -13,24 +13,68 @@ import { SembleActionType } from '../types/NodeTypes';
 import { DynamicFieldDefinition, FieldRegistryEntry } from '../types/NodeTypes';
 
 /**
- * Field registry configuration options
+ * Configuration options interface for field registry instances
+ * 
+ * Controls the behavior of the AdditionalFieldsRegistry including caching,
+ * validation, and automatic field registration features.
+ * 
+ * @example
+ * ```typescript
+ * const registryOptions: FieldRegistryOptions = {
+ *   enableCaching: true,
+ *   cacheTtl: 300,              // 5 minutes
+ *   enableValidation: true,
+ *   autoRegisterCommon: true    // Auto-register frequently used fields
+ * };
+ * 
+ * const registry = new AdditionalFieldsRegistry(registryOptions);
+ * ```
+ * 
+ * @interface FieldRegistryOptions
+ * @since 2.0.0
  */
 export interface FieldRegistryOptions {
-	/** Enable field caching */
+	/** Enable field caching to improve performance */
 	enableCaching?: boolean;
-	/** Cache TTL in seconds */
+	/** Cache time-to-live in seconds (default: 300) */
 	cacheTtl?: number;
-	/** Enable field validation */
+	/** Enable field validation during registration */
 	enableValidation?: boolean;
-	/** Auto-register common fields */
+	/** Automatically register commonly used fields */
 	autoRegisterCommon?: boolean;
 }
 
 /**
- * Field definition with metadata
+ * Extended field definition interface with registry-specific metadata
+ * 
+ * Extends the base DynamicFieldDefinition with additional properties
+ * needed for field organization, prioritization, and management within
+ * the registry system.
+ * 
+ * @example
+ * ```typescript
+ * const fieldDefinition: RegisteredFieldDefinition = {
+ *   name: 'customField',
+ *   type: 'string',
+ *   displayName: 'Custom Field',
+ *   description: 'A custom field for specific use cases',
+ *   category: 'patient-metadata',
+ *   priority: 100,
+ *   tags: ['custom', 'metadata'],
+ *   conditions: {
+ *     show: {
+ *       resource: ['patient']
+ *     }
+ *   }
+ * };
+ * ```
+ * 
+ * @interface RegisteredFieldDefinition
+ * @extends {DynamicFieldDefinition}
+ * @since 2.0.0
  */
 export interface RegisteredFieldDefinition extends DynamicFieldDefinition {
-	/** Field category for organization */
+	/** Field category for logical grouping and organization */
 	category?: string;
 	/** Field priority for ordering */
 	priority?: number;
@@ -45,9 +89,34 @@ export interface RegisteredFieldDefinition extends DynamicFieldDefinition {
 }
 
 /**
- * Field registration result
+ * Result interface for field registration operations
+ * 
+ * Provides detailed feedback about field registration attempts including
+ * success status, generated field ID, and any conflicts or issues encountered.
+ * 
+ * @example
+ * ```typescript
+ * const result: FieldRegistrationResult = registry.registerField(
+ *   SembleResourceType.PATIENT,
+ *   SembleActionType.CREATE,
+ *   fieldDefinition
+ * );
+ * 
+ * if (result.success) {
+ *   console.log('Field registered with ID:', result.fieldId);
+ * } else {
+ *   console.error('Registration failed:', result.message);
+ *   if (result.conflicts) {
+ *     console.warn('Conflicts with:', result.conflicts);
+ *   }
+ * }
+ * ```
+ * 
+ * @interface FieldRegistrationResult
+ * @since 2.0.0
  */
 export interface FieldRegistrationResult {
+	/** Whether the field registration was successful */
 	success: boolean;
 	fieldId: string;
 	message?: string;
@@ -55,8 +124,49 @@ export interface FieldRegistrationResult {
 }
 
 /**
- * Additional fields registry class
+ * Dynamic field registry for managing additional n8n node properties
+ * 
+ * Provides a centralized system for registering, managing, and loading
+ * dynamic field definitions for Semble n8n nodes. Supports field caching,
+ * validation, conflict detection, and automatic registration of common fields.
+ * 
+ * Features:
+ * - Dynamic field registration per resource/action combination
+ * - Field conflict detection and resolution
+ * - Intelligent caching with configurable TTL
+ * - Automatic registration of commonly used fields
+ * - Validation and type checking for field definitions
+ * - Support for conditional field display logic
+ * 
+ * @example
+ * ```typescript
+ * const registry = new AdditionalFieldsRegistry({
+ *   enableCaching: true,
+ *   cacheTtl: 300,
+ *   autoRegisterCommon: true
+ * });
+ * 
+ * // Register a custom field
+ * const result = registry.registerField(
+ *   SembleResourceType.PATIENT,
+ *   SembleActionType.CREATE,
+ *   {
+ *     name: 'customField',
+ *     type: 'string',
+ *     displayName: 'Custom Field',
+ *     description: 'A custom field for patient creation'
+ *   }
+ * );
+ * 
+ * // Load fields for a specific resource/action
+ * const fields = await registry.loadFields(
+ *   SembleResourceType.PATIENT,
+ *   SembleActionType.CREATE
+ * );
+ * ```
+ * 
  * @class AdditionalFieldsRegistry
+ * @since 2.0.0
  * @description Manages dynamic field registration and loading for n8n nodes
  */
 export class AdditionalFieldsRegistry {
@@ -66,7 +176,13 @@ export class AdditionalFieldsRegistry {
 	private readonly cache: Map<string, { data: INodeProperties[]; timestamp: number }> = new Map();
 
 	/**
-	 * Create new additional fields registry
+	 * Create a new additional fields registry instance
+	 * 
+	 * Initializes the registry with the specified options and automatically
+	 * registers common fields if enabled.
+	 * 
+	 * @param options - Configuration options for the registry
+	 * @since 2.0.0
 	 */
 	constructor(options: FieldRegistryOptions = {}) {
 		this.options = {
@@ -83,7 +199,40 @@ export class AdditionalFieldsRegistry {
 	}
 
 	/**
-	 * Register a new field definition
+	 * Register a new field definition for a specific resource and action
+	 * 
+	 * Adds a new field definition to the registry with conflict detection
+	 * and validation. Fields are scoped to specific resource/action combinations
+	 * to avoid conflicts and ensure proper field loading.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const registry = new AdditionalFieldsRegistry();
+	 * 
+	 * const result = registry.registerField(
+	 *   SembleResourceType.PATIENT,
+	 *   SembleActionType.UPDATE,
+	 *   {
+	 *     name: 'emergencyContact',
+	 *     type: 'string',
+	 *     displayName: 'Emergency Contact',
+	 *     description: 'Patient emergency contact information',
+	 *     required: false
+	 *   }
+	 * );
+	 * 
+	 * if (result.success) {
+	 *   console.log('Field registered:', result.fieldId);
+	 * } else {
+	 *   console.error('Registration failed:', result.message);
+	 * }
+	 * ```
+	 * 
+	 * @param resourceType - The Semble resource type (patient, booking, etc.)
+	 * @param actionType - The action type (create, update, delete, etc.)
+	 * @param fieldDefinition - The field definition to register
+	 * @returns Registration result with success status and metadata
+	 * @since 2.0.0
 	 */
 	public registerField(
 		resourceType: SembleResourceType,

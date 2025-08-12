@@ -29,24 +29,76 @@ import { BaseServiceConfig } from '../types/ConfigTypes';
 // =============================================================================
 
 /**
- * Field discovery configuration
+ * Configuration interface for field discovery service
+ * 
+ * Defines all configuration options needed to initialize a FieldDiscoveryService
+ * instance with proper caching, validation, and introspection settings.
+ * 
+ * @example
+ * ```typescript
+ * const config: FieldDiscoveryConfig = {
+ *   queryService: new SembleQueryService(queryConfig),
+ *   cacheService: new CacheService(cacheConfig),
+ *   introspectionCacheTtl: 3600, // 1 hour
+ *   includeDeprecated: false,
+ *   maxDepth: 5,
+ *   enableSchemaValidation: true
+ * };
+ * 
+ * const discoveryService = new FieldDiscoveryService(config);
+ * ```
+ * 
+ * @interface FieldDiscoveryConfig
+ * @extends {BaseServiceConfig}
+ * @since 2.0.0
  */
 export interface FieldDiscoveryConfig extends BaseServiceConfig {
+	/** Required query service for executing GraphQL introspection queries */
 	queryService: SembleQueryService;
+	/** Optional cache service for storing introspection results */
 	cacheService?: CacheService;
+	/** Cache TTL for introspection results in seconds (default: 1 hour) */
 	introspectionCacheTtl?: number;
+	/** Whether to include deprecated fields in discovery results */
 	includeDeprecated?: boolean;
+	/** Maximum depth for nested type discovery */
 	maxDepth?: number;
+	/** Whether to enable schema validation after introspection */
 	enableSchemaValidation?: boolean;
 }
 
 /**
- * GraphQL introspection result
+ * Result interface for GraphQL schema introspection operations
+ * 
+ * Contains the complete results of a GraphQL introspection query,
+ * including parsed schema, types, available queries, and mutations.
+ * This is the primary data structure returned by schema discovery operations.
+ * 
+ * @example
+ * ```typescript
+ * const result: IntrospectionResult = await discoveryService.discoverSchema();
+ * 
+ * // Access available types
+ * console.log('Patient type fields:', result.types.Patient?.fields);
+ * 
+ * // Access available queries
+ * console.log('Available queries:', Object.keys(result.queries));
+ * 
+ * // Access mutations
+ * console.log('Available mutations:', Object.keys(result.mutations));
+ * ```
+ * 
+ * @interface IntrospectionResult
+ * @since 2.0.0
  */
 export interface IntrospectionResult {
+	/** Complete GraphQL schema object with full type information */
 	schema: GraphQLSchema;
+	/** Dictionary of all available types mapped by type name */
 	types: Record<string, GraphQLType>;
+	/** Dictionary of all available queries mapped by query name */
 	queries: Record<string, GraphQLField>;
+	/** Dictionary of all available mutations mapped by mutation name */
 	mutations: Record<string, GraphQLField>;
 	subscriptions: Record<string, GraphQLField>;
 	discoveredAt: Date;
@@ -54,23 +106,88 @@ export interface IntrospectionResult {
 }
 
 /**
- * Field discovery options
+ * Options interface for controlling field discovery behavior
+ * 
+ * Provides fine-grained control over schema introspection and field discovery
+ * operations, including filtering, caching, and deprecation handling.
+ * 
+ * @example
+ * ```typescript
+ * // Basic discovery with caching
+ * const basicOptions: DiscoveryOptions = {
+ *   useCache: true,
+ *   includeDeprecated: false
+ * };
+ * 
+ * // Filtered discovery for specific types
+ * const filteredOptions: DiscoveryOptions = {
+ *   typeFilter: ['Patient', 'Booking'],
+ *   fieldFilter: ['id', 'firstName', 'lastName'],
+ *   maxDepth: 3
+ * };
+ * 
+ * // Force refresh discovery
+ * const refreshOptions: DiscoveryOptions = {
+ *   refreshCache: true,
+ *   includeDeprecated: true
+ * };
+ * ```
+ * 
+ * @interface DiscoveryOptions
+ * @since 2.0.0
  */
 export interface DiscoveryOptions {
+	/** Whether to include deprecated fields and types in results */
 	includeDeprecated?: boolean;
+	/** Array of type names to include (filters out others) */
 	typeFilter?: string[];
+	/** Array of field names to include (filters out others) */
 	fieldFilter?: string[];
+	/** Maximum depth for nested type traversal */
 	maxDepth?: number;
+	/** Whether to use cached results if available */
 	useCache?: boolean;
+	/** Whether to force refresh of cached results */
 	refreshCache?: boolean;
 }
 
 /**
- * Field metadata with permissions and validation info
+ * Comprehensive metadata interface for GraphQL fields
+ * 
+ * Contains detailed information about individual GraphQL fields including
+ * type information, validation rules, permission constraints, and usage context.
+ * This is the primary data structure for field-level introspection results.
+ * 
+ * @example
+ * ```typescript
+ * const fieldMetadata: FieldMetadata = {
+ *   name: 'firstName',
+ *   type: 'String!',
+ *   description: 'The patient\'s first name',
+ *   required: true,
+ *   deprecated: false,
+ *   permissions: {
+ *     read: true,
+ *     write: true,
+ *     restricted: false
+ *   },
+ *   validation: {
+ *     minLength: 1,
+ *     maxLength: 50,
+ *     pattern: '^[A-Za-z]+$'
+ *   }
+ * };
+ * ```
+ * 
+ * @interface FieldMetadata
+ * @since 2.0.0
  */
 export interface FieldMetadata {
+	/** The field name as it appears in the GraphQL schema */
 	name: string;
+	/** The GraphQL type specification (e.g., 'String!', '[Patient]') */
 	type: string;
+	/** Human-readable description from schema documentation */
 	description?: string;
 	isRequired: boolean;
 	isDeprecated: boolean;
@@ -125,6 +242,29 @@ export class FieldDiscoveryService {
 
 	/**
 	 * Discover the complete GraphQL schema through introspection
+	 * 
+	 * Performs a comprehensive GraphQL introspection to retrieve the complete
+	 * API schema including types, fields, queries, mutations, and metadata.
+	 * Results are cached for performance.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const discoveryService = new FieldDiscoveryService(config);
+	 * 
+	 * const schema = await discoveryService.discoverSchema({
+	 *   includeDeprecated: false,
+	 *   useCache: true,
+	 *   maxDepth: 3
+	 * });
+	 * 
+	 * console.log('Available types:', Object.keys(schema.types));
+	 * console.log('Available queries:', Object.keys(schema.queries));
+	 * ```
+	 * 
+	 * @param options - Discovery options to control introspection behavior
+	 * @returns Promise resolving to complete schema introspection result
+	 * @throws {SembleError} When introspection fails or schema is invalid
+	 * @since 2.0.0
 	 */
 	async discoverSchema(options: DiscoveryOptions = {}): Promise<IntrospectionResult> {
 		try {
@@ -170,7 +310,31 @@ export class FieldDiscoveryService {
 	}
 
 	/**
-	 * Discover fields for a specific type/resource
+	 * Discover available fields for a specific GraphQL type
+	 * 
+	 * Retrieves detailed metadata about all fields available for a given type,
+	 * including field types, descriptions, deprecation status, and arguments.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const discoveryService = new FieldDiscoveryService(config);
+	 * 
+	 * const patientFields = await discoveryService.discoverFields('Patient', {
+	 *   includeDeprecated: false,
+	 *   useCache: true
+	 * });
+	 * 
+	 * Object.entries(patientFields).forEach(([name, metadata]) => {
+	 *   console.log(`${name}: ${metadata.type} - ${metadata.description}`);
+	 * });
+	 * ```
+	 * 
+	 * @param typeName - The name of the GraphQL type to discover fields for
+	 * @param options - Discovery options to control field introspection
+	 * @returns Promise resolving to field metadata mapped by field name
+	 * @throws {SembleValidationError} When type name is invalid or not found
+	 * @throws {SembleError} When field discovery fails
+	 * @since 2.0.0
 	 */
 	async discoverFields(typeName: string, options: DiscoveryOptions = {}): Promise<Record<string, FieldMetadata>> {
 		try {

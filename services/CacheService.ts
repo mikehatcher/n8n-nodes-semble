@@ -79,7 +79,31 @@ export class CacheService {
 	// =============================================================================
 
 	/**
-	 * Set a value in the cache with TTL
+	 * Store a value in the cache with optional TTL override
+	 * 
+	 * Stores data in the cache with automatic expiration handling and capacity management.
+	 * If the cache is at capacity, least recently used entries are evicted to make space.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const cache = new CacheService(config);
+	 * 
+	 * // Store with default TTL
+	 * await cache.set('user:123', { name: 'John', email: 'john@example.com' });
+	 * 
+	 * // Store with custom TTL (5 minutes)
+	 * await cache.set('temp:session', sessionData, 300);
+	 * 
+	 * // Store complex data structures
+	 * await cache.set('api:response', { data: [...], metadata: {...} });
+	 * ```
+	 * 
+	 * @param key - The cache key to store under
+	 * @param value - The value to cache (any serializable type)
+	 * @param ttl - Optional TTL in seconds (uses default if not provided)
+	 * @returns Promise that resolves when value is stored
+	 * @throws {SembleError} When cache write operation fails
+	 * @since 2.0.0
 	 */
 	async set<T>(key: string, value: T, ttl?: number): Promise<void> {
 		try {
@@ -113,7 +137,24 @@ export class CacheService {
 	}
 
 	/**
-	 * Get a value from the cache
+	 * Retrieve a value from the cache by key
+	 * 
+	 * Automatically updates access metadata and handles expiration.
+	 * Returns null if the key doesn't exist or has expired.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const cache = new CacheService(config);
+	 * const userdata = await cache.get<User>('user:123');
+	 * if (userdata) {
+	 *   console.log('Found user:', userdata.name);
+	 * }
+	 * ```
+	 * 
+	 * @param key - The cache key to retrieve
+	 * @returns Promise resolving to cached value or null if not found/expired
+	 * @throws {SembleError} When cache read operation fails
+	 * @since 2.0.0
 	 */
 	async get<T>(key: string): Promise<T | null> {
 		try {
@@ -146,7 +187,22 @@ export class CacheService {
 	}
 
 	/**
-	 * Check if a key exists and is not expired
+	 * Check if a cache key exists and has not expired
+	 * 
+	 * Automatically removes expired entries during the check.
+	 * This is more efficient than get() when you only need existence.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const cache = new CacheService(config);
+	 * if (await cache.has('user:123')) {
+	 *   console.log('User data is cached');
+	 * }
+	 * ```
+	 * 
+	 * @param key - The cache key to check
+	 * @returns Promise resolving to true if key exists and is valid
+	 * @since 2.0.0
 	 */
 	async has(key: string): Promise<boolean> {
 		const normalizedKey = this.normalizeKey(key);
@@ -167,7 +223,20 @@ export class CacheService {
 	}
 
 	/**
-	 * Delete a specific cache entry
+	 * Remove a specific cache entry
+	 * 
+	 * Deletes the cache entry for the given key if it exists.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const cache = new CacheService(config);
+	 * const wasDeleted = await cache.delete('user:123');
+	 * console.log(`Entry ${wasDeleted ? 'was' : 'was not'} deleted`);
+	 * ```
+	 * 
+	 * @param key - The cache key to delete
+	 * @returns Promise resolving to true if entry was deleted, false if not found
+	 * @since 2.0.0
 	 */
 	async delete(key: string): Promise<boolean> {
 		const normalizedKey = this.normalizeKey(key);
@@ -176,6 +245,19 @@ export class CacheService {
 
 	/**
 	 * Clear all cache entries
+	 * 
+	 * Removes all cached data and resets the cache to empty state.
+	 * This operation cannot be undone.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const cache = new CacheService(config);
+	 * await cache.clear();
+	 * console.log('Cache cleared');
+	 * ```
+	 * 
+	 * @returns Promise that resolves when cache is cleared
+	 * @since 2.0.0
 	 */
 	async clear(): Promise<void> {
 		this.cache.clear();
@@ -186,7 +268,31 @@ export class CacheService {
 	// =============================================================================
 
 	/**
-	 * Generate cache key using specified strategy
+	 * Generate a cache key using the specified strategy
+	 * 
+	 * Creates cache keys using different strategies for different use cases:
+	 * - SIMPLE: Basic underscore-separated keys (fast)
+	 * - HIERARCHICAL: Colon-separated keys (organized) 
+	 * - HASHED: Hash-based keys (fixed length)
+	 * 
+	 * @example
+	 * ```typescript
+	 * const cache = new CacheService(config);
+	 * 
+	 * // Hierarchical key
+	 * const key1 = cache.generateKey(['user', '123', 'profile'], CacheKeyStrategy.HIERARCHICAL);
+	 * // Result: "user:123:profile"
+	 * 
+	 * // Hashed key
+	 * const key2 = cache.generateKey(['very', 'long', 'key', 'parts'], CacheKeyStrategy.HASHED);
+	 * // Result: "hash_123456789"
+	 * ```
+	 * 
+	 * @param parts - Array of key parts to combine
+	 * @param strategy - The strategy to use for key generation (default: HIERARCHICAL)
+	 * @returns Generated cache key string
+	 * @throws {SembleValidationError} When invalid strategy is provided
+	 * @since 2.0.0
 	 */
 	generateKey(parts: string[], strategy: CacheKeyStrategy = CacheKeyStrategy.HIERARCHICAL): string {
 		const sanitizedParts = parts.map(part => this.sanitizeKeyPart(part));
@@ -220,14 +326,30 @@ export class CacheService {
 	}
 
 	/**
-	 * Normalize cache key with prefix
+	 * Normalize cache key by adding the configured prefix
+	 * 
+	 * Internal method that ensures all cache keys are properly prefixed
+	 * to avoid collisions with other cache instances.
+	 * 
+	 * @param key - The raw cache key
+	 * @returns Normalized key with prefix
+	 * @internal
+	 * @since 2.0.0
 	 */
 	private normalizeKey(key: string): string {
 		return `${this.config.keyPrefix}${key}`;
 	}
 
 	/**
-	 * Sanitize individual key parts
+	 * Sanitize individual key parts for safe cache usage
+	 * 
+	 * Removes special characters and limits length to prevent
+	 * cache key issues and ensure consistent behavior.
+	 * 
+	 * @param part - The key part to sanitize
+	 * @returns Sanitized key part (max 50 characters, alphanumeric + underscore/dash)
+	 * @internal
+	 * @since 2.0.0
 	 */
 	private sanitizeKeyPart(part: string): string {
 		return part
@@ -241,6 +363,30 @@ export class CacheService {
 
 	/**
 	 * Refresh a specific cache entry with new data
+	 * 
+	 * Updates cache entry by calling the provided refresh function.
+	 * Prevents concurrent refreshes of the same key and handles errors gracefully.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const cache = new CacheService(config);
+	 * 
+	 * const freshUserData = await cache.refreshEntry(
+	 *   'user:123',
+	 *   async () => {
+	 *     const response = await api.getUser(123);
+	 *     return response.data;
+	 *   },
+	 *   300 // 5 minute TTL
+	 * );
+	 * ```
+	 * 
+	 * @param key - The cache key to refresh
+	 * @param refreshFunction - Async function that returns fresh data
+	 * @param ttl - Optional TTL in seconds (uses default if not provided)
+	 * @returns Promise resolving to the refreshed data
+	 * @throws {SembleError} When refresh operation fails
+	 * @since 2.0.0
 	 */
 	async refreshEntry<T>(key: string, refreshFunction: () => Promise<T>, ttl?: number): Promise<T> {
 		const normalizedKey = this.normalizeKey(key);

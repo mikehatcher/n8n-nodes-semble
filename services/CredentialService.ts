@@ -19,32 +19,73 @@ import { ErrorMapper } from '../core/ErrorMapper';
 // =============================================================================
 
 /**
- * Extended credential structure matching the actual credential form
+ * Extended credentials interface with environment and safety features
+ * 
+ * Extends the base SembleCredentials with additional properties needed
+ * for environment management, safety checks, and production safeguards.
+ * 
+ * @example
+ * ```typescript
+ * const credentials: ExtendedSembleCredentials = {
+ *   environment: 'production',
+ *   apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+ *   baseUrl: 'https://api.semble.io/graphql',
+ *   safetyMode: false,
+ *   productionConfirmed: true,
+ *   // Base interface properties
+ *   token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+ *   organizationId: 'org_123456'
+ * };
+ * ```
+ * 
+ * @interface ExtendedSembleCredentials
+ * @extends {SembleCredentials}
+ * @since 2.0.0
  */
 export interface ExtendedSembleCredentials extends SembleCredentials {
-	/** Environment selection */
+	/** Target environment for API connections */
 	environment: 'production' | 'staging' | 'development';
-	/** API token from credential form */
+	/** API authentication token from credential form */
 	apiToken: string;
-	/** GraphQL endpoint URL */
+	/** Complete GraphQL endpoint URL */
 	baseUrl: string;
-	/** Safety mode flag for non-production environments */
+	/** Safety mode flag to prevent destructive operations in non-production */
 	safetyMode?: boolean;
-	/** Production confirmation flag */
+	/** Explicit confirmation for production environment usage */
 	productionConfirmed?: boolean;
 }
 
 /**
- * Credential validation result
+ * Result interface for credential validation operations
+ * 
+ * Provides comprehensive feedback about credential validation including
+ * validity status, detailed error messages, warnings, and environment-specific
+ * recommendations for optimal configuration.
+ * 
+ * @example
+ * ```typescript
+ * const validation: CredentialValidationResult = {
+ *   isValid: false,
+ *   errors: ['Invalid API token format'],
+ *   warnings: ['Using development environment'],
+ *   recommendations: [
+ *     'Ensure API token has sufficient permissions',
+ *     'Consider enabling safety mode for non-production'
+ *   ]
+ * };
+ * ```
+ * 
+ * @interface CredentialValidationResult
+ * @since 2.0.0
  */
 export interface CredentialValidationResult {
-	/** Whether credentials are valid */
+	/** Whether the credentials passed all validation checks */
 	isValid: boolean;
-	/** Validation error messages */
+	/** Array of validation error messages */
 	errors: string[];
-	/** Warning messages */
+	/** Array of non-critical warning messages */
 	warnings: string[];
-	/** Environment-specific recommendations */
+	/** Array of environment-specific configuration recommendations */
 	recommendations: string[];
 }
 
