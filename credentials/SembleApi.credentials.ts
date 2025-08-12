@@ -109,16 +109,16 @@ export class SembleApi implements ICredentialType {
 
   /**
    * Authentication configuration for Semble API requests
-   * 
+   *
    * Configures n8n to automatically include the API token in the x-token header
    * for all requests made to the Semble API. The token is interpolated from
    * the credential's apiToken field at runtime.
-   * 
+   *
    * The authentication uses:
    * - Generic authentication type for maximum flexibility
    * - x-token header for JWT token authentication
    * - Content-Type header set to application/json for GraphQL
-   * 
+   *
    * @example
    * ```typescript
    * // This configuration automatically adds headers like:
@@ -127,7 +127,7 @@ export class SembleApi implements ICredentialType {
    *   "Content-Type": "application/json"
    * }
    * ```
-   * 
+   *
    * @type {IAuthenticateGeneric}
    * @since 2.0.0
    * @description Uses generic authentication with x-token header containing JWT

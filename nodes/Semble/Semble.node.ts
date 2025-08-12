@@ -70,12 +70,12 @@ import { SembleQueryConfig } from "../../services/SembleQueryService";
 
 /**
  * Main Semble node implementation for n8n integration
- * 
+ *
  * Provides comprehensive CRUD operations for the Semble practice management system
  * using a resource-based architecture. Supports patients, bookings, appointments,
  * products, and other Semble entities with built-in caching, error handling,
  * and pagination.
- * 
+ *
  * Features:
  * - Multi-resource support (Patients, Bookings, Products, Appointments)
  * - Advanced field discovery and dynamic form generation
@@ -83,7 +83,7 @@ import { SembleQueryConfig } from "../../services/SembleQueryService";
  * - Comprehensive error handling and retry logic
  * - Paginated data retrieval with auto-pagination options
  * - Event-driven architecture for extensibility
- * 
+ *
  * @example
  * ```typescript
  * // Node configuration in n8n workflow
@@ -97,7 +97,7 @@ import { SembleQueryConfig } from "../../services/SembleQueryService";
  *   }
  * }
  * ```
- * 
+ *
  * @class Semble
  * @implements {INodeType}
  * @since 2.0.0
@@ -1420,28 +1420,28 @@ name
 
   /**
    * Main execution method for the Semble node
-   * 
+   *
    * Handles all CRUD operations across different Semble resources using an
    * action-based approach. Processes input data, validates parameters,
    * executes the appropriate resource operation, and returns structured results.
-   * 
+   *
    * The method supports:
    * - Resource operations: Patient, Booking, Product, Appointment management
    * - CRUD actions: create, update, delete, get, getAll
    * - Special actions: updateJourney (booking-specific)
    * - Batch processing: handles multiple input items
    * - Error handling: comprehensive error mapping and reporting
-   * 
+   *
    * @example
    * ```typescript
    * // Executed automatically by n8n when node runs
    * // Node parameters determine the operation:
    * // - action: "getAll"
-   * // - resource: "patient" 
+   * // - resource: "patient"
    * // - returnAll: true
    * // - filters: { firstName: "John" }
    * ```
-   * 
+   *
    * @async
    * @method execute
    * @param this - n8n execution context providing access to parameters and utilities
