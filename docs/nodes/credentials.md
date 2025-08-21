@@ -312,8 +312,8 @@ With credentials configured, explore:
 
 - **[Node Overview](overview.md)** - Understanding available operations
 - **[Patient Operations](patient-nodes.md)** - Working with patient data
-- **[First Workflow](../getting-started/first-workflow.md)** - Build your first automation
-- **[Common Workflows](../examples/common-workflows.md)** - Ready-to-use examples
+- **[Workflow Templates](../examples/templates/)** - Ready-to-use workflow templates
+- **[Common Workflows](../examples/common-workflows.md)** - Practical examples
 
 ---
 

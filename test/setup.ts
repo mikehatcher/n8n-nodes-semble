@@ -44,8 +44,24 @@ process.on('unhandledRejection', (reason, promise) => {
 /**
  * Global cleanup after all tests
  */
-afterAll(() => {
+afterAll(async () => {
   // Add any global cleanup logic here
   jest.clearAllMocks();
   jest.restoreAllMocks();
+  
+  // Clean up singleton services that might have open handles
+  try {
+    const { serviceContainer } = await import('../core/ServiceContainer');
+    const { eventSystem } = await import('../core/EventSystem');
+    
+    // Clear all registered services and listeners
+    serviceContainer.clear();
+    eventSystem.clear();
+    
+    // Give a moment for cleanup to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+  } catch (error) {
+    // Ignore errors during cleanup - services may not be initialized
+    console.debug('Cleanup warning (can be ignored):', error instanceof Error ? error.message : String(error));
+  }
 });

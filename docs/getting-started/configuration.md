@@ -6,34 +6,7 @@ Learn how to configure your Semble API credentials and customize the node settin
 
 ### Obtaining API Credentials
 
-## Managing Multiple Practices
-
-The node supports connecting to different practices through separate credential configurations:
-
-### Separate Credentials Approach
-Create individual credentials for each practice you need to connect to:
-
-```yaml
-Credential 1: "Practice A - London"
-  - API Token: your-london-practice-token
-  - Base URL: https://open.semble.io/graphql
-  - Environment: Production
-
-Credential 2: "Practice B - Manchester" 
-  - API Token: your-manchester-practice-token
-  - Base URL: https://open.semble.io/graphql
-  - Environment: Production
-```
-
-### Usage in Workflows
-Select the appropriate credential in each node to connect to the desired practice:
-
-1. **Different workflows per practice** - Recommended for completely separate operations
-2. **Conditional credential selection** - Use n8n's credential switching for dynamic practice selection
-3. **Practice-specific nodes** - Configure different nodes with different credentials within the same workflow
-
-!!! note "Practice Isolation"
-    Each API token is tied to a specific Semble practice. There's no cross-practice access or shared tokens, so you must obtain separate API tokens from each practice administrator. Semble practice management system**
+1. **Log into your Semble practice management system**
 2. **Navigate to Settings** → **API Access** (or contact your administrator)
 3. **Generate a new API token** with appropriate permissions
 4. **Copy the token** - you'll need this for n8n configuration
@@ -92,59 +65,183 @@ The node uses intelligent caching to improve performance:
 
 ### Logging and Debugging
 
-Basic logging is available for troubleshooting:
+The node provides comprehensive logging capabilities for troubleshooting issues:
 
-**Available Logging:**
-- Console logging for debug information during development
-- n8n logger integration (when `debugMode` parameter is used in API calls)
-- Error logging with stack traces for failed operations
-- Basic request/response logging in debug mode
+#### Activating Debug Logging
 
-**Implementation Details:**
-- The `sembleApiRequest` function accepts a `debugMode` parameter
-- When enabled, logs API request details via `this.logger?.info()`
-- Console logs are used for integration testing and development
-- Error details are captured and logged during API failures
+**Method 1: n8n Environment Variable**
+Set the n8n log level to see detailed node execution logs:
+```bash
+# Set environment variable before starting n8n
+export N8N_LOG_LEVEL=debug
 
-!!! note "Debug Mode Usage"
-    Debug mode is enabled programmatically by setting the `debugMode` parameter when calling `sembleApiRequest()`. This is primarily used for development and testing rather than end-user configuration.
+# Then start n8n
+n8n start
+```
+
+**Method 2: Node Configuration**
+
+Some nodes have individual debug options:
+
+1. **Open a Semble node** in your workflow
+2. **Look for "Debug Mode"** or "Enable Logging" in Options section
+3. **Enable the option** to see detailed execution logs
+4. **Check the execution logs** in n8n's execution view
+
+#### Available Logging Levels
+
+| Log Level | What Gets Logged | When to Use |
+|-----------|------------------|-------------|
+| **Error** | Errors and failures only | Production environments |
+| **Warn** | Warnings and errors | Production with monitoring |
+| **Info** | General information, errors, warnings | Development and staging |
+| **Debug** | Detailed execution information | Troubleshooting issues |
+| **Verbose** | Complete request/response data | Deep debugging |
+
+#### Where to Find Logs
+
+**In n8n Interface:**
+
+1. **Workflow Execution View** → Click on any node to see its execution log
+2. **Executions List** → View detailed logs for each workflow run
+3. **Node Output** → Inspect data flowing between nodes
+
+**In n8n Server Logs:**
+
+- **Docker users**: `docker logs n8n-container-name`
+- **PM2 users**: Check PM2 logs or `/var/log/n8n/`
+- **Direct installation**: Check console output or configured log files
+
+**What Gets Logged:**
+- API request URLs and parameters (without sensitive data)
+- Response status codes and execution times
+- GraphQL query details (in debug mode)
+- Permission check results
+- Cache hit/miss information
+- Error messages with stack traces
+
+#### Debugging Common Issues
+
+**Enable verbose logging for specific problems:**
+
+```bash
+# For API connectivity issues
+export N8N_LOG_LEVEL=debug
+export N8N_LOG_OUTPUT=console
+
+# Start n8n and watch the console
+n8n start
+```
+
+**Log Analysis Tips:**
+- Look for HTTP status codes (200=success, 401=auth error, 429=rate limit)
+- Check for `MISSING_PERMISSION` messages in debug logs
+- Monitor request timing for performance issues
+- Search for error stack traces for technical failures
+
+!!! warning "Log Security"
+    Debug logging may include API responses in logs. Ensure logs are secure and not accessible to unauthorized users. API tokens are never logged regardless of log level.
 
 ## Advanced Configuration
 
 ### Timeout Settings
 
-Default timeout configurations (used by internal services):
+The node handles timeouts at two levels:
+
+#### Node-Level Timeouts
+Each Semble node includes a **"Timeout (seconds)"** field in its configuration:
+
+| Setting | Default | Range | Purpose |
+|---------|---------|-------|---------|
+| **Node Timeout Field** | 60 seconds | 10-300 seconds | Maximum time to wait for a single node execution |
+
+**How to Configure:**
+
+1. **Open any Semble node** in your workflow
+2. **Scroll to "Options"** section
+3. **Set "Timeout (seconds)"** field to your desired value
+4. **Recommended values**:
+   - Simple operations: 30-60 seconds
+   - Complex queries: 60-120 seconds
+   - Bulk operations: 120-300 seconds
+
+#### Internal Service Timeouts
+The node also uses internal timeout configurations for API operations:
 
 | Timeout Type | Default Value | Description |
 |--------------|---------------|-------------|
-| **Request Timeout** | 30 seconds | Service-level API request timeout |
-| **Connection Timeout** | 10 seconds | Service connection establishment timeout |
-| **Operation Timeout** | 45 seconds | Complex operation timeout |
-| **Batch Operations** | 2 minutes | Large batch operation timeout |
+| **API Request Timeout** | 30 seconds | Individual API call timeout |
+| **Connection Timeout** | 10 seconds | Time to establish connection |
+| **Complex Operations** | 45 seconds | Multi-step operations |
+| **Batch Operations** | 2 minutes | Large batch processing |
 
-!!! note "Implementation Details"
-    These timeouts are defined in `SEMBLE_CONSTANTS.TIMEOUTS` and used by internal services like `SembleQueryService`. The main `sembleApiRequest` function relies on n8n's default HTTP timeout behavior.
+!!! tip "Timeout Configuration"
+    If you're experiencing timeout errors, increase the **"Timeout (seconds)"** field in your node configuration. The internal service timeouts are optimised and typically don't need adjustment.
 
 ### Test Environment Detection
 
-The nodes automatically detect test environments and adjust behavior accordingly:
+The node automatically detects when it's running in test environments and adjusts behaviour to prevent issues during development and automated testing.
 
-| Detection Method | Description |
-|------------------|-------------|
-| **NODE_ENV=test** | Environment variable set to 'test' |
-| **Jest Detection** | Jest test runner (`global.__jest__`) |
-| **Development Indicators** | Other development environment signals |
+#### How Test Environments Are Detected
+
+The node checks for several indicators to determine if it's in a test environment:
+
+| Detection Method | Check | Description |
+|------------------|-------|-------------|
+| **NODE_ENV Variable** | `process.env.NODE_ENV === 'test'` | Standard Node.js environment indicator |
+| **Jest Test Runner** | `typeof global.__jest__ !== 'undefined'` | Detects Jest testing framework |
+| **Development Mode** | `process.env.NODE_ENV === 'development'` | Development environment detection |
+| **CI Environment** | `process.env.CI === 'true'` | Continuous integration detection |
+| **n8n Test Mode** | n8n-specific test indicators | When n8n is running in test mode |
 
 #### Test Environment Adjustments
 
-| Adjustment | Normal Environment | Test Environment | Purpose |
-|------------|-------------------|------------------|---------|
-| **Pagination Limit** | No limit | Maximum 5 pages | Prevent timeouts during automated testing |
-| **Timeouts** | Standard values | Reduced timeouts | Faster failure detection |
-| **Cache TTL** | Full duration | Shorter lifetimes | Test isolation |
+When a test environment is detected, the node automatically applies these changes:
+
+| Setting | Production | Test Environment | Reason |
+|---------|------------|------------------|---------|
+| **Pagination Limit** | Unlimited | Maximum 5 pages | Prevents long-running tests |
+| **Cache TTL** | Full duration (1 hour) | 30 seconds | Faster test isolation |
+| **Request Timeouts** | 30 seconds | 10 seconds | Quicker failure detection |
+| **Retry Attempts** | 3 attempts | 1 attempt | Faster test execution |
+| **Debug Logging** | Disabled | Enhanced | Better test diagnostics |
+
+#### Checking Your Environment
+
+To verify what environment the node detects:
+
+**Option 1: Check n8n Logs**
+Look for messages like:
+```
+[DEBUG] Semble Node: Test environment detected, applying test configurations
+[DEBUG] Environment checks: NODE_ENV=test, Jest=true, CI=false
+```
+
+**Option 2: Use a Simple Workflow**
+Create a test workflow with a Semble trigger node and check the execution logs for environment detection messages.
+
+**Option 3: Environment Variables**
+Check your current environment:
+```bash
+echo "NODE_ENV: $NODE_ENV"
+echo "CI: $CI"
+echo "Jest detection: $npm_config_user_config"
+```
+
+#### Forcing Production Behaviour
+
+If you need production behaviour in a test environment:
+```bash
+# Temporarily override environment detection
+export SEMBLE_FORCE_PRODUCTION=true
+export NODE_ENV=production
+
+# Start n8n
+n8n start
+```
 
 !!! note "User Impact"
-    If you're running n8n in a test environment (e.g., `NODE_ENV=test`), you may notice different pagination behavior in trigger nodes. This is intentional to prevent long-running tests.
+    Most users won't notice these adjustments unless running n8n in development/test setups. The changes are designed to make testing more reliable without affecting normal operation.
 
 ### Retry Configuration
 
@@ -184,9 +281,6 @@ Ensure your API token has access to the resources you need:
 | **Patients** | ✅ Required | ⚠️ Optional | ❌ Typically restricted | Core functionality |
 | **Bookings** | ✅ Required | ⚠️ Optional | ⚠️ Optional | Appointment management |
 | **Products** | ✅ Required | ⚠️ Optional | ⚠️ Optional | Service and product data |
-| **Staff** | ✅ Required | ❌ Not needed | ❌ Not needed | Read-only access sufficient |
-| **Doctors** | ✅ Required | ❌ Not needed | ❌ Not needed | Practitioner information |
-| **Locations** | ✅ Required | ❌ Not needed | ❌ Not needed | Practice locations |
 
 !!! note "Permission Verification"
     The system includes built-in permission checking that will identify restricted fields during API calls. Use the permission discovery script (`scripts/discover-permissions.js`) to test your token's actual permissions.
@@ -303,10 +397,10 @@ curl -X POST https://open.semble.io/graphql \
 ## Next Steps
 
 With your credentials configured:
-- [Create your first workflow →](first-workflow.md)
 - [Explore available nodes →](../nodes/overview.md)
 - [Browse workflow examples →](../examples/common-workflows.md)
+- [View workflow templates →](../examples/templates/)
 
 ---
 
-**Previous**: [← Installation Guide](installation.md) | **Next**: [First Workflow →](first-workflow.md)
+**Previous**: [← Installation Guide](installation.md) | **Next**: [Node Overview →](../nodes/overview.md)

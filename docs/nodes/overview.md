@@ -1,53 +1,146 @@
 # Node Overview
 
-The n8n Semble integration provides two powerful nodes for automating your practice management workflows. This overview helps you understand when and how to use each node effectively.
+The n8n Semble integration v2.0 provides two powerful nodes for automating your practice management workflows with enterprise-grade reliability and performance. This overview helps you understand when and how to use each node effectively.
+
+!!! info "Version 2.0 Changes"
+    This documentation reflects the v2.0 release with significant architectural improvements and resource changes.
 
 ## Available Nodes
 
 ### Semble (Action Node)
 
 - **Best for**: Manual triggers, scheduled operations, workflow actions
-- **Primary function**: Perform CRUD operations on Semble resources
-- **Create, Read, Update, Delete** operations
-- **Batch processing** capabilities
-- **Real-time data retrieval**
-- **Resource management** for patients, bookings, products
+- **Primary function**: Perform comprehensive CRUD operations on Semble resources  
+- **Enhanced features**: Advanced error handling, intelligent caching, field validation
+- **Resource management**: Patients, bookings, and products with full lifecycle support
+- **Performance**: Optimised queries with service-oriented architecture
 
 ### Semble Trigger (Trigger Node)
 
-- **Best for**: Automated workflows, real-time responses, data synchronization
+- **Best for**: Automated workflows, real-time responses, data synchronisation
 - **Primary function**: Monitor Semble for changes and automatically trigger workflows
-- **Automated monitoring** for new/updated records
-- **Configurable polling intervals**
-- **Event-driven workflows**
-- **Real-time synchronization**
+- **Enhanced monitoring**: Configurable polling with intelligent caching
+- **Event-driven workflows**: Service container integration for reliable operation
+- **Real-time synchronisation**: Advanced change detection and metadata handling
 
 ## Supported Resources
 
-Both nodes support operations across these Semble entities:
+Version 2.0 supports operations across these Semble entities:
 
-| Resource | Description |
-|----------|-------------|
-| **👤 Patients** | Patient records and demographics |
-| **📅 Bookings** | Appointments and scheduling |
-| **🛍️ Products** | Services and inventory |
+| Resource | Description | v2.0 Changes |
+|----------|-------------|--------------|
+| **👤 Patients** | Patient records and demographics | Enhanced validation and error handling |
+| **📅 Bookings** | Appointments and scheduling | Renamed from `appointments`, improved functionality |
+| **🛍️ Products** | Services, products, and inventory | New in v2.0 - full CRUD support |
+
+!!! warning "Breaking Changes"
+    - `appointment` resource renamed to `booking`
+    - `staff` resource removed (limited functionality in v1.x)
+    - Enhanced API response format for consistency
 
 ## Resource Capabilities Matrix
 
-| Resource | Create | Read | Update | Delete | Trigger Support |
-|----------|--------|------|--------|--------|-----------------|
-| **Patients** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Bookings** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Products** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Resource | Create | Read | Update | Delete | Trigger Support | v2.0 Enhancements |
+|----------|--------|------|--------|--------|-----------------|-------------------|
+| **Patients** | ✅ | ✅ | ✅ | ✅ | ✅ | Advanced validation, error mapping |
+| **Bookings** | ✅ | ✅ | ✅ | ✅ | ✅ | Enhanced from `appointments`, better scheduling |
+| **Products** | ✅ | ✅ | ✅ | ✅ | ✅ | New in v2.0 - comprehensive inventory management |
 
 !!! note "Permission Requirements"
-    Actual available operations depend on your Semble API token permissions. Some operations may be restricted based on your user role and practice configuration.
+    Actual available operations depend on your Semble API token permissions. Version 2.0 includes enhanced permission checking and field-level validation.
 
 ## Common Operations
 
 ### Data Retrieval Operations
 ```yaml
-# Get single record
+# Get single record by ID
+resource: "patient"
+operation: "get" 
+patientId: "{{$json.patientId}}"
+
+# Get multiple records with filtering
+resource: "booking"
+operation: "getMany"
+returnAll: false
+limit: 50
+filters:
+  dateFrom: "2025-01-01T00:00:00Z"
+  dateTo: "2025-01-31T23:59:59Z"
+```
+
+### Data Modification Operations
+```yaml
+# Create new record
+resource: "patient"
+operation: "create"
+firstName: "John"
+lastName: "Smith"
+email: "john.smith@example.com"
+
+# Update existing record  
+resource: "booking"
+operation: "update"
+bookingId: "{{$json.bookingId}}"
+status: "confirmed"
+notes: "Updated appointment status"
+```
+
+### Trigger Operations
+```yaml
+# Monitor for new patients
+resource: "patient"
+triggerType: "newOnly"
+pollInterval: "5m"
+limit: 100
+
+# Monitor for booking changes
+resource: "booking" 
+triggerType: "newOrUpdated"
+pollInterval: "2m"
+dateRange: "today"
+```
+
+## Advanced Features (v2.0)
+
+### Service-oriented Architecture
+- **ServiceContainer**: Dependency injection for modular design
+- **EventSystem**: Comprehensive event handling and debugging
+- **CacheService**: Intelligent caching with configurable TTL
+- **ValidationService**: Runtime validation with detailed error reporting
+
+### Enhanced Error Handling
+- **ErrorMapper**: Sophisticated error classification and user-friendly messages
+- **Field Permissions**: Fine-grained permission checking at field level
+- **Context Preservation**: Detailed error context for debugging
+
+### Performance Optimisations
+- **Query Optimisation**: Intelligent GraphQL query construction
+- **Schema Registry**: Dynamic schema management and caching  
+- **Connection Pooling**: Efficient API connection management
+
+## Migration from v1.x
+
+### Resource Mapping
+```yaml
+# v1.x → v2.0 Migration
+v1_appointment → v2_booking    # Renamed with enhanced functionality
+v1_patient → v2_patient        # Enhanced validation and error handling  
+v1_staff → removed             # Limited functionality, removed in v2.0
+new → v2_products             # Comprehensive inventory management
+```
+
+### Workflow Updates
+Update your trigger configurations:
+```yaml
+# v1.x Configuration
+resource: "appointment"
+operation: "getMany"
+
+# v2.0 Configuration  
+resource: "booking"
+operation: "getMany"
+# Enhanced filtering and validation available
+```
 Action: "Get"
 Resource: "Patient" 
 Patient ID: "patient_id_here"

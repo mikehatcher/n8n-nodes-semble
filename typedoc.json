@@ -14,6 +14,7 @@
   "excludeProtected": false,
   "excludeInternal": true,
   "hideGenerator": true,
+  "hideBreadcrumbs": false,
   "sort": ["source-order"],
   "kindSortOrder": [
     "Class",
@@ -52,5 +53,12 @@
   "logLevel": "Info",
   "cleanOutputDir": true,
   "gitRevision": "main",
-  "sourceLinkTemplate": "https://github.com/mikehatcher/n8n-nodes-semble/blob/{gitRevision}/{path}#L{line}"
+  "sourceLinkTemplate": "https://github.com/mikehatcher/n8n-nodes-semble/blob/{gitRevision}/{path}#L{line}",
+  "navigationLinks": {
+    "GitHub": "https://github.com/mikehatcher/n8n-nodes-semble"
+  },
+  "sidebarLinks": {
+    "Documentation": "../",
+    "GitHub": "https://github.com/mikehatcher/n8n-nodes-semble"
+  }
 }

@@ -387,7 +387,7 @@ SMS Automation:
 ```yaml
 # Internal staff communication
 Team Coordination:
-  Patient Arrivals: Real-time check-in notifications
+  Patient Arrivals: Real-time arrival notifications
   Urgent Cases: Immediate team alerts
   Schedule Changes: Staff coordination
   Daily Huddles: Automated meeting creation
@@ -628,7 +628,7 @@ Orchestration Flow:
     - Health questionnaires
 
 4. Appointment Delivery
-    - Check-in processing
+    - Arrival processing
     - Service delivery tracking
     - Real-time updates
     - Quality monitoring

@@ -167,7 +167,7 @@ Booking ID: "booking_id_here"
 
 #### Use Cases
 - Appointment confirmation workflows
-- Patient check-in systems
+- Patient arrival management
 - Appointment details for staff
 - Integration with calendar systems
 
@@ -888,7 +888,7 @@ Appointment Rescheduled:
 Appointment Day:
   → Send arrival instructions
   → Notify of any delays
-  → Provide check-in options
+  → Provide arrival guidance
 ```
 
 #### Multi-Channel Communication

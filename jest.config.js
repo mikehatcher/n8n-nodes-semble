@@ -77,7 +77,7 @@ module.exports = {
   // Global test setup with NODE_ENV for environment detection
   globals: {
     'ts-jest': {
-      tsconfig: 'tsconfig.json',
+      tsconfig: '<rootDir>/tsconfig.json',
     },
     'process.env': {
       NODE_ENV: 'test'

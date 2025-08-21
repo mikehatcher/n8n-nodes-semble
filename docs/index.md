@@ -1,29 +1,50 @@
 # n8n Semble Integration
 
-Welcome to the official documentation for the **n8n Semble community node** - your gateway to automating healthcare practice management workflows.
+Welcome to the official documentation for the **n8n Semble community node v2.0** - your gateway to automating healthcare practice management workflows with enterprise-grade reliability.
 
-## 🚀 What is n8n Semble?
+## 🚀 What is n8n Semble v2.0?
 
-The n8n Semble node is a powerful community integration that connects [n8n workflow automation](https://n8n.io) with [Semble practice management system](https://semble.io). It enables healthcare practices to automate their booking, patient management, and service catalog operations through visual workflows.
+The n8n Semble node is a completely rewritten, enterprise-ready integration that connects [n8n workflow automation](https://n8n.io) with [Semble practice management system](https://semble.io). Version 2.0 features a complete architectural overhaul with service-oriented design, comprehensive testing, and professional documentation.
 
 ## ✨ Key Features
 
-- **📅 Booking Management** - Automate appointment scheduling, updates, and cancellations
-- **👥 Patient Operations** - Streamline patient data management and synchronization
-- **🛍️ Product & Service Catalog** - Manage services, products, and inventory
-- **🔄 Real-time Triggers** - Monitor changes and trigger workflows automatically
-- **🛡️ Enterprise-grade Security** - Secure API authentication with environment safety
-- **⚡ High Performance** - Built-in caching, rate limiting, and error handling
+- **📅 Booking Management** - Complete CRUD operations for appointment scheduling and management
+- **👥 Patient Operations** - Full patient lifecycle management with advanced validation
+- **🛍️ Product & Service Catalogue** - Comprehensive inventory and service management
+- **🔄 Real-time Triggers** - Intelligent monitoring with configurable polling intervals
+- **🛡️ Enterprise-grade Security** - Advanced error handling, field permissions, and environment controls
+- **⚡ High Performance** - Intelligent caching, service container, and optimised queries
+- **🧪 Quality Assurance** - 86.31% test coverage with 1,312+ automated tests
 
 ## 🏗️ Architecture
 
-Built with modern TypeScript and following n8n community node best practices:
+Built with modern TypeScript and enterprise-grade patterns:
 
-- **Type-safe Operations** - Comprehensive TypeScript interfaces and validation
-- **Modular Design** - Clean separation of concerns with service-oriented architecture
-- **Intelligent Caching** - Optimized performance with configurable TTL caching
-- **Error Resilience** - Robust error handling with user-friendly messages
-- **GraphQL Integration** - Direct integration with Semble's GraphQL API
+- **Service-oriented Architecture** - Modular design with dependency injection via ServiceContainer
+- **Event-driven System** - Comprehensive event system for monitoring and debugging
+- **Type-safe Operations** - Full TypeScript interfaces with runtime validation
+- **Intelligent Caching** - High-performance caching with configurable TTL and service integration
+- **Advanced Error Handling** - Sophisticated error mapping and field permission processing
+- **Schema Registry** - Dynamic schema management and validation system
+
+## 🆕 What's New in v2.0
+
+!!! success "Complete Rewrite"
+    Version 2.0 is a complete architectural rewrite with significant breaking changes and improvements.
+
+### Major Enhancements
+- **Service-oriented Architecture** - Complete refactor with dependency injection and service container
+- **Resource Changes** - `appointment` → `booking`, removed `staff`, added comprehensive `products` support
+- **Enhanced Testing** - 86.31% test coverage with 1,312+ automated tests and quality gates
+- **Professional Documentation** - Complete MkDocs documentation with examples and API reference
+- **Advanced Error Handling** - Sophisticated error mapping and validation system
+- **Performance Optimisations** - Intelligent caching, schema registry, and query optimisation
+
+### Breaking Changes
+- Resource name changed from `appointment` to `booking`
+- `staff` resource removed (read-only operations were limited in scope)
+- Enhanced credential configuration with environment validation
+- API response format improvements for better data consistency
 
 ## 📚 Documentation Structure
 
@@ -51,7 +72,7 @@ Built with modern TypeScript and following n8n community node best practices:
 
     Auto-generated documentation from TypeScript code
 
-    [:octicons-arrow-right-24: API Docs](api/)
+    [:octicons-arrow-right-24: API Docs](api/README.md)
 
 -   :material-lightbulb:{ .lg .middle } **Examples**
 

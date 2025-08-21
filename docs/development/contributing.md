@@ -916,7 +916,7 @@ Ready to contribute? Here's what to do next:
 - **[Architecture Guide](architecture.md)** - Deep dive into project structure
 - **[Testing Guide](testing.md)** - Comprehensive testing practices
 - **[Node Documentation](../nodes/overview.md)** - Understanding the node system
-- **[API Reference](../api/reference.md)** - Technical implementation details
+- **[API Reference](../api/README.md)** - Technical implementation details
 
 ---
 

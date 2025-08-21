@@ -5,33 +5,12 @@ repo_url: https://github.com/mikehatcher/n8n-nodes-semble
 repo_name: mikehatcher/n8n-nodes-semble
 
 theme:
-  name: material
-  palette:
-    - scheme: default
-      primary: blue
-      accent: blue
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: blue
-      accent: blue
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-    - navigation.top
-    - search.highlight
-    - search.suggest
-    - content.code.copy
-    - content.code.annotate
-    - navigation.tracking
-    - navigation.instant
-  logo: assets/logo.svg
-  favicon: assets/logo.svg
+  name: shadcn
+  show_title: true
+  show_stargazers: true
+  pygments_style:
+    light: shadcn-light
+    dark: github-dark
 
 plugins:
   - search:
@@ -43,7 +22,6 @@ nav:
   - Getting Started:
     - Installation: getting-started/installation.md
     - Configuration: getting-started/configuration.md
-    - First Workflow: getting-started/first-workflow.md
   - Node Reference:
     - Overview: nodes/overview.md
     - Credentials: nodes/credentials.md
@@ -51,7 +29,13 @@ nav:
     - Booking Nodes: nodes/booking-nodes.md
     - Product Nodes: nodes/product-nodes.md
     - Trigger Nodes: nodes/trigger-nodes.md
-  - API Reference: api/
+  - API Reference:
+    - Overview: api/README.md
+    - Components: api/components/README.md
+    - Core: api/core/README.md
+    - Credentials: api/credentials/README.md
+    - Nodes: api/nodes/README.md
+    - Services: api/services/README.md
   - Examples:
     - Common Workflows: examples/common-workflows.md
     - Integration Patterns: examples/integration-patterns.md
@@ -102,9 +86,6 @@ extra:
   version:
     provider: mike
     default: stable
-
-extra_css:
-  - assets/stylesheets/extra.css
 
 copyright: >
   Copyright &copy; 2024-2025 Mike Hatcher –
