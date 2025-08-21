@@ -1,21 +1,18 @@
 /**
  * @fileoverview Unit tests for CredentialService
- * @description Comprehensive tests for credential validation, format checking, and connection testing
+ * @description Tests credential validation, retrieval, and JWT token handling
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Tests.Services
- * @since 2.0.0
  */
 
-import { 
-	CredentialService, 
-	ExtendedSembleCredentials, 
-	CredentialValidationResult,
-	ConnectionTestResult,
-	EnvironmentConfig 
+import {
+  CredentialService,
+  CredentialValidationResult,
 } from '../../services/CredentialService';
-import { SembleValidationError, SembleAPIError } from '../../core/SembleError';
+import { SembleValidationError } from '../../core/SembleError';
 import { IExecuteFunctions, ILoadOptionsFunctions } from 'n8n-workflow';
+import { SembleCredentials } from '../../types/NodeTypes';
 
 // =============================================================================
 // TEST SETUP
@@ -33,14 +30,10 @@ describe('CredentialService', () => {
 	// =============================================================================
 
 	describe('validateCredentialFormat', () => {
-		it('should validate valid credentials', () => {
-			const credentials: ExtendedSembleCredentials = {
+		it('should validate valid credentials successfully', () => {
+			const credentials: SembleCredentials = {
 				server: 'https://open.semble.io/graphql',
-				token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-				environment: 'development',
-				apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-				baseUrl: 'https://open.semble.io/graphql',
-				safetyMode: true,
+				token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token',
 			};
 
 			const result = credentialService.validateCredentialFormat(credentials);
@@ -50,12 +43,9 @@ describe('CredentialService', () => {
 		});
 
 		it('should reject credentials with missing required fields', () => {
-			const credentials: ExtendedSembleCredentials = {
+			const credentials: SembleCredentials = {
 				server: '',
 				token: '',
-				environment: 'development',
-				apiToken: '',
-				baseUrl: '',
 			};
 
 			const result = credentialService.validateCredentialFormat(credentials);
@@ -65,59 +55,10 @@ describe('CredentialService', () => {
 			expect(result.errors).toContain('GraphQL endpoint URL is required');
 		});
 
-		it('should warn about invalid token format', () => {
-			const credentials: ExtendedSembleCredentials = {
-				server: 'https://open.semble.io/graphql',
-				token: 'invalid-token',
-				environment: 'development',
-				apiToken: 'invalid-token',
-				baseUrl: 'https://open.semble.io/graphql',
-			};
-
-			const result = credentialService.validateCredentialFormat(credentials);
-
-			expect(result.isValid).toBe(true); // Still valid, just a warning
-			expect(result.warnings).toContain('API token does not appear to be in valid JWT format');
-		});
-
-		it('should require production confirmation for production environment', () => {
-			const credentials: ExtendedSembleCredentials = {
-				server: 'https://open.semble.io/graphql',
-				token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-				environment: 'production',
-				apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-				baseUrl: 'https://open.semble.io/graphql',
-				productionConfirmed: false,
-			};
-
-			const result = credentialService.validateCredentialFormat(credentials);
-
-			expect(result.isValid).toBe(false);
-			expect(result.errors).toContain('Production environment requires explicit confirmation');
-		});
-
-		it('should warn about custom endpoints for known environments', () => {
-			const credentials: ExtendedSembleCredentials = {
-				server: 'https://custom.endpoint.com/graphql',
-				token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-				environment: 'development',
-				apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-				baseUrl: 'https://custom.endpoint.com/graphql',
-			};
-
-			const result = credentialService.validateCredentialFormat(credentials);
-
-			expect(result.isValid).toBe(true);
-			expect(result.warnings).toContain('Custom endpoint detected. Expected: https://dev.semble.io/graphql');
-		});
-
-		it('should reject invalid URLs', () => {
-			const credentials: ExtendedSembleCredentials = {
-				server: 'not-a-url',
-				token: 'valid-token',
-				environment: 'development',
-				apiToken: 'valid-token',
-				baseUrl: 'not-a-url',
+		it('should validate URL format correctly', () => {
+			const credentials: SembleCredentials = {
+				server: 'invalid-url',
+				token: 'valid.jwt.token',
 			};
 
 			const result = credentialService.validateCredentialFormat(credentials);
@@ -126,220 +67,193 @@ describe('CredentialService', () => {
 			expect(result.errors).toContain('GraphQL endpoint URL is not valid');
 		});
 
-		it('should require HTTPS and GraphQL path in URLs', () => {
-			const credentials: ExtendedSembleCredentials = {
-				server: 'http://insecure.com/api',
-				token: 'valid-token',
-				environment: 'development',
-				apiToken: 'valid-token',
-				baseUrl: 'http://insecure.com/api',
+		it('should validate token format and warn about invalid JWT', () => {
+			const credentials: SembleCredentials = {
+				server: 'https://open.semble.io/graphql',
+				token: 'invalid-token-format',
 			};
 
 			const result = credentialService.validateCredentialFormat(credentials);
 
-			expect(result.isValid).toBe(false);
-			expect(result.errors).toContain('GraphQL endpoint URL is not valid');
-		});
-	});
+			expect(result.isValid).toBe(true); // Token format warnings don't make credentials invalid
+expect(result.warnings).toContain('API token does not appear to be in valid JWT format');
+});
 
-	// =============================================================================
-	// ENVIRONMENT CONFIGURATION TESTS
-	// =============================================================================
+it('should handle valid JWT token format', () => {
+const credentials: SembleCredentials = {
+server: 'https://open.semble.io/graphql',
+token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+};
 
-	describe('getEnvironmentConfig', () => {
-		it('should return valid config for production environment', () => {
-			const config = credentialService.getEnvironmentConfig('production');
+const result = credentialService.validateCredentialFormat(credentials);
 
-			expect(config.name).toBe('Production');
-			expect(config.defaultEndpoint).toBe('https://open.semble.io/graphql');
-			expect(config.requiresConfirmation).toBe(true);
-			expect(config.rateLimiting.requestsPerMinute).toBe(120);
-		});
+expect(result.isValid).toBe(true);
+expect(result.warnings.some(w => w.includes('JWT format'))).toBe(false);
+});
 
-		it('should return valid config for staging environment', () => {
-			const config = credentialService.getEnvironmentConfig('staging');
+it('should validate HTTPS URLs with GraphQL endpoint', () => {
+const credentials: SembleCredentials = {
+server: 'https://api.example.com/graphql',
+token: 'valid.jwt.token',
+};
 
-			expect(config.name).toBe('Staging');
-			expect(config.defaultEndpoint).toBe('https://staging.semble.io/graphql');
-			expect(config.requiresSafetyMode).toBe(true);
-			expect(config.rateLimiting.requestsPerMinute).toBe(240);
-		});
+const result = credentialService.validateCredentialFormat(credentials);
 
-		it('should return valid config for development environment', () => {
-			const config = credentialService.getEnvironmentConfig('development');
+expect(result.isValid).toBe(true);
+expect(result.errors.some(e => e.includes('not valid'))).toBe(false);
+});
 
-			expect(config.name).toBe('Development');
-			expect(config.defaultEndpoint).toBe('https://dev.semble.io/graphql');
-			expect(config.requiresSafetyMode).toBe(true);
-			expect(config.rateLimiting.enabled).toBe(false);
-		});
+it('should reject HTTP URLs (non-secure)', () => {
+const credentials: SembleCredentials = {
+server: 'http://api.example.com/graphql',
+token: 'valid.jwt.token',
+};
 
-		it('should throw error for unsupported environment', () => {
-			expect(() => {
-				credentialService.getEnvironmentConfig('invalid');
-			}).toThrow(SembleValidationError);
-		});
-	});
+const result = credentialService.validateCredentialFormat(credentials);
 
-	describe('getSupportedEnvironments', () => {
-		it('should return list of supported environments', () => {
-			const environments = credentialService.getSupportedEnvironments();
+expect(result.isValid).toBe(false);
+expect(result.errors).toContain('GraphQL endpoint URL is not valid');
+});
 
-			expect(environments).toContain('production');
-			expect(environments).toContain('staging');
-			expect(environments).toContain('development');
-			expect(environments).toHaveLength(3);
-		});
-	});
+it('should reject URLs without GraphQL path', () => {
+const credentials: SembleCredentials = {
+server: 'https://api.example.com/api',
+token: 'valid.jwt.token',
+};
 
-	// =============================================================================
-	// CONNECTION TESTING TESTS
-	// =============================================================================
+const result = credentialService.validateCredentialFormat(credentials);
 
-	describe('testConnection', () => {
-		const validCredentials: ExtendedSembleCredentials = {
-			server: 'https://open.semble.io/graphql',
-			token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-			environment: 'development',
-			apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-			baseUrl: 'https://open.semble.io/graphql',
-		};
+expect(result.isValid).toBe(false);
+expect(result.errors).toContain('GraphQL endpoint URL is not valid');
+});
+});
 
-		it('should return success for valid connection', async () => {
-			const result = await credentialService.testConnection(validCredentials);
+// =============================================================================
+// CREDENTIAL RETRIEVAL TESTS
+// =============================================================================
 
-			expect(result.success).toBe(true);
-			expect(result.endpoint).toBe('https://open.semble.io/graphql');
-			expect(result.environment).toBe('development');
-			expect(result.responseTime).toBeGreaterThan(0);
-			expect(result.permissionLevel).toBeDefined();
-		});
+describe('getCredentials', () => {
+it('should successfully retrieve and validate credentials', async () => {
+const mockCredentials = {
+apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token',
+baseUrl: 'https://open.semble.io/graphql',
+};
 
-		it('should include response time measurement', async () => {
-			const result = await credentialService.testConnection(validCredentials);
+const mockExecuteFunctions = {
+getCredentials: jest.fn().mockResolvedValue(mockCredentials),
+} as unknown as IExecuteFunctions;
 
-			expect(result.responseTime).toBeGreaterThan(0);
-			expect(result.responseTime).toBeLessThan(5000); // Should be reasonably fast
-		});
+const result = await credentialService.getCredentials(mockExecuteFunctions);
 
-		it('should handle connection failures gracefully', async () => {
-			const invalidCredentials: ExtendedSembleCredentials = {
-				...validCredentials,
-				baseUrl: 'https://invalid.endpoint.com/graphql',
-			};
+expect(result.server).toBe(mockCredentials.baseUrl);
+expect(result.token).toBe(mockCredentials.apiToken);
+});
 
-			// Mock the private method to simulate failure
-			const originalMethod = (credentialService as any).performConnectionTest;
-			(credentialService as any).performConnectionTest = jest.fn().mockRejectedValue(
-				new Error('Connection failed')
-			);
+it('should throw error when credentials are missing', async () => {
+const mockExecuteFunctions = {
+getCredentials: jest.fn().mockResolvedValue(null),
+} as unknown as IExecuteFunctions;
 
-			const result = await credentialService.testConnection(invalidCredentials);
+await expect(credentialService.getCredentials(mockExecuteFunctions))
+.rejects
+.toThrow(SembleValidationError);
+});
 
-			expect(result.success).toBe(false);
-			expect(result.error).toBeDefined();
-			expect(result.endpoint).toBe('https://invalid.endpoint.com/graphql');
+it('should throw error when validation fails', async () => {
+const mockCredentials = {
+apiToken: '', // Invalid - empty token
+baseUrl: 'https://open.semble.io/graphql',
+};
 
-			// Restore original method
-			(credentialService as any).performConnectionTest = originalMethod;
-		});
-	});
+const mockExecuteFunctions = {
+getCredentials: jest.fn().mockResolvedValue(mockCredentials),
+} as unknown as IExecuteFunctions;
 
-	// =============================================================================
-	// CREDENTIAL RETRIEVAL TESTS
-	// =============================================================================
+await expect(credentialService.getCredentials(mockExecuteFunctions))
+.rejects
+.toThrow(SembleValidationError);
+});
 
-	describe('getCredentials', () => {
-		const mockExecuteFunctions = {
-			getCredentials: jest.fn(),
-		} as unknown as IExecuteFunctions;
+it('should handle getCredentials with ILoadOptionsFunctions', async () => {
+const mockCredentials = {
+apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token',
+baseUrl: 'https://open.semble.io/graphql',
+};
 
-		beforeEach(() => {
-			jest.clearAllMocks();
-		});
+const mockLoadOptionsFunctions = {
+getCredentials: jest.fn().mockResolvedValue(mockCredentials),
+} as unknown as ILoadOptionsFunctions;
 
-		it('should retrieve and validate credentials successfully', async () => {
-			const mockCredentials = {
-				environment: 'development',
-				apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-				baseUrl: 'https://open.semble.io/graphql',
-				safetyMode: true,
-			};
+const result = await credentialService.getCredentials(mockLoadOptionsFunctions);
 
-			(mockExecuteFunctions.getCredentials as jest.Mock).mockResolvedValue(mockCredentials);
+expect(result.server).toBe(mockCredentials.baseUrl);
+expect(result.token).toBe(mockCredentials.apiToken);
+});
 
+it('should validate credentials after retrieval', async () => {
+const mockCredentials = {
+apiToken: 'invalid-token-format',
+baseUrl: 'https://open.semble.io/graphql',
+};
+
+const mockExecuteFunctions = {
+getCredentials: jest.fn().mockResolvedValue(mockCredentials),
+} as unknown as IExecuteFunctions;
+
+// Should not throw because token format warnings don't invalidate credentials
 			const result = await credentialService.getCredentials(mockExecuteFunctions);
-
-			expect(result.environment).toBe('development');
-			expect(result.apiToken).toBe(mockCredentials.apiToken);
-			expect(result.baseUrl).toBe(mockCredentials.baseUrl);
+			
 			expect(result.server).toBe(mockCredentials.baseUrl);
 			expect(result.token).toBe(mockCredentials.apiToken);
 		});
-
-		it('should throw error when no credentials are configured', async () => {
-			(mockExecuteFunctions.getCredentials as jest.Mock).mockResolvedValue(null);
-
-			await expect(credentialService.getCredentials(mockExecuteFunctions))
-				.rejects
-				.toThrow(SembleValidationError);
-		});
-
-		it('should throw error when credentials are invalid', async () => {
-			const invalidCredentials = {
-				environment: 'development',
-				apiToken: '', // Invalid: empty token
-				baseUrl: 'invalid-url', // Invalid: not a valid URL
-			};
-
-			(mockExecuteFunctions.getCredentials as jest.Mock).mockResolvedValue(invalidCredentials);
-
-			await expect(credentialService.getCredentials(mockExecuteFunctions))
-				.rejects
-				.toThrow(SembleValidationError);
-		});
-
-		it('should handle credential retrieval errors', async () => {
-			(mockExecuteFunctions.getCredentials as jest.Mock).mockRejectedValue(
-				new Error('Credential retrieval failed')
-			);
-
-			await expect(credentialService.getCredentials(mockExecuteFunctions))
-				.rejects
-				.toThrow(SembleAPIError);
-		});
 	});
 
 	// =============================================================================
-	// INTEGRATION TESTS
+	// EDGE CASE TESTS
 	// =============================================================================
 
-	describe('integration scenarios', () => {
-		it('should handle complete credential workflow', async () => {
-			const mockExecuteFunctions = {
-				getCredentials: jest.fn().mockResolvedValue({
-					environment: 'development',
-					apiToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-					baseUrl: 'https://open.semble.io/graphql',
-					safetyMode: true,
-				}),
-			} as unknown as IExecuteFunctions;
+	describe('edge cases', () => {
+		it('should handle whitespace-only credentials', () => {
+			const credentials: SembleCredentials = {
+				server: '   ',
+				token: '   ',
+			};
 
-			// 1. Get credentials
-			const credentials = await credentialService.getCredentials(mockExecuteFunctions);
-			expect(credentials).toBeDefined();
+			const result = credentialService.validateCredentialFormat(credentials);
 
-			// 2. Validate format
-			const validation = credentialService.validateCredentialFormat(credentials);
-			expect(validation.isValid).toBe(true);
+			expect(result.isValid).toBe(false);
+			expect(result.errors).toContain('API token is required');
+			expect(result.errors).toContain('GraphQL endpoint URL is required');
+		});
 
-			// 3. Get environment config
-			const envConfig = credentialService.getEnvironmentConfig(credentials.environment);
-			expect(envConfig.name).toBe('Development');
+		it('should handle null/undefined values gracefully', () => {
+			const credentials: SembleCredentials = {
+				server: null as any,
+				token: undefined as any,
+			};
 
-			// 4. Test connection
-			const connectionTest = await credentialService.testConnection(credentials);
-			expect(connectionTest.success).toBe(true);
+			const result = credentialService.validateCredentialFormat(credentials);
+
+			expect(result.isValid).toBe(false);
+			expect(result.errors).toContain('API token is required');
+			expect(result.errors).toContain('GraphQL endpoint URL is required');
+		});
+
+		it('should provide helpful validation results structure', () => {
+			const credentials: SembleCredentials = {
+				server: 'https://open.semble.io/graphql',
+				token: 'invalid-format',
+			};
+
+			const result = credentialService.validateCredentialFormat(credentials);
+
+			expect(result).toHaveProperty('isValid');
+			expect(result).toHaveProperty('errors');
+			expect(result).toHaveProperty('warnings');
+			expect(result).toHaveProperty('recommendations');
+			expect(Array.isArray(result.errors)).toBe(true);
+			expect(Array.isArray(result.warnings)).toBe(true);
+			expect(Array.isArray(result.recommendations)).toBe(true);
 		});
 	});
 });

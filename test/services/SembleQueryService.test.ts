@@ -31,7 +31,7 @@ const createMockResponse = (data: any, headers: Record<string, string> = {}) => 
 const mockCredentials: SembleCredentials = {
 	token: 'test-token-123',
 	apiKey: 'test-api-key',
-	baseUrl: 'https://api.semble.com',
+	baseUrl: 'https://open.semble.io/graphql',
 	environment: 'development'
 };
 
@@ -71,7 +71,7 @@ describe('SembleQueryService', () => {
 			enabled: true,
 			initTimeout: 5000,
 			options: {},
-			baseUrl: 'https://api.semble.com',
+			baseUrl: 'https://open.semble.io/graphql',
 			timeout: 10000,
 			retries: {
 				maxAttempts: 3,
@@ -101,7 +101,7 @@ describe('SembleQueryService', () => {
 			expect(service).toBeInstanceOf(SembleQueryService);
 			
 			const serviceConfig = service.getConfig();
-			expect(serviceConfig.baseUrl).toBe('https://api.semble.com');
+			expect(serviceConfig.baseUrl).toBe('https://open.semble.io/graphql');
 			expect(serviceConfig.timeout).toBe(10000);
 			expect(serviceConfig.validateResponses).toBe(true);
 			expect(serviceConfig.useCompression).toBe(true);
@@ -113,7 +113,7 @@ describe('SembleQueryService', () => {
 				enabled: true,
 				initTimeout: 5000,
 				options: {},
-				baseUrl: 'https://api.semble.com'
+				baseUrl: 'https://open.semble.io/graphql'
 			};
 
 			const minimalService = new SembleQueryService(minimalConfig);
@@ -159,7 +159,7 @@ describe('SembleQueryService', () => {
 
 		test('should validate that credentials contain token or API key', async () => {
 			const invalidCredentials = {
-				baseUrl: 'https://api.semble.com'
+				baseUrl: 'https://open.semble.io/graphql'
 				// Missing token and apiKey
 			} as SembleCredentials;
 
@@ -446,7 +446,7 @@ describe('SembleQueryService', () => {
 		test('should return complete configuration', () => {
 			const returnedConfig = service.getConfig();
 
-			expect(returnedConfig.baseUrl).toBe('https://api.semble.com');
+			expect(returnedConfig.baseUrl).toBe('https://open.semble.io/graphql');
 			expect(returnedConfig.timeout).toBe(10000);
 			expect(returnedConfig.retries.maxAttempts).toBe(3);
 			expect(returnedConfig.rateLimit.maxRequests).toBe(100);

@@ -30,8 +30,8 @@ theme:
     - content.code.annotate
     - navigation.tracking
     - navigation.instant
-  logo: assets/logo.png
-  favicon: assets/favicon.ico
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
 
 plugins:
   - search:

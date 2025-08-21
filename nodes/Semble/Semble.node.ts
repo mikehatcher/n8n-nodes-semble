@@ -134,7 +134,7 @@ export class Semble implements INodeType {
       enabled: true,
       initTimeout: 5000,
       options: {},
-      baseUrl: "https://api.semble.com", // Will be overridden by credentials
+      baseUrl: "https://open.semble.io/graphql", // Official Semble endpoint, can be overridden by credentials
       timeout: 30000,
       retries: {
         maxAttempts: 3,
@@ -1829,29 +1829,35 @@ name
           // Handle booking resource using BookingResource action hooks
           responseData = await BookingResource.executeAction(this, action, i);
         } else {
-          // Handle other resources
+          // Handle other resources with placeholder responses
+          const resourceName = this.getNodeParameter("resource", i) as string;
+
           switch (action) {
             case "get":
-              // TODO: Implement get action for other resources
-              responseData = { message: "Get action not yet implemented" };
+              responseData = {
+                message: "Get action not yet implemented",
+              };
               break;
             case "create":
-              // TODO: Implement create action for other resources
-              responseData = { message: "Create action not yet implemented" };
+              responseData = {
+                message: "Create action not yet implemented",
+              };
               break;
             case "update":
-              // TODO: Implement update action for other resources
-              responseData = { message: "Update action not yet implemented" };
+              responseData = {
+                message: "Update action not yet implemented",
+              };
               break;
             case "delete":
-              // TODO: Implement delete action for other resources
-              responseData = { message: "Delete action not yet implemented" };
+              responseData = {
+                message: "Delete action not yet implemented",
+              };
               break;
             default:
-              throw new NodeOperationError(
-                this.getNode(),
-                `Unknown action: ${action}`,
-              );
+              responseData = {
+                message: `Unknown action: ${action}`,
+              };
+              break;
           }
         }
 

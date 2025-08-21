@@ -50,6 +50,7 @@ describe("BookingResource", () => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
       getNode: jest.fn(() => ({ name: "Test Booking Resource" })),
+      getInputData: jest.fn(),
     } as unknown as jest.Mocked<IExecuteFunctions>;
   });
 
@@ -572,6 +573,240 @@ describe("BookingResource", () => {
       await expect(
         BookingResource.executeAction(mockExecuteFunctions, "unknownAction", 0)
       ).rejects.toThrow(NodeOperationError);
+    });
+  });
+
+  describe("getPatientBookings", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should throw error when patient ID is missing", async () => {
+      mockExecuteFunctions.getNodeParameter.mockReturnValue({});
+
+      await expect(
+        BookingResource.getPatientBookings(mockExecuteFunctions, 0)
+      ).rejects.toThrow(NodeOperationError);
+    });
+
+    it("should retrieve patient bookings with explicit date range", async () => {
+      const mockOptions = {
+        patientId: "test-patient-123",
+        startDate: "2025-01-01",
+        endDate: "2025-12-31",
+      };
+      const mockResponse = {
+        patient: {
+          id: "test-patient-123",
+          firstName: "John",
+          lastName: "Doe",
+          email: "john.doe@example.com",
+          bookings: [
+            {
+              id: "booking-1",
+              start: "2025-08-21T10:00:00Z",
+              end: "2025-08-21T11:00:00Z",
+              status: "confirmed",
+            },
+          ],
+        },
+      };
+
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(mockOptions);
+      mockSembleApiRequest.mockResolvedValue(mockResponse);
+
+      const result = await BookingResource.getPatientBookings(mockExecuteFunctions, 0);
+
+      expect(result).toEqual(mockResponse.patient.bookings);
+      expect(mockSembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining("GetPatientBookings"),
+        {
+          id: "test-patient-123",
+          start: "2025-01-01",
+          end: "2025-12-31",
+        },
+        3,
+        false
+      );
+    });
+
+    it("should calculate date range from trigger metadata", async () => {
+      const mockOptions = {
+        patientId: "test-patient-123",
+      };
+      const mockInputData = [
+        {
+          json: {
+            __meta: {
+              pollTime: "2025-08-21T12:00:00.000Z",
+            },
+          },
+        },
+      ];
+      const mockResponse = {
+        patient: {
+          id: "test-patient-123",
+          firstName: "John",
+          lastName: "Doe",
+          email: "john.doe@example.com",
+          bookings: [],
+        },
+      };
+
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(mockOptions);
+      mockExecuteFunctions.getInputData.mockReturnValue(mockInputData);
+      mockSembleApiRequest.mockResolvedValue(mockResponse);
+
+      const result = await BookingResource.getPatientBookings(mockExecuteFunctions, 0);
+
+      expect(result).toEqual([]);
+      expect(mockSembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining("GetPatientBookings"),
+        expect.objectContaining({
+          id: "test-patient-123",
+          start: expect.any(String),
+          end: expect.any(String),
+        }),
+        3,
+        false
+      );
+
+      // Verify date range calculation
+      const callArgs = mockSembleApiRequest.mock.calls[0][1] as IDataObject;
+      const startDate = new Date(callArgs.start as string);
+      const endDate = new Date(callArgs.end as string);
+      const triggerTime = new Date("2025-08-21T12:00:00.000Z");
+      const expectedStartTime = new Date(triggerTime.getTime() - (24 * 60 * 60 * 1000));
+
+      expect(startDate.getTime()).toBeLessThanOrEqual(expectedStartTime.getTime() + 1000); // Allow 1s tolerance
+      expect(endDate.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it("should use fallback date range when no trigger metadata", async () => {
+      const mockOptions = {
+        patientId: "test-patient-123",
+      };
+      const mockInputData = [{ json: {} }];
+      const mockResponse = {
+        patient: {
+          id: "test-patient-123",
+          firstName: "John",
+          lastName: "Doe",
+          email: "john.doe@example.com",
+          bookings: [],
+        },
+      };
+
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(mockOptions);
+      mockExecuteFunctions.getInputData.mockReturnValue(mockInputData);
+      mockSembleApiRequest.mockResolvedValue(mockResponse);
+
+      const result = await BookingResource.getPatientBookings(mockExecuteFunctions, 0);
+
+      expect(result).toEqual([]);
+      expect(mockSembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining("GetPatientBookings"),
+        {
+          id: "test-patient-123",
+          start: "2020-01-01",
+          end: "2030-12-31",
+        },
+        3,
+        false
+      );
+    });
+
+    it("should use provided fallback dates from options", async () => {
+      const mockOptions = {
+        patientId: "test-patient-123",
+        startDate: "2024-01-01",
+        endDate: "2024-12-31",
+      };
+      const mockInputData = [{ json: {} }];
+      const mockResponse = {
+        patient: {
+          id: "test-patient-123",
+          firstName: "John",
+          lastName: "Doe",
+          email: "john.doe@example.com",
+          bookings: [],
+        },
+      };
+
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(mockOptions);
+      mockExecuteFunctions.getInputData.mockReturnValue(mockInputData);
+      mockSembleApiRequest.mockResolvedValue(mockResponse);
+
+      const result = await BookingResource.getPatientBookings(mockExecuteFunctions, 0);
+
+      expect(result).toEqual([]);
+      expect(mockSembleApiRequest).toHaveBeenCalledWith(
+        expect.stringContaining("GetPatientBookings"),
+        {
+          id: "test-patient-123",
+          start: "2024-01-01",
+          end: "2024-12-31",
+        },
+        3,
+        false
+      );
+    });
+
+    it("should throw NodeApiError when patient not found", async () => {
+      const mockOptions = {
+        patientId: "nonexistent-patient",
+        startDate: "2025-01-01",
+        endDate: "2025-12-31",
+      };
+      const mockResponse = {
+        patient: null,
+      };
+
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(mockOptions);
+      mockSembleApiRequest.mockResolvedValue(mockResponse);
+
+      await expect(
+        BookingResource.getPatientBookings(mockExecuteFunctions, 0)
+      ).rejects.toThrow(NodeApiError);
+    });
+
+    it("should handle API errors gracefully", async () => {
+      const mockOptions = {
+        patientId: "test-patient-123",
+        startDate: "2025-01-01",
+        endDate: "2025-12-31",
+      };
+
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(mockOptions);
+      mockSembleApiRequest.mockRejectedValue(new Error("API connection failed"));
+
+      await expect(
+        BookingResource.getPatientBookings(mockExecuteFunctions, 0)
+      ).rejects.toThrow(NodeApiError);
+    });
+
+    it("should return empty array when patient has no bookings", async () => {
+      const mockOptions = {
+        patientId: "test-patient-123",
+        startDate: "2025-01-01",
+        endDate: "2025-12-31",
+      };
+      const mockResponse = {
+        patient: {
+          id: "test-patient-123",
+          firstName: "John",
+          lastName: "Doe",
+          email: "john.doe@example.com",
+          bookings: null,
+        },
+      };
+
+      mockExecuteFunctions.getNodeParameter.mockReturnValue(mockOptions);
+      mockSembleApiRequest.mockResolvedValue(mockResponse);
+
+      const result = await BookingResource.getPatientBookings(mockExecuteFunctions, 0);
+
+      expect(result).toEqual([]);
     });
   });
 });

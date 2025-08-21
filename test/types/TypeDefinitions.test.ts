@@ -278,7 +278,7 @@ describe('NodeTypes', () => {
 				resource: 'patient',
 				action: 'get',
 				credentials: {
-					server: 'https://api.semble.com',
+					server: 'https://open.semble.io/graphql',
 					token: 'test-token'
 				},
 				filters: {
@@ -292,7 +292,7 @@ describe('NodeTypes', () => {
 
 			expect(context.resource).toBe('patient');
 			expect(context.action).toBe('get');
-			expect(context.credentials.server).toBe('https://api.semble.com');
+			expect(context.credentials.server).toBe('https://open.semble.io/graphql');
 		});
 	});
 
@@ -441,7 +441,7 @@ describe('Type Integration', () => {
 			resource: 'patient',
 			action: 'get',
 			credentials: {
-				server: 'https://api.semble.com',
+				server: 'https://open.semble.io/graphql',
 				token: 'test-token'
 			},
 			filters: {},

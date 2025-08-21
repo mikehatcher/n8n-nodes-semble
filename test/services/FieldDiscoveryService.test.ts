@@ -580,4 +580,143 @@ describe('FieldDiscoveryService', () => {
 			expect(mockQueryService.executeQuery).toHaveBeenCalledTimes(1); // No additional calls
 		});
 	});
+
+	// =============================================================================
+	// NEW METHODS TESTS
+	// =============================================================================
+
+	describe('Enhanced Field Analysis Methods', () => {
+		let service: FieldDiscoveryService;
+		
+		beforeEach(() => {
+			service = new FieldDiscoveryService(config);
+		});
+
+		describe('extractPermissions', () => {
+			it('should extract permissions from field descriptions', () => {
+				const field = {
+					name: 'sensitiveData',
+					description: 'This field requires @auth and is admin only',
+					type: 'String',
+					args: [],
+					isDeprecated: false
+				};
+
+				// Using reflection to access private method
+				const permissions = (service as any).extractPermissions(field);
+				
+				expect(permissions).toContain('authenticated');
+				expect(permissions).toContain('admin');
+			});
+
+			it('should return empty array when no permissions found', () => {
+				const field = {
+					name: 'publicField',
+					description: 'A public field with no restrictions',
+					type: 'String',
+					args: [],
+					isDeprecated: false
+				};
+
+				const permissions = (service as any).extractPermissions(field);
+				expect(permissions).toEqual([]);
+			});
+		});
+
+		describe('extractValidationRules', () => {
+			it('should extract validation rules from field descriptions', () => {
+				const field = {
+					name: 'email',
+					description: 'Required email field with minimum length: 5 and maximum length: 100',
+					type: 'String',
+					args: [],
+					isDeprecated: false
+				};
+
+				const rules = (service as any).extractValidationRules(field);
+				
+				expect(rules.required).toBe(true);
+				expect(rules.minLength).toBe(5);
+				expect(rules.maxLength).toBe(100);
+			});
+
+			it('should detect email format from type and description', () => {
+				const field = {
+					name: 'contactEmail',
+					description: 'User email address',
+					type: 'String',
+					args: [],
+					isDeprecated: false
+				};
+
+				const rules = (service as any).extractValidationRules(field);
+				expect(rules.format).toBe('email');
+			});
+		});
+
+		describe('extractExamples', () => {
+			it('should extract examples from various formats', () => {
+				const field = {
+					name: 'patientId',
+					description: 'Patient identifier. @example 68740bc493985f7d03d4f8c9 or e.g., 62e2b7d228ec4b0013179e67',
+					type: 'ID',
+					args: [],
+					isDeprecated: false
+				};
+
+				const examples = (service as any).extractExamples(field);
+				
+				expect(examples).toContain('68740bc493985f7d03d4f8c9');
+				expect(examples).toContain('62e2b7d228ec4b0013179e67');
+			});
+
+			it('should return empty array when no examples found', () => {
+				const field = {
+					name: 'description',
+					description: 'A simple description field',
+					type: 'String',
+					args: [],
+					isDeprecated: false
+				};
+
+				const examples = (service as any).extractExamples(field);
+				expect(examples).toEqual([]);
+			});
+		});
+
+		describe('extractSchemaVersion', () => {
+			it('should extract version from schema description', () => {
+				const schema = {
+					description: 'Semble API schema version: 2.1.0',
+					queryType: { name: 'Query' }
+				};
+
+				const version = (service as any).extractSchemaVersion(schema);
+				expect(version).toBe('2.1.0');
+			});
+
+			it('should return undefined when no version found', () => {
+				const schema = {
+					description: 'Simple schema without version info',
+					queryType: { name: 'Query' }
+				};
+
+				const version = (service as any).extractSchemaVersion(schema);
+				expect(version).toBeUndefined();
+			});
+
+			it('should detect version from presence of modern GraphQL features', () => {
+				const schema = {
+					types: {
+						Query: { name: 'Query' },
+						Subscription: { name: 'Subscription' },
+						Mutation: { name: 'Mutation' }
+					}
+				};
+
+				const version = (service as any).extractSchemaVersion(schema);
+				expect(version).toBe('1.1.0'); // Subscription support indicates newer version
+			});
+		});
+	});
 });

@@ -351,7 +351,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 'valid string', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -360,7 +359,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 123, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -374,7 +372,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 123, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -383,7 +380,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'not a number', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -397,7 +393,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', true, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -406,7 +401,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'not a boolean', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -420,7 +414,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', '2024-01-01', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -429,7 +422,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'not a date', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -443,7 +435,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 'test@example.com', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -452,7 +443,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'not-an-email', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -466,7 +456,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', '+1234567890', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -475,7 +464,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', '123', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -489,7 +477,6 @@ describe('ValidationService', () => {
         const validUuidResult = validationService.validateField('testField', '123e4567-e89b-12d3-a456-426614174000', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -498,7 +485,6 @@ describe('ValidationService', () => {
         const validNumericResult = validationService.validateField('testField', '12345', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -507,7 +493,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'invalid-id!', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -523,7 +508,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 'valid string', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -532,7 +516,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'hi', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -546,7 +529,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 'short', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -555,7 +537,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'this string is too long', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -571,7 +552,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 15, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -580,7 +560,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 5, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -594,7 +573,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 50, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -603,7 +581,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 150, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -619,7 +596,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 'Valid', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -628,7 +604,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'invalid', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -648,7 +623,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 'option2', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -657,7 +631,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'invalid-option', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -685,7 +658,6 @@ describe('ValidationService', () => {
         const validResult = validationService.validateField('testField', 'allowed', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -694,7 +666,6 @@ describe('ValidationService', () => {
         const invalidResult = validationService.validateField('testField', 'forbidden', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -716,7 +687,6 @@ describe('ValidationService', () => {
         const result = validationService.validateField('testField', '  hello world  ', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -739,7 +709,6 @@ describe('ValidationService', () => {
         const result = validationService.validateField('testField', 'test', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -756,7 +725,6 @@ describe('ValidationService', () => {
         const undefinedResult = validationService.validateField('testField', undefined, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -766,7 +734,6 @@ describe('ValidationService', () => {
         const nullResult = validationService.validateField('testField', null, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -776,7 +743,6 @@ describe('ValidationService', () => {
         const emptyStringResult = validationService.validateField('testField', '', rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });
@@ -790,7 +756,6 @@ describe('ValidationService', () => {
         const result = validationService.validateField('testField', undefined, rule, {
           resource: 'test',
           operation: 'create',
-          environment: 'test',
           allFields: {},
           strictMode: false,
         });

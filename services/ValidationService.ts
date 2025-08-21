@@ -114,7 +114,6 @@ export interface ResourceValidationSchema {
 export interface ValidationContext {
   resource: string;
   operation: string;
-  environment: string;
   allFields: IDataObject;
   strictMode: boolean;
 }
@@ -290,7 +289,6 @@ export class ValidationService {
     const validationContext: ValidationContext = {
       resource,
       operation,
-      environment: 'development', // Default environment
       allFields: data,
       strictMode: false, // Default to lenient mode
       ...context,

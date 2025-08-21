@@ -213,6 +213,151 @@ describe('Integration Layer', () => {
                 expect(configuredContainer.isRegistered('credentials')).toBe(true);
             });
         });
+
+        describe('Service Container Error Handling', () => {
+            it('should handle factory function errors gracefully', () => {
+                container.register('errorService', () => {
+                    throw new Error('Factory function failed');
+                });
+
+                expect(() => {
+                    container.resolve('errorService');
+                }).toThrow('Factory function failed');
+            });
+
+            it('should detect deep circular dependencies', () => {
+                container.register('serviceA', () => {
+                    const serviceB = container.resolve('serviceB');
+                    return { type: 'A', dep: serviceB };
+                });
+
+                container.register('serviceB', () => {
+                    const serviceC = container.resolve('serviceC');
+                    return { type: 'B', dep: serviceC };
+                });
+
+                container.register('serviceC', () => {
+                    const serviceA = container.resolve('serviceA'); // Circular!
+                    return { type: 'C', dep: serviceA };
+                });
+
+                expect(() => {
+                    container.resolve('serviceA');
+                }).toThrow();
+            });
+
+            it('should handle complex dependency chains with mixed lifetimes', () => {
+                // Singleton -> Transient -> Scoped
+                container.register('singletonA', () => ({ type: 'singletonA' }), ServiceLifetime.SINGLETON);
+                
+                container.register('transientB', () => {
+                    const dep = container.resolve('singletonA');
+                    return { type: 'transientB', dep };
+                }, ServiceLifetime.TRANSIENT);
+
+                container.register('scopedC', () => {
+                    const dep = container.resolve('transientB');
+                    return { type: 'scopedC', dep };
+                }, ServiceLifetime.SCOPED);
+
+                const scope1 = container.createScope('scope1');
+                const scope2 = container.createScope('scope2');
+
+                // Resolve the scoped service directly in each scope
+                const scopedService1 = scope1.resolve('scopedC');
+                const scopedService2 = scope2.resolve('scopedC');
+
+                // Scoped services should be different instances across different scopes
+                expect(scopedService1).not.toBe(scopedService2);
+                
+                // But within the same scope, they should be the same
+                const scopedService1Again = scope1.resolve('scopedC');
+                expect(scopedService1).toBe(scopedService1Again);
+                
+                // The singleton dependencies should be the same across all instances
+                expect((scopedService1 as any).dep.dep).toBe((scopedService2 as any).dep.dep);
+            });
+
+            it('should handle service resolution with invalid service names', () => {
+                expect(() => {
+                    container.resolve('');
+                }).toThrow();
+
+                expect(() => {
+                    container.resolve(null as any);
+                }).toThrow();
+
+                expect(() => {
+                    container.resolve(undefined as any);
+                }).toThrow();
+            });
+
+            it('should handle registration with edge case parameters', () => {
+                // ServiceContainer allows empty string names (though not recommended)
+                expect(() => {
+                    container.register('', () => ({}));
+                }).not.toThrow();
+
+                // But null/undefined factories should cause issues during resolution
+                expect(() => {
+                    container.register('validName', null as any);
+                    container.resolve('validName');
+                }).toThrow();
+
+                expect(() => {
+                    container.register('validName2', undefined as any);
+                    container.resolve('validName2');
+                }).toThrow();
+            });
+
+            it('should handle scope cleanup with pending resolutions', () => {
+                container.register('slowService', () => {
+                    // Simulate slow service creation
+                    return new Promise(resolve => {
+                        setTimeout(() => resolve({ type: 'slow' }), 100);
+                    });
+                }, ServiceLifetime.SCOPED);
+
+                const scope = container.createScope('asyncScope');
+                
+                // Start resolution but don't wait
+                const resolutionPromise = scope.resolve('slowService');
+                
+                // Clear scope immediately
+                expect(() => {
+                    scope.clear();
+                }).not.toThrow();
+                
+                // Original promise should still resolve
+                return expect(resolutionPromise).resolves.toBeDefined();
+            });
+
+            it('should handle memory leaks from abandoned services', () => {
+                const createdServices: any[] = [];
+                
+                container.register('trackableService', () => {
+                    const service = { id: Math.random(), data: new Array(1000).fill('test') };
+                    createdServices.push(service);
+                    return service;
+                }, ServiceLifetime.TRANSIENT);
+
+                // Create many transient instances
+                for (let i = 0; i < 10; i++) {
+                    container.resolve('trackableService');
+                }
+
+                expect(createdServices).toHaveLength(10);
+                
+                // Clear container should not affect already created instances
+                container.clear();
+                expect(createdServices).toHaveLength(10);
+                
+                // But new resolutions should fail
+                expect(() => {
+                    container.resolve('trackableService');
+                }).toThrow();
+            });
+        });
     });
 
     describe('EventSystem', () => {
@@ -856,6 +1001,293 @@ describe('Integration Layer', () => {
                 expect(stats.schemasByType.booking).toBe(1);
                 expect(stats.totalFields).toBeGreaterThan(0);
                 expect(stats.averageFieldsPerSchema).toBeGreaterThan(0);
+            });
+        });
+
+        describe('Schema Edge Cases', () => {
+            it('should handle circular schema dependencies gracefully', () => {
+                const schemaA: ResourceSchema = {
+                    name: 'SchemaA',
+                    type: 'patient',
+                    version: {
+                        version: '1.0.0',
+                        timestamp: Date.now(),
+                        author: 'test',
+                        description: 'Schema with circular dependency',
+                        breaking: false
+                    },
+                    fields: [
+                        { name: 'id', type: 'string', required: true },
+                        { name: 'relatedB', type: 'SchemaB', required: false }
+                    ],
+                    actions: ['get']
+                };
+
+                const schemaB: ResourceSchema = {
+                    name: 'SchemaB',
+                    type: 'booking',
+                    version: {
+                        version: '1.0.0',
+                        timestamp: Date.now(),
+                        author: 'test',
+                        description: 'Schema with circular dependency',
+                        breaking: false
+                    },
+                    fields: [
+                        { name: 'id', type: 'string', required: true },
+                        { name: 'relatedA', type: 'SchemaA', required: false }
+                    ],
+                    actions: ['get']
+                };
+
+                // Should register both schemas without infinite loops
+                expect(() => {
+                    registry.registerSchema(schemaA);
+                    registry.registerSchema(schemaB);
+                }).not.toThrow();
+
+                expect(registry.getSchema('patient')).toBeDefined();
+                expect(registry.getSchema('booking')).toBeDefined();
+            });
+
+            it('should handle complex nested field validation', () => {
+                const complexSchema: ResourceSchema = {
+                    name: 'ComplexSchema',
+                    type: 'product',
+                    version: {
+                        version: '1.0.0',
+                        timestamp: Date.now(),
+                        author: 'test',
+                        description: 'Complex nested schema',
+                        breaking: false
+                    },
+                    fields: [
+                        { name: 'id', type: 'string', required: true },
+                        { 
+                            name: 'metadata', 
+                            type: 'object', 
+                            required: false,
+                            metadata: {
+                                description: 'Complex metadata object with tags and ratings',
+                                nestedFields: ['tags', 'ratings']
+                            }
+                        },
+                        {
+                            name: 'variants',
+                            type: 'array',
+                            required: false,
+                            metadata: {
+                                description: 'Array of product variants',
+                                itemType: 'object',
+                                itemFields: ['sku', 'price', 'inventory']
+                            }
+                        }
+                    ],
+                    actions: ['get', 'create', 'update']
+                };
+
+                const result = registry.validateSchema(complexSchema);
+                expect(result.isValid).toBe(true);
+                expect(result.errors).toHaveLength(0);
+
+                // Register and verify it can be retrieved
+                registry.registerSchema(complexSchema);
+                const retrieved = registry.getSchema('product');
+                expect(retrieved).toBeDefined();
+                expect(retrieved?.fields).toHaveLength(3);
+            });
+
+            it('should detect and prevent invalid schema overwrites', () => {
+                const originalSchema: ResourceSchema = {
+                    name: 'ProtectedSchema',
+                    type: 'patient',
+                    version: {
+                        version: '1.0.0',
+                        timestamp: Date.now(),
+                        author: 'original',
+                        description: 'Original schema',
+                        breaking: false
+                    },
+                    fields: [{ name: 'id', type: 'string', required: true }],
+                    actions: ['get']
+                };
+
+                const conflictingSchema: ResourceSchema = {
+                    name: 'ProtectedSchema',
+                    type: 'patient', // Same type AND same version - should cause conflict
+                    version: {
+                        version: '1.0.0', // Same version - should prevent overwrite
+                        timestamp: Date.now(),
+                        author: 'conflicting',
+                        description: 'Conflicting schema',
+                        breaking: false
+                    },
+                    fields: [{ name: 'id', type: 'string', required: true }],
+                    actions: ['get']
+                };
+
+                registry.registerSchema(originalSchema);
+                
+                // Should throw error when trying to register conflicting schema with same type and version
+                expect(() => {
+                    registry.registerSchema(conflictingSchema);
+                }).toThrow();
+
+                // Original schema should remain unchanged
+                const retrieved = registry.getSchema('patient');
+                expect(retrieved?.type).toBe('patient');
+                expect(retrieved?.version.author).toBe('original');
+            });
+
+            it('should handle malformed schema data gracefully', () => {
+                const malformedSchema = {
+                    name: 'MalformedSchema',
+                    // Missing required fields
+                    fields: [
+                        // Malformed field
+                        { name: '', type: 'invalid-type', required: 'not-boolean' }
+                    ]
+                } as unknown as ResourceSchema;
+
+                const result = registry.validateSchema(malformedSchema);
+                expect(result.isValid).toBe(false);
+                expect(result.errors.length).toBeGreaterThan(0);
+                
+                // Should contain specific validation errors
+                expect(result.errors.some(error => error.includes('type'))).toBe(true);
+                expect(result.errors.some(error => error.includes('version'))).toBe(true);
+            });
+
+            it('should handle schema transformation edge cases', () => {
+                const edgeCaseSchema: ResourceSchema = {
+                    name: 'EdgeCaseSchema',
+                    type: 'patient',
+                    version: {
+                        version: '1.0.0',
+                        timestamp: Date.now(),
+                        author: 'test',
+                        description: 'Edge case schema',
+                        breaking: false
+                    },
+                    fields: [
+                        { name: 'id', type: 'string', required: true },
+                        // Fields with special characters and edge cases
+                        { name: 'field-with-dashes', type: 'string', required: false },
+                        { name: 'field_with_underscores', type: 'string', required: false },
+                        { name: 'fieldWithNumbers123', type: 'number', required: false },
+                        { name: 'UPPERCASE_FIELD', type: 'boolean', required: false }
+                    ],
+                    actions: ['get', 'create', 'update', 'delete']
+                };
+
+                // Should handle field name normalization
+                registry.registerSchema(edgeCaseSchema);
+                
+                const properties = registry.generateNodeProperties(edgeCaseSchema);
+                expect(properties).toBeDefined();
+                expect(Array.isArray(properties)).toBe(true);
+                
+                // All fields should be represented in generated properties
+                expect(properties.length).toBeGreaterThanOrEqual(edgeCaseSchema.fields.length);
+            });
+
+            it('should validate schema version compatibility', () => {
+                const baseSchema: ResourceSchema = {
+                    name: 'VersionedSchema',
+                    type: 'patient',
+                    version: {
+                        version: '1.0.0',
+                        timestamp: Date.now(),
+                        author: 'test',
+                        description: 'Base version',
+                        breaking: false
+                    },
+                    fields: [
+                        { name: 'id', type: 'string', required: true },
+                        { name: 'name', type: 'string', required: false }
+                    ],
+                    actions: ['get']
+                };
+
+                const patchUpdate: ResourceSchema = {
+                    ...baseSchema,
+                    version: {
+                        version: '1.0.1', // Patch version
+                        timestamp: Date.now(),
+                        author: 'test',
+                        description: 'Patch update - should be compatible',
+                        breaking: false
+                    },
+                    fields: [
+                        ...baseSchema.fields,
+                        { name: 'email', type: 'string', required: false } // Added optional field
+                    ]
+                };
+
+                const majorUpdate: ResourceSchema = {
+                    ...baseSchema,
+                    version: {
+                        version: '2.0.0', // Major version
+                        timestamp: Date.now(),
+                        author: 'test',
+                        description: 'Major update - breaking change',
+                        breaking: true
+                    },
+                    fields: [
+                        { name: 'id', type: 'string', required: true },
+                        { name: 'fullName', type: 'string', required: true } // Renamed and made required
+                    ]
+                };
+
+                registry.registerSchema(baseSchema);
+                
+                // Patch update should be compatible
+                const patchImpact = registry.analyzeSchemaChanges(baseSchema, patchUpdate);
+                expect(patchImpact.breaking).toBe(false);
+                expect(patchImpact.addedFields).toContain('email');
+                
+                // Major update should be breaking
+                const majorImpact = registry.analyzeSchemaChanges(baseSchema, majorUpdate);
+                expect(majorImpact.breaking).toBe(true);
+                expect(majorImpact.removedFields).toContain('name');
+                expect(majorImpact.addedFields).toContain('fullName');
+            });
+
+            it('should handle schema export/import with edge cases', () => {
+                const specialCharSchema: ResourceSchema = {
+                    name: 'Special-Characters_Schema123',
+                    type: 'patient',
+                    version: {
+                        version: '1.0.0',
+                        timestamp: Date.now(),
+                        author: 'test@example.com',
+                        description: 'Schema with special characters: áéíóú ñ ç',
+                        breaking: false
+                    },
+                    fields: [
+                        { name: 'id', type: 'string', required: true },
+                        { name: 'símbol_field', type: 'string', required: false }
+                    ],
+                    actions: ['get']
+                };
+
+                registry.registerSchema(specialCharSchema);
+
+                // Export should handle special characters
+                const exported = registry.exportSchema('patient');
+                expect(exported).toContain('Special-Characters_Schema123');
+                expect(exported).toContain('áéíóú ñ ç');
+                
+                // Clear registry and import back
+                registry.clear();
+                expect(registry.getAllSchemas()).toHaveLength(0);
+                
+                registry.importSchema(exported);
+                expect(registry.getAllSchemas()).toHaveLength(1);
+                
+                const imported = registry.getSchema('patient');
+                expect(imported).toBeDefined();
+                expect(imported?.version.description).toBe('Schema with special characters: áéíóú ñ ç');
             });
         });
     });

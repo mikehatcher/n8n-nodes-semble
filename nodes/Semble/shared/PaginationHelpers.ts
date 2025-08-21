@@ -128,7 +128,10 @@ export class SemblePagination {
         
         // Check maxPages limit for integration tests
         if (maxPages && currentPage > maxPages) {
-          console.log(`🔒 Stopping pagination at maxPages limit: ${maxPages}`);
+          // Debug logging only in development/test environments
+          if (typeof jest !== 'undefined' || process.env.NODE_ENV === 'development') {
+            console.log(`🔒 Stopping pagination at maxPages limit: ${maxPages}`);
+          }
           break;
         }
         

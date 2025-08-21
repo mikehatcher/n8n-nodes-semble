@@ -51,20 +51,22 @@ export async function sembleApiRequest(
     });
   }
 
-  // DEBUG: Always log for integration tests
-  console.log("🔧 API Request Debug:");
-  console.log("- URL:", credentials.url || credentials.baseUrl);
-  console.log(
-    "- Token available:",
-    !!(credentials.token || credentials.apiToken),
-  );
-  console.log(
-    "- Token value preview:",
-    `${(credentials.token || credentials.apiToken || "").toString().substring(0, 20)}...`,
-  );
-  console.log("- Full credentials keys:", Object.keys(credentials));
-  console.log("- Query preview:", query.substring(0, 200) + "...");
-  console.log("- Variables:", JSON.stringify(variables, null, 2));
+  // Debug logging only in development/test environments
+  if (typeof jest !== "undefined" || process.env.NODE_ENV === "development") {
+    console.log("🔧 API Request Debug:");
+    console.log("- URL:", credentials.url || credentials.baseUrl);
+    console.log(
+      "- Token available:",
+      !!(credentials.token || credentials.apiToken),
+    );
+    console.log(
+      "- Token value preview:",
+      `${(credentials.token || credentials.apiToken || "").toString().substring(0, 20)}...`,
+    );
+    console.log("- Full credentials keys:", Object.keys(credentials));
+    console.log("- Query preview:", query.substring(0, 200) + "...");
+    console.log("- Variables:", JSON.stringify(variables, null, 2));
+  }
 
   const options: IHttpRequestOptions = {
     headers: {
@@ -130,13 +132,19 @@ export async function sembleApiRequest(
         continue;
       }
 
-      console.log("🔴 Detailed API Error Debug:");
-      console.log("- Error type:", typeof error);
-      console.log("- Error name:", error?.constructor?.name);
-      console.log("- Error message:", error?.message);
-      console.log("- Response status:", error?.response?.status);
-      console.log("- Response statusText:", error?.response?.statusText);
-      console.log("- Response data:", error?.response?.data);
+      // Debug logging only in development/test environments
+      if (
+        typeof jest !== "undefined" ||
+        process.env.NODE_ENV === "development"
+      ) {
+        console.log("🔴 Detailed API Error Debug:");
+        console.log("- Error type:", typeof error);
+        console.log("- Error name:", error?.constructor?.name);
+        console.log("- Error message:", error?.message);
+        console.log("- Response status:", error?.response?.status);
+        console.log("- Response statusText:", error?.response?.statusText);
+        console.log("- Response data:", error?.response?.data);
+      }
 
       throw new NodeApiError(this.getNode(), {
         message: `Semble API Error: ${error.message}`,

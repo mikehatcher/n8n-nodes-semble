@@ -30,18 +30,22 @@
   },
   "main": "dist/index.js",
   "scripts": {
+
     "// === Package Management ===": "",
     "preinstall": "npx only-allow pnpm",
     "prepublishOnly": "npm run build",
     "postinstall": "[ -f ./scripts/install-hooks.sh ] && ./scripts/install-hooks.sh || echo 'Skipping install-hooks (not in dev environment)'",
+   
     "// === Build & Development ===": "",
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc && gulp build:icons",
     "dev": "tsc --watch",
+    
     "// === Code Quality ===": "",
     "lint": "eslint nodes/**/*.ts credentials/**/*.ts",
     "lint:fix": "eslint nodes/**/*.ts credentials/**/*.ts --fix",
     "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
+    
     "// === Testing ===": "",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -49,8 +53,10 @@
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "test:e2e": "jest test/e2e/ --testTimeout=30000",
+    
     "// === API Validation ===": "",
     "test:api": "./scripts/test-api-connection.sh",
+    
     "// === Quality Gates ===": "",
     "verify": "npm run lint && npm run test && npm run build",
     "verify:full": "npm run lint && npm run test:coverage && npm run build",
@@ -71,11 +77,13 @@
     "update:node": "npm run pack:local && npm run install:node",
     "dev:full": "npm run pre-commit && npm run pack:local:skip-quality && npm run install:node && npm run restart:n8n",
     "test:env": "./scripts/test-setup.sh",
+    
     "// === Production Deployment ===": "",
     "pack:prod": "npm run pre-commit && npm run test:ci",
     "deploy:prod": "npm run pack:prod && ./scripts/deploy-production.sh",
     "rollback:prod": "./scripts/deploy-production.sh --rollback",
     "status:prod": "./scripts/deploy-production.sh --status",
+   
     "// === Local n8n Environment Management ===": "",
     "setup": "cd ../n8n-local-test && ./setup.sh",
     "setup:env": "cd ../n8n-local-test && ./setup-env.sh",
@@ -84,9 +92,11 @@
     "stop:n8n": "cd ../n8n-local-test && docker compose down",
     "restart:n8n": "cd ../n8n-local-test && docker compose restart",
     "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
+   
     "// === MCP Integration ===": "",
     "setup:mcp": "node scripts/setup-mcp-copilot.js",
     "test:mcp": "node scripts/test-mcp-copilot.js",
+   
     "// === n8n Version Management ===": "",
     "update:n8n": "./scripts/update-n8n.sh",
     "update:n8n:local": "./scripts/update-n8n.sh local",
@@ -112,12 +122,12 @@
     ]
   },
   "dependencies": {
-    "axios": "^1.11.0",
-    "dotenv": "^17.2.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@typescript-eslint/parser": "~8.32.0",
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^4.0.2",

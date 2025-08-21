@@ -25,15 +25,14 @@ import { GET_PATIENTS_QUERY } from "./shared/PatientQueries";
 import { GET_PRODUCTS_QUERY } from "./shared/ProductQueries";
 import { GET_BOOKINGS_QUERY } from "./shared/BookingQueries";
 
-// Import specialized trigger classes - REMOVED BookingTrigger
+// Import specialized trigger classes
 // import { BookingTrigger } from "./triggers/BookingTrigger";
 
 // Field Descriptions
-// TEMPORARILY COMMENTED OUT FOR TESTING - SIMPLIFY TO MATCH PATIENT/PRODUCT TRIGGERS
-// import {
-//   BOOKING_TRIGGER_OPTIONS,
-//   EVENT_TYPE_FIELD,
-// } from "./descriptions/BookingDescription";
+import {
+  BOOKING_TRIGGER_OPTIONS,
+  EVENT_TYPE_FIELD,
+} from "./descriptions/BookingDescription";
 
 // Core Components - Dependency Injection & Event System
 import {
@@ -289,7 +288,7 @@ export class SembleTrigger implements INodeType {
       enabled: true,
       initTimeout: 5000,
       options: {},
-      baseUrl: "https://api.semble.com", // Will be overridden by credentials
+      baseUrl: "https://open.semble.io/graphql", // Official Semble endpoint, can be overridden by credentials
       timeout: 30000,
       retries: {
         maxAttempts: 3,
@@ -510,25 +509,24 @@ export class SembleTrigger implements INodeType {
           },
         ],
       },
-      // TEMPORARILY COMMENTED OUT FOR TESTING - SIMPLIFY TO MATCH PATIENT/PRODUCT TRIGGERS
       // Add Event Type selector for bookings
-      // {
-      //   ...EVENT_TYPE_FIELD,
-      //   displayOptions: {
-      //     show: {
-      //       resource: ["booking"],
-      //     },
-      //   },
-      // },
+      {
+        ...EVENT_TYPE_FIELD,
+        displayOptions: {
+          show: {
+            resource: ["booking"],
+          },
+        },
+      },
       // Add Booking-specific trigger options
-      // {
-      //   ...BOOKING_TRIGGER_OPTIONS,
-      //   displayOptions: {
-      //     show: {
-      //       resource: ["booking"],
-      //     },
-      //   },
-      // },
+      {
+        ...BOOKING_TRIGGER_OPTIONS,
+        displayOptions: {
+          show: {
+            resource: ["booking"],
+          },
+        },
+      },
     ],
   };
 
@@ -562,7 +560,6 @@ export class SembleTrigger implements INodeType {
 
     // Check if we're in a test environment to apply pagination limits
     const isTestEnvironment =
-      process.env.NODE_ENV === "test" ||
       typeof jest !== "undefined" ||
       (typeof global !== "undefined" && (global as any).__jest__);
 
@@ -713,6 +710,19 @@ async function pollResource(
       returnAll: true, // This triggers executeAutoPagination
       maxPages, // Pass the maxPages limit for integration tests
     });
+
+    // Handle null pagination results gracefully
+    if (!paginationResult || !paginationResult.data) {
+      this.logger?.error("Pagination result is null or missing data");
+      workflowStaticData.lastPoll = currentTime.toISOString();
+      return {
+        data: [],
+        hasNewData: false,
+        pollTime: currentTime.toISOString(),
+        filteredCount: 0,
+        totalCount: 0,
+      };
+    }
 
     const allItems = paginationResult.data;
     const hasNewData = allItems.length > 0;

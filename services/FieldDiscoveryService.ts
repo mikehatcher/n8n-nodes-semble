@@ -701,37 +701,291 @@ export class FieldDiscoveryService {
 
 	/**
 	 * Extract permission information from field directives
+	 * 
+	 * Parses GraphQL field descriptions to identify permission requirements.
+	 * Since GraphQL introspection may not preserve directive information,
+	 * this method analyzes field descriptions for permission hints.
 	 */
 	private extractPermissions(field: GraphQLField): string[] {
-		// TODO: Implement permission extraction from directives
-		// This would parse @auth, @permission, or similar directives
-		return [];
+		const permissions: string[] = [];
+		
+		if (!field.description) {
+			return permissions;
+		}
+
+		const description = field.description.toLowerCase();
+		
+		// Look for permission indicators in field descriptions
+		if (description.includes('@auth') || description.includes('authenticated')) {
+			permissions.push('authenticated');
+		}
+		
+		if (description.includes('@admin') || description.includes('admin only')) {
+			permissions.push('admin');
+		}
+		
+		if (description.includes('@owner') || description.includes('owner only')) {
+			permissions.push('owner');
+		}
+		
+		if (description.includes('@staff') || description.includes('staff only')) {
+			permissions.push('staff');
+		}
+		
+		if (description.includes('restricted') || description.includes('permission required')) {
+			permissions.push('restricted');
+		}
+
+		return [...new Set(permissions)]; // Remove duplicates
 	}
 
 	/**
 	 * Extract validation rules from field directives
+	 * 
+	 * Parses GraphQL field descriptions and type information to identify validation constraints.
+	 * Since GraphQL introspection may not preserve directive information,
+	 * this method analyzes field descriptions and types for validation hints.
 	 */
 	private extractValidationRules(field: GraphQLField): Record<string, any> {
-		// TODO: Implement validation rule extraction from directives
-		// This would parse @constraint, @validate, or similar directives
-		return {};
+		const rules: Record<string, any> = {};
+		
+		if (!field.description) {
+			return rules;
+		}
+
+		const description = field.description.toLowerCase();
+		const type = field.type.toLowerCase();
+		
+		// Look for validation indicators in field descriptions
+		if (description.includes('required') || description.includes('mandatory')) {
+			rules.required = true;
+		}
+		
+		// Extract length constraints from description
+		const lengthMatch = description.match(/(?:min|minimum)\s*(?:length\s*)?:?\s*(\d+)/);
+		if (lengthMatch) {
+			rules.minLength = parseInt(lengthMatch[1], 10);
+		}
+		
+		const maxLengthMatch = description.match(/(?:max|maximum)\s*(?:length\s*)?:?\s*(\d+)/);
+		if (maxLengthMatch) {
+			rules.maxLength = parseInt(maxLengthMatch[1], 10);
+		}
+		
+		// Extract numeric ranges from description
+		const minMatch = description.match(/(?:min|minimum)\s*(?:value\s*)?:?\s*(\d+(?:\.\d+)?)/);
+		if (minMatch) {
+			rules.min = parseFloat(minMatch[1]);
+		}
+		
+		const maxMatch = description.match(/(?:max|maximum)\s*(?:value\s*)?:?\s*(\d+(?:\.\d+)?)/);
+		if (maxMatch) {
+			rules.max = parseFloat(maxMatch[1]);
+		}
+		
+		// Detect format requirements from field type and description
+		if (type.includes('email') || description.includes('email')) {
+			rules.format = 'email';
+		}
+		
+		if (type.includes('url') || description.includes('url')) {
+			rules.format = 'url';
+		}
+		
+		if (description.includes('phone')) {
+			rules.format = 'phone';
+		}
+		
+		// Look for pattern indicators
+		if (description.includes('pattern') || description.includes('regex')) {
+			const patternMatch = description.match(/pattern[:\s]+['""]([^'"]+)['"]/);
+			if (patternMatch) {
+				rules.pattern = patternMatch[1];
+			}
+		}
+
+		return rules;
 	}
 
 	/**
 	 * Extract examples from field documentation
+	 * 
+	 * Parses GraphQL field descriptions to identify and extract example values.
+	 * Supports various documentation formats for examples.
 	 */
 	private extractExamples(field: GraphQLField): any[] {
-		// TODO: Implement example extraction from field descriptions
-		// This would parse structured examples from documentation
-		return [];
+		const examples: any[] = [];
+		
+		if (!field.description) {
+			return examples;
+		}
+
+		const description = field.description;
+		
+		// Look for examples in various formats
+		// Format 1: @example value
+		const exampleMatches = description.match(/@example\s+([^\s\n\r]+)/gi);
+		if (exampleMatches) {
+			exampleMatches.forEach(match => {
+				const value = match.replace(/@example\s+/i, '').trim();
+				examples.push(this.parseExampleValue(value));
+			});
+		}
+		
+		// Format 2: Example: value
+		const exampleColonMatches = description.match(/example:\s*([^\s\n\r]+)/gi);
+		if (exampleColonMatches) {
+			exampleColonMatches.forEach(match => {
+				const value = match.replace(/example:\s*/i, '').trim();
+				examples.push(this.parseExampleValue(value));
+			});
+		}
+		
+		// Format 3: e.g., value (extract just the first word/ID after e.g.,)
+		const egMatches = description.match(/e\.g\.[:,]\s*([^\s\n\r,]+)/gi);
+		if (egMatches) {
+			egMatches.forEach(match => {
+				const value = match.replace(/e\.g\.[:,]\s*/i, '').trim();
+				examples.push(this.parseExampleValue(value));
+			});
+		}
+		
+		// Format 4: Examples enclosed in quotes or backticks
+		const quotedMatches = description.match(/["`']([^"`']+)["`']/g);
+		if (quotedMatches) {
+			quotedMatches.forEach(match => {
+				const value = match.slice(1, -1); // Remove quotes
+				// Only include if it looks like an example (not just text)
+				if (this.isLikelyExample(value)) {
+					examples.push(this.parseExampleValue(value));
+				}
+			});
+		}
+
+		return examples;
+	}
+
+	/**
+	 * Parse example value to appropriate type
+	 */
+	private parseExampleValue(value: string): any {
+		const trimmed = value.trim();
+		
+		// Try parsing as JSON first
+		try {
+			return JSON.parse(trimmed);
+		} catch {
+			// Not JSON, continue with other parsing
+		}
+		
+		// Check for boolean values
+		if (trimmed.toLowerCase() === 'true') return true;
+		if (trimmed.toLowerCase() === 'false') return false;
+		
+		// Check for numbers
+		if (/^\d+$/.test(trimmed)) {
+			return parseInt(trimmed, 10);
+		}
+		if (/^\d*\.\d+$/.test(trimmed)) {
+			return parseFloat(trimmed);
+		}
+		
+		// Return as string
+		return trimmed;
+	}
+
+	/**
+	 * Check if a value looks like an example rather than descriptive text
+	 */
+	private isLikelyExample(value: string): boolean {
+		// Skip if too long (likely descriptive text)
+		if (value.length > 50) return false;
+		
+		// Skip if contains common descriptive words
+		const descriptiveWords = ['the', 'this', 'that', 'which', 'where', 'when', 'how', 'field', 'value', 'represents', 'contains'];
+		const lowerValue = value.toLowerCase();
+		if (descriptiveWords.some(word => lowerValue.includes(word))) return false;
+		
+		// Include if looks like ID, email, URL, etc.
+		if (/^[a-f0-9]{24}$/.test(value)) return true; // MongoDB ObjectId
+		if (/^\d{10,}$/.test(value)) return true; // Long number ID
+		if (/@/.test(value)) return true; // Email-like
+		if (/^https?:\/\//.test(value)) return true; // URL
+		
+		// Include short alphanumeric values
+		if (/^[a-zA-Z0-9._-]+$/.test(value) && value.length <= 30) return true;
+		
+		return false;
 	}
 
 	/**
 	 * Extract schema version from introspection result
+	 * 
+	 * Attempts to determine the GraphQL schema version from various sources:
+	 * schema metadata, type descriptions, or query type information.
 	 */
 	private extractSchemaVersion(schema: any): string | undefined {
-		// TODO: Implement schema version extraction
-		// This might come from custom directives or schema metadata
+		if (!schema) {
+			return undefined;
+		}
+
+		// Method 1: Check for version in schema description
+		if (schema.description) {
+			const versionMatch = schema.description.match(/version\s*[:=]?\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)/i);
+			if (versionMatch) {
+				return versionMatch[1];
+			}
+		}
+
+		// Method 2: Look for version in query type description
+		if (schema.queryType && schema.queryType.description) {
+			const versionMatch = schema.queryType.description.match(/version\s*[:=]?\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)/i);
+			if (versionMatch) {
+				return versionMatch[1];
+			}
+		}
+
+		// Method 3: Check for version field in Query type
+		if (schema.types) {
+			const queryType = Object.values(schema.types).find((type: any) => type.name === 'Query');
+			if (queryType && (queryType as any).fields) {
+				const versionField = (queryType as any).fields.version || (queryType as any).fields.schemaVersion;
+				if (versionField && versionField.description) {
+					const versionMatch = versionField.description.match(/([0-9]+\.[0-9]+(?:\.[0-9]+)?)/);
+					if (versionMatch) {
+						return versionMatch[1];
+					}
+				}
+			}
+		}
+
+		// Method 4: Look for version indicators in type names or descriptions
+		if (schema.types) {
+			for (const type of Object.values(schema.types) as any[]) {
+				if (type.description) {
+					const versionMatch = type.description.match(/(?:schema|api)\s*version\s*[:=]?\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)/i);
+					if (versionMatch) {
+						return versionMatch[1];
+					}
+				}
+			}
+		}
+
+		// Method 5: Default version detection based on common patterns
+		if (schema.types) {
+			const typeNames = Object.keys(schema.types);
+			
+			// Check for modern GraphQL features that indicate newer versions
+			if (typeNames.includes('Subscription')) {
+				return '1.1.0'; // Subscriptions introduced in newer versions
+			}
+			
+			if (typeNames.some(name => name.includes('Connection') && name.includes('Edge'))) {
+				return '1.0.0'; // Relay-style pagination indicates mature schema
+			}
+		}
+
+		// Unable to determine version
 		return undefined;
 	}
 

@@ -23,9 +23,6 @@ import { MockProxy, mock } from 'jest-mock-extended';
 export const TEST_CREDENTIALS: ICredentialDataDecryptedObject = {
   baseUrl: 'https://test.semble.app/graphql',
   apiToken: 'test-api-token-12345',
-  environment: 'test',
-  safetyMode: true,
-  productionConfirmed: false,
 };
 
 /**

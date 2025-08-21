@@ -26,8 +26,7 @@
     "core/**/*",
     "services/**/*",
     "types/**/*",
-    "components/**/*",
-    "test/**/*"
+    "components/**/*"
   ],
   "exclude": [
     "dist",

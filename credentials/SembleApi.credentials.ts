@@ -36,32 +36,6 @@ export class SembleApi implements ICredentialType {
    */
   properties: INodeProperties[] = [
     {
-      displayName: "Environment",
-      name: "environment",
-      type: "options",
-      options: [
-        {
-          name: "Production",
-          value: "production",
-          description: "Live production environment - USE WITH EXTREME CAUTION",
-        },
-        {
-          name: "Staging",
-          value: "staging",
-          description: "Staging/testing environment",
-        },
-        {
-          name: "Development",
-          value: "development",
-          description:
-            "Local development environment (recommended for testing)",
-        },
-      ],
-      default: "development",
-      description: "Select the environment you are connecting to",
-      required: true,
-    },
-    {
       displayName: "API Token",
       name: "apiToken",
       type: "string",
@@ -76,33 +50,6 @@ export class SembleApi implements ICredentialType {
       type: "string",
       default: "https://open.semble.io/graphql",
       description: "The GraphQL endpoint for the Semble API",
-      required: true,
-    },
-    {
-      displayName: "Enable Safety Mode",
-      name: "safetyMode",
-      type: "boolean",
-      default: true,
-      description:
-        "Enable safety mode to prevent accidental data modifications. Recommended for non-production environments.",
-      displayOptions: {
-        show: {
-          environment: ["development", "staging"],
-        },
-      },
-    },
-    {
-      displayName: "Production Confirmation",
-      name: "productionConfirmed",
-      type: "boolean",
-      default: false,
-      description:
-        "⚠️ I confirm I am intentionally connecting to PRODUCTION and understand the risks",
-      displayOptions: {
-        show: {
-          environment: ["production"],
-        },
-      },
       required: true,
     },
   ];

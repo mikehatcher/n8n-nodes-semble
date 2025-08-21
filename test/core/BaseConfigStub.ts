@@ -1,11 +1,12 @@
 /**
- * @fileoverview Stub for BaseConfig test compatibility - to be updated when interfaces are aligned
- * @description Temporary stub to maintain test passing status during phased development
+ * @fileoverview BaseConfig test compatibility stub - DEPRECATED
+ * @description This stub is no longer needed as BaseConfig.test.ts now uses the real implementation
  * @author Mike Hatcher
  * @website https://progenious.com
  * @namespace N8nNodesSemble.Test.Stubs
- * @since Temporary stub for test compatibility
- * @todo Update BaseConfig.test.ts when interface alignment is complete
+ * @since 2.0.0
+ * @deprecated This file is no longer used and can be safely removed
+ * @see BaseConfig.test.ts now imports directly from core/BaseConfig
  */
 
 // Import the real implementations that do exist
