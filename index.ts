@@ -1,15 +1,9 @@
 /**
  * @fileoverview Entry point for n8n-nodes-semble package
  * @description This module exports all node types and credentials for the Semble n8n integration
- * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @author Mike Hatcher
  * @website https://progenious.com
- * @version 1.0
- * @namespace N8nNodesSemble
- */
-
-/**
- * @namespace N8nNodesSemble
- * @description Main namespace for the n8n-nodes-semble package
+ * @namespace N8nNodesSemble.Main
  */
 
 /**

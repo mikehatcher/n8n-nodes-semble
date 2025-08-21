@@ -1,0 +1,234 @@
+{
+  "name": "Practice Team Notifications v2.0",
+  "description": "Automated notifications for practice team about new bookings, cancellations, and patient arrivals (adapted for v2.0 without staff resource)",
+  "version": 1,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "booking",
+        "operation": "getMany",
+        "returnAll": false,
+        "limit": 20,
+        "options": {
+          "event": "newAndUpdated",
+          "pollInterval": "5m",
+          "datePeriod": "last15Minutes"
+        }
+      },
+      "id": "n1e2w3b4-o5o6-k7i8-n9g0-s1n2o3t4i5f6",
+      "name": "Semble Trigger - Booking Changes",
+      "type": "n8n-nodes-semble.sembleTrigger",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "credentials": {
+        "sembleApi": {
+          "id": "your-credential-id",
+          "name": "Semble API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "new-booking",
+              "leftValue": "={{$node['Semble Trigger - Booking Changes'].json['__changeType']}}",
+              "rightValue": "new",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "i7s8n9e0-w1b2-o3o4-k5i6-n7g8c9h0e1c2",
+      "name": "If New Booking",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cancelled-booking",
+              "leftValue": "={{$node['Semble Trigger - Booking Changes'].json['status']}}",
+              "rightValue": "cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "i9s0c1a2-n3c4-e5l6-l7e8-d9c0h1e2c3k4",
+      "name": "If Cancelled",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredential",
+        "genericAuthType": "httpHeaderAuth",
+        "nodeCredentialType": "slackApi",
+        "requestMethod": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "options": {
+          "bodyContentType": "json"
+        },
+        "bodyParametersJson": "{\n  \"channel\": \"#practice-notifications\",\n  \"username\": \"Practice Bot\",\n  \"text\": \"🆕 New Booking Alert\",\n  \"attachments\": [\n    {\n      \"color\": \"good\",\n      \"fields\": [\n        {\n          \"title\": \"Patient\",\n          \"value\": \"{{$node['Semble Trigger - Booking Changes'].json['patient']['firstName']}} {{$node['Semble Trigger - Booking Changes'].json['patient']['lastName']}}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Date & Time\",\n          \"value\": \"{{DateTime.fromISO($node['Semble Trigger - Booking Changes'].json['bookingDate']).toFormat('cccc, LLL dd, yyyy')}} at {{$node['Semble Trigger - Booking Changes'].json['bookingTime']}}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Practitioner\",\n          \"value\": \"{{$node['Semble Trigger - Booking Changes'].json['practitioner']['firstName']}} {{$node['Semble Trigger - Booking Changes'].json['practitioner']['lastName']}}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Service\",\n          \"value\": \"{{$node['Semble Trigger - Booking Changes'].json['service']['name']}}\",\n          \"short\": true\n        }\n      ],\n      \"footer\": \"Semble Practice Management\",\n      \"ts\": {{Math.floor(Date.now() / 1000)}}\n    }\n  ]\n}"
+      },
+      "id": "s5l6a7c8-k9n0-e1w2-b3o4-o5k6i7n8g9s0",
+      "name": "Slack - New Booking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "your-slack-credential-id",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredential",
+        "genericAuthType": "httpHeaderAuth",
+        "nodeCredentialType": "slackApi",
+        "requestMethod": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "options": {
+          "bodyContentType": "json"
+        },
+        "bodyParametersJson": "{\n  \"channel\": \"#practice-notifications\",\n  \"username\": \"Practice Bot\",\n  \"text\": \"❌ Booking Cancellation\",\n  \"attachments\": [\n    {\n      \"color\": \"warning\",\n      \"fields\": [\n        {\n          \"title\": \"Patient\",\n          \"value\": \"{{$node['Semble Trigger - Booking Changes'].json['patient']['firstName']}} {{$node['Semble Trigger - Booking Changes'].json['patient']['lastName']}}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Cancelled Slot\",\n          \"value\": \"{{DateTime.fromISO($node['Semble Trigger - Booking Changes'].json['bookingDate']).toFormat('cccc, LLL dd, yyyy')}} at {{$node['Semble Trigger - Booking Changes'].json['bookingTime']}}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Practitioner\",\n          \"value\": \"{{$node['Semble Trigger - Booking Changes'].json['practitioner']['firstName']}} {{$node['Semble Trigger - Booking Changes'].json['practitioner']['lastName']}}\",\n          \"short\": true\n        },\n        {\n          \"title\": \"Reason\",\n          \"value\": \"{{$node['Semble Trigger - Booking Changes'].json['cancellationReason'] || 'Not specified'}}\",\n          \"short\": true\n        }\n      ],\n      \"footer\": \"Slot now available for rebooking\",\n      \"ts\": {{Math.floor(Date.now() / 1000)}}\n    }\n  ]\n}"
+      },
+      "id": "s7l8a9c0-k1c2-a3n4-c5e6-l7l8a9t0i1o2",
+      "name": "Slack - Cancellation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 400],
+      "credentials": {
+        "slackApi": {
+          "id": "your-slack-credential-id",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "notifications@yourpractice.com",
+        "toEmail": "practice-manager@yourpractice.com,reception@yourpractice.com",
+        "subject": "📊 Daily Practice Summary - {{DateTime.now().toFormat('cccc, LLL dd, yyyy')}}",
+        "emailType": "html",
+        "message": "Good morning!\n\nHere's your daily practice summary:\n\n**Today's Activity:**\n• New bookings in last hour: {{$node['Semble Trigger - Booking Changes'].json.length}}\n• Total bookings for today: [To be calculated]\n• Cancellations: [To be tracked separately]\n\n**Upcoming:**\n• Next booking: {{$node['Semble Trigger - Booking Changes'].json[0]['bookingTime']}} - {{$node['Semble Trigger - Booking Changes'].json[0]['patient']['firstName']}} {{$node['Semble Trigger - Booking Changes'].json[0]['patient']['lastName']}}\n\nHave a great day!\n\n---\nSemble Practice Management System"
+      },
+      "id": "d3a4i5l6-y7s8-u9m0-m1a2-r3y4e5m6a7i8",
+      "name": "Daily Summary Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [460, 600]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "d9a0i1l2-y3s4-c5h6-e7d8-u9l0e1s2c3h4",
+      "name": "Daily Schedule (8am weekdays)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 600]
+    }
+  ],
+  "connections": {
+    "Semble Trigger - Booking Changes": {
+      "main": [
+        [
+          {
+            "node": "If New Booking",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If New Booking": {
+      "main": [
+        [
+          {
+            "node": "Slack - New Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Cancelled": {
+      "main": [
+        [
+          {
+            "node": "Slack - Cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule (8am weekdays)": {
+      "main": [
+        [
+          {
+            "node": "Daily Summary Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-08-21T10:00:00.000Z",
+      "updatedAt": "2025-08-21T10:00:00.000Z",
+      "id": "team-notifications",
+      "name": "Practice Team Notifications"
+    }
+  ],
+  "triggerCount": 2,
+  "updatedAt": "2025-08-21T10:00:00.000Z",
+  "versionId": "v2.0-practice-notifications"
+}

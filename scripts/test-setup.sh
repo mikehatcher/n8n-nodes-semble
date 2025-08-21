@@ -37,7 +37,7 @@ fi
 echo "3. Testing owner account..."
 LOGIN_RESPONSE=$(curl -s -X POST http://localhost:5678/rest/login \
   -H "Content-Type: application/json" \
-  -d "{\"emailOrLdapLoginId\":\"$N8N_ADMIN_EMAIL\",\"password\":\"$N8N_ADMIN_PASSWORD\"}")
+  -d "{\"emailOrLdapLoginId\":\"$N8N_LOCAL_ADMIN_EMAIL\",\"password\":\"$N8N_LOCAL_ADMIN_PASSWORD\"}")
 
 if echo "$LOGIN_RESPONSE" | grep -q "sessionId\|\"data\""; then
     echo "   ✅ Owner account login works"
@@ -50,7 +50,7 @@ echo ""
 echo "🎉 All tests passed! Setup is working correctly."
 echo ""
 echo "🌐 Access n8n at: http://localhost:5678"
-echo "📧 Login: $N8N_ADMIN_EMAIL / [CONFIGURED]"
+echo "📧 Login: $N8N_LOCAL_ADMIN_EMAIL / [CONFIGURED]"
 echo "🔍 Search for 'Semble' to find both the regular node and trigger"
 echo ""
 echo "✨ Available Semble nodes:"

@@ -1,0 +1,64 @@
+{
+  "entryPoints": [
+    "nodes/**/*.ts",
+    "services/**/*.ts", 
+    "components/**/*.ts",
+    "core/**/*.ts",
+    "credentials/**/*.ts"
+  ],
+  "out": "docs/api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "theme": "markdown",
+  "readme": "none",
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "hideBreadcrumbs": false,
+  "sort": ["source-order"],
+  "kindSortOrder": [
+    "Class",
+    "Interface", 
+    "TypeAlias",
+    "Variable",
+    "Function"
+  ],
+  "categorizeByGroup": true,
+  "groupOrder": [
+    "Nodes",
+    "Services", 
+    "Components",
+    "Core",
+    "Credentials",
+    "*"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/test/**/*",
+    "**/tests/**/*",
+    "node_modules/**/*"
+  ],
+  "excludeExternals": true,
+  "includeVersion": true,
+  "searchInComments": true,
+  "searchInDocuments": true,
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "treatWarningsAsErrors": false,
+  "treatValidationWarningsAsErrors": false,
+  "logLevel": "Info",
+  "cleanOutputDir": true,
+  "gitRevision": "main",
+  "sourceLinkTemplate": "https://github.com/mikehatcher/n8n-nodes-semble/blob/{gitRevision}/{path}#L{line}",
+  "navigationLinks": {
+    "GitHub": "https://github.com/mikehatcher/n8n-nodes-semble"
+  },
+  "sidebarLinks": {
+    "Documentation": "../",
+    "GitHub": "https://github.com/mikehatcher/n8n-nodes-semble"
+  }
+}

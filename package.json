@@ -1,18 +1,23 @@
 {
   "name": "n8n-nodes-semble",
-  "version": "1.1.1",
-  "description": "n8n community node for Semble practice management system",
+  "version": "2.0.0",
+  "description": "n8n community node for Semble practice management system - automate bookings, patients, and product/service catalog management",
   "keywords": [
     "n8n-community-node-package",
     "semble",
     "healthcare",
-    "practice-management"
+    "practice-management",
+    "medical",
+    "booking",
+    "patient",
+    "product",
+    "inventory",
+    "service-catalog"
   ],
   "license": "MIT",
   "homepage": "https://github.com/mikehatcher/n8n-nodes-semble",
   "author": {
     "name": "Mike Hatcher",
-    "email": "mike.hatcher@progenious.com",
     "url": "https://progenious.com"
   },
   "repository": {
@@ -25,25 +30,83 @@
   },
   "main": "dist/index.js",
   "scripts": {
+
+    "// === Package Management ===": "",
     "preinstall": "npx only-allow pnpm",
-    "build": "tsc && gulp build:icons",
+    "prepublishOnly": "npm run build",
+    "postinstall": "[ -f ./scripts/install-hooks.sh ] && ./scripts/install-hooks.sh || echo 'Skipping install-hooks (not in dev environment)'",
+   
+    "// === Build & Development ===": "",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc && gulp build:icons",
     "dev": "tsc --watch",
-    "pack:local": "npm run build && npm pack --pack-destination=../n8n-local-test",
+    
+    "// === Code Quality ===": "",
+    "lint": "eslint nodes/**/*.ts credentials/**/*.ts",
+    "lint:fix": "eslint nodes/**/*.ts credentials/**/*.ts --fix",
+    "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
+    
+    "// === Testing ===": "",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:e2e": "jest test/e2e/ --testTimeout=30000",
+    
+    "// === API Validation ===": "",
+    "test:api": "./scripts/test-api-connection.sh",
+    
+    "// === Quality Gates ===": "",
+    "verify": "npm run lint && npm run test && npm run build",
+    "verify:full": "npm run lint && npm run test:coverage && npm run build",
+    "pre-commit": "./scripts/pre-commit.sh",
+    "quality-check": "./scripts/pre-commit.sh",
+    "install-hooks": "./scripts/install-hooks.sh",
+
+    "// === Documentation ===": "",
+    "docs:generate": "typedoc && node scripts/generate-api-overview.js && node scripts/enhance-api-pages.js && node scripts/update-api-navigation.js",
+    "docs:serve": "source .venv/bin/activate && mkdocs serve",
+    "docs:build": "npm run docs:generate && source .venv/bin/activate && mkdocs build",
+    "docs:clean": "rm -rf docs/api site",
+
+    "// === Local Development & Testing ===": "",
+    "pack:local": "npm run pre-commit && npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
+    "pack:local:skip-quality": "npm pack --pack-destination=../n8n-local-test && cd ../n8n-local-test && mv n8n-nodes-semble-*.tgz n8n-nodes-semble.tgz",
     "install:node": "cd ../n8n-local-test && ./install-semble-node.sh",
     "update:node": "npm run pack:local && npm run install:node",
-    "setup:test-env": "./scripts/setup-n8n-test-env.sh",
+    "dev:full": "npm run pre-commit && npm run pack:local:skip-quality && npm run install:node && npm run restart:n8n",
+    "test:env": "./scripts/test-setup.sh",
+    
+    "// === Production Deployment ===": "",
+    "pack:prod": "npm run pre-commit && npm run test:ci",
+    "deploy:prod": "npm run pack:prod && ./scripts/deploy-production.sh",
+    "rollback:prod": "./scripts/deploy-production.sh --rollback",
+    "status:prod": "./scripts/deploy-production.sh --status",
+   
+    "// === Local n8n Environment Management ===": "",
+    "setup": "cd ../n8n-local-test && ./setup.sh",
+    "setup:env": "cd ../n8n-local-test && ./setup-env.sh",
+    "setup:test-env": "cd ../n8n-local-test && ./setup-test-env.sh",
     "start:n8n": "cd ../n8n-local-test && docker compose up -d",
     "stop:n8n": "cd ../n8n-local-test && docker compose down",
     "restart:n8n": "cd ../n8n-local-test && docker compose restart",
     "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
-    "setup:owner": "cd ../n8n-local-test && ./setup-owner-account.sh",
-    "test:env": "./scripts/test-setup.sh",
-    "dev:full": "npm run pack:local && npm run install:node && npm run restart:n8n",
-    "lint": "eslint nodes/**/*.ts credentials/**/*.ts",
-    "lint:fix": "eslint nodes/**/*.ts credentials/**/*.ts --fix",
-    "lintfix": "npm run lint:fix",
-    "format": "prettier nodes/**/*.ts credentials/**/*.ts --write",
-    "prepublishOnly": "npm run build"
+   
+    "// === MCP Integration ===": "",
+    "setup:mcp": "node scripts/setup-mcp-copilot.js",
+    "test:mcp": "node scripts/test-mcp-copilot.js",
+   
+    "// === n8n Version Management ===": "",
+    "update:n8n": "./scripts/update-n8n.sh",
+    "update:n8n:local": "./scripts/update-n8n.sh local",
+    "update:n8n:production": "./scripts/update-n8n.sh production",
+    "update:n8n:local:latest": "./scripts/update-n8n.sh local latest",
+    "update:n8n:production:latest": "./scripts/update-n8n.sh production latest",
+    "n8n:version": "./scripts/update-n8n.sh current",
+    "n8n:version:local": "./scripts/update-n8n.sh local current",
+    "n8n:version:production": "./scripts/update-n8n.sh production current",
+    "n8n:versions": "./scripts/update-n8n.sh list"
   },
   "files": [
     "dist"
@@ -58,13 +121,25 @@
       "dist/nodes/Semble/SembleTrigger.node.js"
     ]
   },
+  "dependencies": {
+  },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@typescript-eslint/parser": "~8.32.0",
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^4.0.2",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "jest-mock-extended": "^4.0.0",
     "n8n-workflow": "^1.82.0",
+    "nock": "^13.5.6",
     "prettier": "^3.5.3",
+    "ts-jest": "^29.4.0",
+    "typedoc": "^0.28.10",
+    "typedoc-plugin-markdown": "^4.8.1",
     "typescript": "^5.8.2"
   },
   "peerDependencies": {

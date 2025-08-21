@@ -1,0 +1,95 @@
+site_name: n8n Semble Integration
+site_description: Official documentation for the n8n Semble community node
+site_url: https://mikehatcher.github.io/n8n-nodes-semble/
+repo_url: https://github.com/mikehatcher/n8n-nodes-semble
+repo_name: mikehatcher/n8n-nodes-semble
+
+theme:
+  name: shadcn
+  show_title: true
+  show_stargazers: true
+  pygments_style:
+    light: shadcn-light
+    dark: github-dark
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - autorefs
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Configuration: getting-started/configuration.md
+  - Node Reference:
+    - Overview: nodes/overview.md
+    - Credentials: nodes/credentials.md
+    - Patient Nodes: nodes/patient-nodes.md
+    - Booking Nodes: nodes/booking-nodes.md
+    - Product Nodes: nodes/product-nodes.md
+    - Trigger Nodes: nodes/trigger-nodes.md
+  - API Reference:
+    - Overview: api/README.md
+    - Components: api/components/README.md
+    - Core: api/core/README.md
+    - Credentials: api/credentials/README.md
+    - Nodes: api/nodes/README.md
+    - Services: api/services/README.md
+  - Examples:
+    - Common Workflows: examples/common-workflows.md
+    - Integration Patterns: examples/integration-patterns.md
+    - Troubleshooting: examples/troubleshooting.md
+  - Development:
+    - Contributing: development/contributing.md
+    - Architecture: development/architecture.md
+    - Testing: development/testing.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mikehatcher/n8n-nodes-semble
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/mikehatcher/
+  version:
+    provider: mike
+    default: stable
+
+copyright: >
+  Copyright &copy; 2024-2025 Mike Hatcher –
+  <a href="#__consent">Change cookie settings</a>
+
+docs_dir: docs
+site_dir: site

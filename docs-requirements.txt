@@ -1,0 +1,6 @@
+# MkDocs documentation dependencies
+# Install with: pip install -r docs-requirements.txt
+
+mkdocs>=1.6.0
+mkdocs-shadcn>=0.9.0
+mkdocs-autorefs>=1.4.0
