@@ -142,5 +142,23 @@ module.exports = {
 				'n8n-nodes-base/node-param-type-options-password-missing': 'error',
 			},
 		},
+		{
+			files: ['./core/**/*.ts', './services/**/*.ts', './types/**/*.ts', './test/**/*.ts', 'test/**/*.ts'],
+			env: {
+				jest: true, // Enable Jest globals for test files
+				node: true,
+			},
+			parserOptions: {
+				project: ['./tsconfig.json'],
+				sourceType: 'module',
+			},
+			rules: {
+				// Basic rules without TypeScript-specific plugin dependencies
+				'no-unused-vars': 'off', // Turn off base rule
+				'no-console': 'warn',
+				'prefer-const': 'error',
+				'no-var': 'error',
+			},
+		},
 	],
 };

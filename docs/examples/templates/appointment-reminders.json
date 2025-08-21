@@ -1,0 +1,185 @@
+{
+  "name": "Booking Reminder System v2.0",
+  "description": "Automated booking reminder system with escalating notifications using v2.0 booking resource",
+  "version": 1,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "booking",
+        "operation": "getMany",
+        "returnAll": false,
+        "limit": 50,
+        "options": {
+          "event": "new",
+          "pollInterval": "15m",
+          "datePeriod": "last1Hour",
+          "filters": {
+            "dateFrom": "{{DateTime.now().plus({days: 1}).startOf('day').toISO()}}",
+            "dateTo": "{{DateTime.now().plus({days: 2}).startOf('day').toISO()}}"
+          }
+        }
+      },
+      "id": "b1o2o3k4-i5n6-g7s8-t9r0-i1g2g3e4r5s6",
+      "name": "Semble Trigger - Tomorrow's Bookings",
+      "type": "n8n-nodes-semble.sembleTrigger",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "credentials": {
+        "sembleApi": {
+          "id": "your-credential-id",
+          "name": "Semble API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        },
+        "triggerTime": "={{DateTime.fromISO($node['Semble Trigger - Tomorrow\\'s Bookings'].json['bookingDate']).minus({days: 1}).set({hour: 18, minute: 0}).toISO()}}"
+      },
+      "id": "s7c8h9e0-d1u2-l3e4-r5n6-o7d8e9r0s1t2",
+      "name": "Schedule Reminder",
+      "type": "n8n-nodes-base.schedule",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "reminders@yourpractice.com",
+        "toEmail": "={{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['patient']['email']}}",
+        "subject": "Booking Reminder - Tomorrow at {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['bookingTime']}}",
+        "emailType": "html",
+        "message": "Dear {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['patient']['firstName']}},\n\nThis is a friendly reminder about your upcoming booking:\n\n📅 Date: {{DateTime.fromISO($node['Semble Trigger - Tomorrow\\'s Bookings'].json['bookingDate']).toFormat('cccc, LLL dd, yyyy')}}\n⏰ Time: {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['bookingTime']}}\n👨‍⚕️ With: {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['practitioner']['firstName']}} {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['practitioner']['lastName']}}\n📍 Location: {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['location']['name']}}\n\nPlease arrive 10 minutes early.\n\nIf you need to reschedule, please contact us as soon as possible.\n\nSee you soon!"
+      },
+      "id": "r3e4m5i6-n7d8-e9r0-e1m2-a3i4l5n6o7d8",
+      "name": "Send Reminder Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fromPhoneNumber": "+12345678900",
+        "toPhoneNumber": "={{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['patient']['phone']}}",
+        "message": "Booking reminder: Tomorrow at {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['bookingTime']}} with {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['practitioner']['firstName']}} {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['practitioner']['lastName']}}. Please arrive 10 minutes early. Reply STOP to opt out."
+      },
+      "id": "t9e0x1t2-m3e4-s5s6-a7g8-e9n0o1t2i3f4",
+      "name": "Send SMS Reminder",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [680, 420],
+      "credentials": {
+        "twilioApi": {
+          "id": "your-twilio-credential-id",
+          "name": "Twilio API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "confirmation-check",
+              "leftValue": "={{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['confirmationStatus']}}",
+              "rightValue": "confirmed",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "i5f6c7o8-n9f0-i1r2-m3a4-t5i6o7n8c9h0",
+      "name": "If Not Confirmed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "fromEmail": "urgent@yourpractice.com",
+        "toEmail": "={{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['patient']['email']}}",
+        "subject": "URGENT: Please Confirm Your Booking Tomorrow",
+        "emailType": "html",
+        "message": "Dear {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['patient']['firstName']}},\n\nWe notice you haven't confirmed your booking for tomorrow.\n\n⚠️ Your booking: {{$node['Semble Trigger - Tomorrow\\'s Bookings'].json['bookingTime']}} tomorrow\n\nPlease confirm or cancel by calling us at (555) 123-4567.\n\nUnconfirmed bookings may be released to other patients.\n\nThank you!"
+      },
+      "id": "u7r8g9e0-n1t2-f3o4-l5l6-o7w8u9p0e1m2",
+      "name": "Send Urgent Follow-up",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 580]
+    }
+  ],
+  "connections": {
+    "Semble Trigger - Tomorrow's Bookings": {
+      "main": [
+        [
+          {
+            "node": "Schedule Reminder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Not Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Reminder": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send SMS Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Confirmed": {
+      "main": [
+        [
+          {
+            "node": "Send Urgent Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-08-21T10:00:00.000Z",
+      "updatedAt": "2025-08-21T10:00:00.000Z",
+      "id": "booking-reminders",
+      "name": "Booking Reminders"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-08-21T10:00:00.000Z",
+  "versionId": "v2.0-booking-reminders"
+}

@@ -1,9 +1,8 @@
 /**
  * @fileoverview Semble API credentials configuration for n8n
  * @description This module defines the credential type for authenticating with the Semble API
- * @author Mike Hatcher <mike.hatcher@progenious.com>
+ * @author Mike Hatcher
  * @website https://progenious.com
- * @version 1.0
  * @namespace N8nNodesSemble.Credentials
  */
 
@@ -37,38 +36,12 @@ export class SembleApi implements ICredentialType {
    */
   properties: INodeProperties[] = [
     {
-      displayName: "Environment",
-      name: "environment",
-      type: "options",
-      options: [
-        {
-          name: "Production",
-          value: "production",
-          description: "Live production environment - USE WITH EXTREME CAUTION"
-        },
-        {
-          name: "Staging",
-          value: "staging", 
-          description: "Staging/testing environment"
-        },
-        {
-          name: "Development",
-          value: "development",
-          description: "Local development environment (recommended for testing)"
-        }
-      ],
-      default: "development",
-      description: "Select the environment you are connecting to",
-      required: true,
-    },
-    {
       displayName: "API Token",
       name: "apiToken",
       type: "string",
       typeOptions: { password: true },
       default: "",
-      description:
-        "The API token for your Semble account (JWT token from Semble app settings)",
+      description: "The API token for your Semble account",
       required: true,
     },
     {
@@ -79,36 +52,31 @@ export class SembleApi implements ICredentialType {
       description: "The GraphQL endpoint for the Semble API",
       required: true,
     },
-    {
-      displayName: "Enable Safety Mode",
-      name: "safetyMode", 
-      type: "boolean",
-      default: true,
-      description: "Enable safety mode to prevent accidental data modifications. Recommended for non-production environments.",
-      displayOptions: {
-        show: {
-          environment: ["development", "staging"]
-        }
-      }
-    },
-    {
-      displayName: "Production Confirmation",
-      name: "productionConfirmed",
-      type: "boolean", 
-      default: false,
-      description: "⚠️ I confirm I am intentionally connecting to PRODUCTION and understand the risks",
-      displayOptions: {
-        show: {
-          environment: ["production"]
-        }
-      },
-      required: true
-    }
   ];
 
   /**
-   * Authentication configuration for Semble API
+   * Authentication configuration for Semble API requests
+   *
+   * Configures n8n to automatically include the API token in the x-token header
+   * for all requests made to the Semble API. The token is interpolated from
+   * the credential's apiToken field at runtime.
+   *
+   * The authentication uses:
+   * - Generic authentication type for maximum flexibility
+   * - x-token header for JWT token authentication
+   * - Content-Type header set to application/json for GraphQL
+   *
+   * @example
+   * ```typescript
+   * // This configuration automatically adds headers like:
+   * {
+   *   "x-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+   *   "Content-Type": "application/json"
+   * }
+   * ```
+   *
    * @type {IAuthenticateGeneric}
+   * @since 2.0.0
    * @description Uses generic authentication with x-token header containing JWT
    */
   // Use generic authentication with x-token header

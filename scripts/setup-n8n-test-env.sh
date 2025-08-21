@@ -26,7 +26,7 @@ echo "📝 Creating docker-compose.yml..."
 cat > docker-compose.yml << 'EOF'
 services:
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:${N8N_LOCAL_VERSION:-latest}
     container_name: n8n-semble-test
     restart: always
     ports:
@@ -39,7 +39,7 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./n8n-nodes-semble-1.0.0.tgz:/tmp/n8n-nodes-semble-1.0.0.tgz
+      - ./n8n-nodes-semble.tgz:/tmp/n8n-nodes-semble.tgz
 
 volumes:
   n8n_data:
@@ -53,8 +53,8 @@ cat > install-semble-node.sh << 'EOF'
 echo "Installing n8n-nodes-semble in local n8n..."
 
 # Check if package exists
-if [ ! -f "n8n-nodes-semble-1.0.0.tgz" ]; then
-    echo "❌ Package file n8n-nodes-semble-1.0.0.tgz not found!"
+if [ ! -f "n8n-nodes-semble.tgz" ]; then
+    echo "❌ Package file n8n-nodes-semble.tgz not found!"
     echo "   Run 'npm run pack:local' from the n8n-nodes-semble directory first."
     exit 1
 fi
@@ -67,7 +67,7 @@ if ! docker ps | grep -q "n8n-semble-test"; then
 fi
 
 echo "📦 Extracting package..."
-docker exec n8n-semble-test sh -c "cd /tmp && rm -rf package && tar -xzf n8n-nodes-semble-1.0.0.tgz"
+docker exec n8n-semble-test sh -c "cd /tmp && rm -rf package && tar -xzf n8n-nodes-semble.tgz"
 
 echo "🔧 Removing pnpm restriction..."
 docker exec n8n-semble-test sh -c "cd /tmp/package && sed -i 's/\"preinstall\": \"npx only-allow pnpm\",//g' package.json"
@@ -113,7 +113,7 @@ ENV_EXAMPLE_FILE="$WORKSPACE_ROOT/n8n-nodes-semble/.env.example"
 
 # Function to ensure .env file exists with required n8n configuration
 ensure_env_file() {
-    local required_vars=("N8N_ADMIN_EMAIL" "N8N_ADMIN_PASSWORD" "N8N_ADMIN_FIRST_NAME" "N8N_ADMIN_LAST_NAME")
+    local required_vars=("N8N_LOCAL_ADMIN_EMAIL" "N8N_LOCAL_ADMIN_PASSWORD" "N8N_LOCAL_ADMIN_FIRST_NAME" "N8N_LOCAL_ADMIN_LAST_NAME")
     local missing_vars=()
     local existing_vars=()
     
@@ -145,7 +145,7 @@ ensure_env_file() {
         
         # Check if any variables have default values that need updating
         local needs_update=false
-        local email=$(get_env_var "N8N_ADMIN_EMAIL")
+        local email=$(get_env_var "N8N_LOCAL_ADMIN_EMAIL")
         if [ "$email" = "admin@example.com" ] || [ "$email" = "your_email_here" ]; then
             needs_update=true
         fi
@@ -245,8 +245,8 @@ setup_n8n_credentials() {
     local email password first_name last_name
     
     # Check if credentials already exist
-    if env_var_exists "N8N_ADMIN_EMAIL" && env_var_exists "N8N_ADMIN_PASSWORD"; then
-        email=$(get_env_var "N8N_ADMIN_EMAIL")
+    if env_var_exists "N8N_LOCAL_ADMIN_EMAIL" && env_var_exists "N8N_LOCAL_ADMIN_PASSWORD"; then
+        email=$(get_env_var "N8N_LOCAL_ADMIN_EMAIL")
         if [ "$email" != "admin@example.com" ] && [ "$email" != "your_email_here" ] && [ -n "$email" ]; then
             echo "✅ n8n credentials already configured for: $email"
             return 0
@@ -285,10 +285,10 @@ setup_n8n_credentials() {
     last_name=${last_name:-User}
     
     # Save to .env file
-    set_env_var "N8N_ADMIN_EMAIL" "$email"
-    set_env_var "N8N_ADMIN_PASSWORD" "$password"
-    set_env_var "N8N_ADMIN_FIRST_NAME" "$first_name"
-    set_env_var "N8N_ADMIN_LAST_NAME" "$last_name"
+    set_env_var "N8N_LOCAL_ADMIN_EMAIL" "$email"
+    set_env_var "N8N_LOCAL_ADMIN_PASSWORD" "$password"
+    set_env_var "N8N_LOCAL_ADMIN_FIRST_NAME" "$first_name"
+    set_env_var "N8N_LOCAL_ADMIN_LAST_NAME" "$last_name"
     
     echo "✅ n8n credentials saved to .env file"
 }
@@ -307,12 +307,12 @@ load_env() {
 
 # Function to validate n8n credentials are set
 validate_n8n_credentials() {
-    if [ -z "$N8N_ADMIN_EMAIL" ] || [ -z "$N8N_ADMIN_PASSWORD" ]; then
+    if [ -z "$N8N_LOCAL_ADMIN_EMAIL" ] || [ -z "$N8N_LOCAL_ADMIN_PASSWORD" ]; then
         echo "❌ n8N credentials not found in environment"
         return 1
     fi
     
-    if [ "$N8N_ADMIN_EMAIL" = "admin@example.com" ] || [ "$N8N_ADMIN_EMAIL" = "your_email_here" ]; then
+    if [ "$N8N_LOCAL_ADMIN_EMAIL" = "admin@example.com" ] || [ "$N8N_LOCAL_ADMIN_EMAIL" = "your_email_here" ]; then
         echo "❌ Please configure your n8n credentials (email is still set to default)"
         return 1
     fi
@@ -360,15 +360,15 @@ echo "✅ n8n is ready! Creating owner account..."
 RESPONSE=$(curl -s -X POST http://localhost:5678/rest/owner/setup \
   -H "Content-Type: application/json" \
   -d "{
-    \"email\": \"$N8N_ADMIN_EMAIL\",
-    \"password\": \"$N8N_ADMIN_PASSWORD\",
-    \"firstName\": \"$N8N_ADMIN_FIRST_NAME\",
-    \"lastName\": \"$N8N_ADMIN_LAST_NAME\"
+    \"email\": \"$N8N_LOCAL_ADMIN_EMAIL\",
+    \"password\": \"$N8N_LOCAL_ADMIN_PASSWORD\",
+    \"firstName\": \"$N8N_LOCAL_ADMIN_FIRST_NAME\",
+    \"lastName\": \"$N8N_LOCAL_ADMIN_LAST_NAME\"
   }")
 
 if echo "$RESPONSE" | grep -q '"id"'; then
     echo "✅ Owner account created successfully!"
-    echo "   Email: $N8N_ADMIN_EMAIL"
+    echo "   Email: $N8N_LOCAL_ADMIN_EMAIL"
     echo "   Password: [CONFIGURED]"
     echo "   URL: http://localhost:5678"
 else
@@ -454,6 +454,67 @@ The `.env` file is automatically created from `.env.example` if it doesn't exist
 - **Stop environment:** `docker compose down`
 - **Reset environment:** `docker compose down -v` (removes all data)
 - **Restart n8n:** `docker compose restart`
+- **Update n8n:** `./update-n8n.sh` (local alias) or use unified script
+- **Check n8n version:** `./update-n8n.sh current`
+- **List available versions:** `./update-n8n.sh list`
+
+## n8n Version Management
+
+The environment supports unified n8n version management for both local and production:
+
+**From the n8n-nodes-semble directory:**
+```bash
+# Local environment
+./scripts/update-n8n.sh local               # Interactive update
+./scripts/update-n8n.sh local 1.55.3       # Update to specific version
+./scripts/update-n8n.sh local latest       # Update to latest
+./scripts/update-n8n.sh local current      # Check current version
+./scripts/update-n8n.sh local rollback 1.54.0  # Rollback
+
+# Production environment
+./scripts/update-n8n.sh production         # Interactive update
+./scripts/update-n8n.sh production latest  # Update to latest
+./scripts/update-n8n.sh production current # Check current version
+./scripts/update-n8n.sh production rollback 1.54.0  # Rollback
+
+# Both environments
+./scripts/update-n8n.sh current           # Show both versions
+./scripts/update-n8n.sh list              # List available versions
+```
+
+**From the n8n-local-test directory:**
+```bash
+# Local-only commands (legacy aliases)
+./update-n8n.sh                           # Interactive update
+./update-n8n.sh 1.55.3                    # Update to specific version
+./update-n8n.sh current                   # Check current version
+```
+
+**NPM Scripts:**
+```bash
+# Local environment
+npm run update:n8n:local                  # Interactive local update
+npm run update:n8n:local:latest           # Update local to latest
+npm run n8n:version:local                 # Check local version
+
+# Production environment
+npm run update:n8n:production             # Interactive production update
+npm run update:n8n:production:latest      # Update production to latest
+npm run n8n:version:production            # Check production version
+
+# Both environments
+npm run n8n:version                       # Check both versions
+npm run n8n:versions                      # List available versions
+```
+
+**Features:**
+- ✅ **Unified Script** - Single script manages both local and production
+- ✅ **Environment Detection** - Automatically uses correct credentials
+- ✅ **Backup & Rollback** - Automatic backups before production updates
+- ✅ **Health Checks** - Validates updates before completing
+- ✅ **Version Control** - Updates .env file with new versions
+- ✅ **SSH Integration** - Secure production updates via SSH
+- ✅ **Multiple Interfaces** - CLI script, npm commands, and legacy aliases
 
 ## Semble API Credentials
 
@@ -498,7 +559,7 @@ EOF
 
 echo "🎯 Creating initial tarball placeholder..."
 # This will be replaced by the actual tarball from pack:local
-touch n8n-nodes-semble-1.0.0.tgz
+touch n8n-nodes-semble.tgz
 
 cd - > /dev/null
 
@@ -516,3 +577,12 @@ echo "   6. Open http://localhost:5678           # Access n8n"
 echo ""
 echo "📧 Login credentials will be configured via .env file during setup"
 echo "🔍 Search for 'Semble' in the node picker to find both nodes"
+
+echo "🔄 Creating update-n8n.sh (alias to main script)..."
+cat > update-n8n.sh << 'EOF'
+#!/bin/bash
+# Legacy alias - redirect to main update script
+exec "$(dirname "$0")/../n8n-nodes-semble/scripts/update-n8n.sh" local "$@"
+EOF
+
+chmod +x update-n8n.sh

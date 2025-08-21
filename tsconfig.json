@@ -3,6 +3,7 @@
     "module": "commonjs",
     "target": "es2019",
     "lib": ["es2019"],
+    "types": ["jest"],
     "declaration": true,
     "outDir": "./dist",
     "strict": true,
@@ -21,11 +22,16 @@
   "include": [
     "index.ts",
     "credentials/**/*",
-    "nodes/**/*"
+    "nodes/**/*",
+    "core/**/*",
+    "services/**/*",
+    "types/**/*",
+    "components/**/*"
   ],
   "exclude": [
     "dist",
     "node_modules",
-    "**/*.test.ts"
+    "test/components/UIComponents.test.ts",
+    "test/components/ResourceSelector.test.ts"
   ]
 }

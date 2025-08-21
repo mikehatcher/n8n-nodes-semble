@@ -1,0 +1,141 @@
+{
+  "name": "Patient Welcome Automation v2.0",
+  "description": "Automated welcome sequence for new patients with email, CRM integration, and follow-up scheduling",
+  "version": 1,
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "patient",
+        "operation": "getMany",
+        "returnAll": false,
+        "limit": 10,
+        "options": {
+          "event": "new",
+          "pollInterval": "30m",
+          "datePeriod": "last4Hours"
+        }
+      },
+      "id": "f1f2e3d4-c5b6-a7b8-c9d0-e1f2e3d4e5f6",
+      "name": "Semble Trigger - New Patients",
+      "type": "n8n-nodes-semble.sembleTrigger",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "credentials": {
+        "sembleApi": {
+          "id": "your-credential-id",
+          "name": "Semble API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "practice@yourpractice.com",
+        "toEmail": "={{$node['Semble Trigger - New Patients'].json['email']}}",
+        "subject": "Welcome to {{ practice_name }} - Important Information",
+        "emailType": "html",
+        "message": "Dear {{$node['Semble Trigger - New Patients'].json['firstName']}},\n\nWelcome to our practice! We're delighted to have you as a new patient.\n\nNext Steps:\n1. Complete your medical history form (attached)\n2. Bring photo ID to your first appointment\n3. Arrive 10 minutes early for your appointment\n\nIf you have any questions, don't hesitate to contact us.\n\nBest regards,\nYour Practice Team"
+      },
+      "id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "operation": "create",
+        "firstName": "={{$node['Semble Trigger - New Patients'].json['firstName']}}",
+        "lastName": "={{$node['Semble Trigger - New Patients'].json['lastName']}}",
+        "email": "={{$node['Semble Trigger - New Patients'].json['email']}}",
+        "phone": "={{$node['Semble Trigger - New Patients'].json['phone']}}",
+        "tags": ["new_patient", "welcome_sequence"]
+      },
+      "id": "p6o5n4m3-l2k1-j0i9-h8g7-f6e5d4c3b2a1",
+      "name": "Create CRM Contact",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "hubspotApi": {
+          "id": "your-hubspot-credential-id",
+          "name": "HubSpot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "list",
+        "operation": "memberAdd",
+        "list": "new_patients_onboarding",
+        "email": "={{$node['Semble Trigger - New Patients'].json['email']}}",
+        "merge_fields": {
+          "FNAME": "={{$node['Semble Trigger - New Patients'].json['firstName']}}",
+          "LNAME": "={{$node['Semble Trigger - New Patients'].json['lastName']}}",
+          "REGDATE": "={{$node['Semble Trigger - New Patients'].json['dateCreated']}}"
+        }
+      },
+      "id": "q7r8s9t0-u1v2-w3x4-y5z6-a7b8c9d0e1f2",
+      "name": "Add to Newsletter",
+      "type": "n8n-nodes-base.mailchimp",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "mailchimpApi": {
+          "id": "your-mailchimp-credential-id",
+          "name": "Mailchimp API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Semble Trigger - New Patients": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Create CRM Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CRM Contact": {
+      "main": [
+        [
+          {
+            "node": "Add to Newsletter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-08-21T10:00:00.000Z",
+      "updatedAt": "2025-08-21T10:00:00.000Z",
+      "id": "welcome-automation",
+      "name": "Patient Welcome"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-08-21T10:00:00.000Z",
+  "versionId": "v2.0-patient-welcome"
+}
