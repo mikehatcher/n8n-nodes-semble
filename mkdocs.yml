@@ -33,7 +33,6 @@ nav:
     - Overview: api/README.md
     - Components: api/components/README.md
     - Core: api/core/README.md
-    - Credentials: api/credentials/README.md
   - Examples:
     - Common Workflows: examples/common-workflows.md
     - Integration Patterns: examples/integration-patterns.md
