@@ -48,7 +48,12 @@ jobs:
           cache: 'pnpm'
 
       - name: Install Node.js dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Checking pnpm workspace configuration:"
+          cat pnpm-workspace.yaml
+          echo "Installing dependencies..."
+          pnpm install --frozen-lockfile
 
       - name: Setup Python
         uses: actions/setup-python@v5
