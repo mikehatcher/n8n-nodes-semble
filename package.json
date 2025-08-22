@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-semble",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "n8n community node for Semble practice management system - automate bookings, patients, and product/service catalog management",
   "keywords": [
     "n8n-community-node-package",
@@ -57,15 +57,17 @@
     "// === API Validation ===": "",
     "test:api": "./scripts/test-api-connection.sh",
     
-    "// === Quality Gates ===": "",
+    "// === Quality Gates (Enhanced) ===": "",
     "verify": "npm run lint && npm run test && npm run build",
     "verify:full": "npm run lint && npm run test:coverage && npm run build",
     "pre-commit": "./scripts/pre-commit.sh",
     "quality-check": "./scripts/pre-commit.sh",
     "install-hooks": "./scripts/install-hooks.sh",
+    "verify:n8n:local": "npm run status:n8n && npm run n8n:version:local",
+    "verify:n8n:production": "npm run health:prod",
 
     "// === Documentation ===": "",
-    "docs:generate": "typedoc && node scripts/generate-api-overview.js && node scripts/enhance-api-pages.js && node scripts/update-api-navigation.js",
+    "docs:generate": "typedoc",
     "docs:serve": "source .venv/bin/activate && mkdocs serve",
     "docs:build": "npm run docs:generate && source .venv/bin/activate && mkdocs build",
     "docs:clean": "rm -rf docs/api site",
@@ -83,6 +85,12 @@
     "deploy:prod": "npm run pack:prod && ./scripts/deploy-production.sh",
     "rollback:prod": "./scripts/deploy-production.sh --rollback",
     "status:prod": "./scripts/deploy-production.sh --status",
+    "health:prod": "./scripts/update-n8n.sh production current",
+    "backup:prod": "echo 'Production backups are created automatically during updates. See update:n8n:production:latest for manual backup creation.'",
+    "update:n8n:production": "./scripts/update-n8n.sh production",
+    "update:n8n:production:latest": "./scripts/update-n8n.sh production latest",
+    "n8n:version:production": "./scripts/update-n8n.sh production current",
+    "n8n:health:production": "./scripts/update-n8n.sh production current",
    
     "// === Local n8n Environment Management ===": "",
     "setup": "cd ../n8n-local-test && ./setup.sh",
@@ -92,21 +100,23 @@
     "stop:n8n": "cd ../n8n-local-test && docker compose down",
     "restart:n8n": "cd ../n8n-local-test && docker compose restart",
     "logs:n8n": "cd ../n8n-local-test && docker compose logs -f",
+    "logs:n8n:tail": "cd ../n8n-local-test && docker compose logs --tail=50",
+    "status:n8n": "cd ../n8n-local-test && docker compose ps && echo '=== Health Status ===' && docker inspect --format='{{.State.Status}} - {{.State.Health.Status}}' n8n-semble-test 2>/dev/null || echo 'Container not running'",
+    "debug:n8n": "cd ../n8n-local-test && docker compose logs --tail=100 && echo '=== Container Stats ===' && docker stats --no-stream n8n-semble-test 2>/dev/null || echo 'Container not running'",
+    "update:n8n:local": "./scripts/update-n8n.sh local",
+    "update:n8n:local:latest": "./scripts/update-n8n.sh local latest",
+    "n8n:version:local": "./scripts/update-n8n.sh local current",
+    "n8n:health:local": "docker compose -f ../n8n-local-test/docker-compose.yml ps && docker inspect --format='{{.State.Health}}' n8n-semble-test 2>/dev/null || echo 'No health check configured'",
    
     "// === MCP Integration ===": "",
     "setup:mcp": "node scripts/setup-mcp-copilot.js",
     "test:mcp": "node scripts/test-mcp-copilot.js",
    
-    "// === n8n Version Management ===": "",
+    "// === n8n Utilities ===": "",
     "update:n8n": "./scripts/update-n8n.sh",
-    "update:n8n:local": "./scripts/update-n8n.sh local",
-    "update:n8n:production": "./scripts/update-n8n.sh production",
-    "update:n8n:local:latest": "./scripts/update-n8n.sh local latest",
-    "update:n8n:production:latest": "./scripts/update-n8n.sh production latest",
     "n8n:version": "./scripts/update-n8n.sh current",
-    "n8n:version:local": "./scripts/update-n8n.sh local current",
-    "n8n:version:production": "./scripts/update-n8n.sh production current",
-    "n8n:versions": "./scripts/update-n8n.sh list"
+    "n8n:versions": "./scripts/update-n8n.sh list",
+    "n8n:health": "./scripts/update-n8n.sh --help"
   },
   "files": [
     "dist"

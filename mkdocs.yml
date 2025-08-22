@@ -33,9 +33,6 @@ nav:
     - Overview: api/README.md
     - Components: api/components/README.md
     - Core: api/core/README.md
-    - Credentials: api/credentials/README.md
-    - Nodes: api/nodes/README.md
-    - Services: api/services/README.md
   - Examples:
     - Common Workflows: examples/common-workflows.md
     - Integration Patterns: examples/integration-patterns.md
@@ -63,9 +60,6 @@ markdown_extensions:
       alternate_style: true
   - attr_list
   - md_in_html
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.critic
   - pymdownx.caret
   - pymdownx.keys
