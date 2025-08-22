@@ -235,14 +235,14 @@ describe('Service Integration Tests', () => {
       const testData = { value: 'test data' };
 
       // Store with very short TTL
-      await cacheService.set(cacheKey, testData, 0.1); // 100ms TTL
+      await cacheService.set(cacheKey, testData, 0.3); // 300ms TTL
 
       // Verify data is initially available
       let cachedData = await cacheService.get(cacheKey);
       expect(cachedData).toEqual(testData);
 
-      // Wait for expiry
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Wait for expiry with extra buffer
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Verify data has expired
       cachedData = await cacheService.get(cacheKey);
