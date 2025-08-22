@@ -1,0 +1,107 @@
+# Production Docker Compose for n8n with Semble Community Node
+# This follows the official n8n Docker recommendations from:
+# https://docs.n8n.io/hosting/installation/docker/#updating
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:${N8N_PROD_VERSION:-latest}
+    container_name: n8n-production
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # --- Required Environment Variables (Official n8n Recommendations) ---
+      - GENERIC_TIMEZONE=Europe/London
+      - TZ=Europe/London
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      
+      # --- Webhook and Host Configuration ---
+      - WEBHOOK_URL=${N8N_PROD_WEBHOOK_URL:-https://workflows.thehealthsuite.co.uk/}
+      - N8N_HOST=${N8N_PROD_HOST:-workflows.thehealthsuite.co.uk}
+      - N8N_PROTOCOL=${N8N_PROD_PROTOCOL:-https}
+      - N8N_PORT=443
+      
+      # --- Database Configuration (PostgreSQL recommended for production) ---
+      - DB_TYPE=${N8N_DB_TYPE:-postgresdb}
+      - DB_POSTGRESDB_HOST=${N8N_DB_HOST}
+      - DB_POSTGRESDB_PORT=${N8N_DB_PORT:-5432}
+      - DB_POSTGRESDB_DATABASE=${N8N_DB_NAME}
+      - DB_POSTGRESDB_USER=${N8N_DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD}
+      - DB_POSTGRESDB_SCHEMA=${N8N_DB_SCHEMA:-public}
+      
+      # --- Community Packages ---
+      - N8N_COMMUNITY_PACKAGES_ENABLED=true
+      
+      # --- API Configuration ---
+      - N8N_API_ENABLED=true
+      - N8N_API_KEY=${N8N_PROD_API_KEY}
+      
+      # --- Security ---
+      - N8N_SECURE_COOKIE=true
+      - N8N_JWT_AUTH_HEADER=${N8N_JWT_AUTH_HEADER:-authorization}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      
+      # --- Logging ---
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_LOG_OUTPUT=${N8N_LOG_OUTPUT:-console}
+      
+      # --- Performance and Scaling ---
+      - N8N_METRICS=true
+      - N8N_DISABLE_UI=${N8N_DISABLE_UI:-false}
+      
+      # --- Email Configuration (for user management) ---
+      - N8N_EMAIL_MODE=${N8N_EMAIL_MODE:-smtp}
+      - N8N_SMTP_HOST=${N8N_SMTP_HOST}
+      - N8N_SMTP_PORT=${N8N_SMTP_PORT:-587}
+      - N8N_SMTP_USER=${N8N_SMTP_USER}
+      - N8N_SMTP_PASS=${N8N_SMTP_PASS}
+      - N8N_SMTP_SSL=${N8N_SMTP_SSL:-true}
+      
+    volumes:
+      - n8n_data:/home/node/.n8n
+      
+    # Health check for better container management
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+volumes:
+  n8n_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${N8N_DATA_PATH:-/opt/n8n/data}
+      o: bind
+
+# Optional: PostgreSQL database (recommended for production)
+# Uncomment this section if you want to run PostgreSQL alongside n8n
+#
+#  postgres:
+#    image: postgres:15
+#    container_name: n8n-postgres
+#    restart: unless-stopped
+#    environment:
+#      - POSTGRES_DB=${N8N_DB_NAME}
+#      - POSTGRES_USER=${N8N_DB_USER}
+#      - POSTGRES_PASSWORD=${N8N_DB_PASSWORD}
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#
+#volumes:
+#  postgres_data:
+#    driver: local

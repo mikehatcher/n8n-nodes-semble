@@ -1,0 +1,91 @@
+services:
+  n8n:
+    image: n8nio/n8n:${N8N_PROD_VERSION:-latest}
+    container_name: n8n-production
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      # --- Required Environment Variables (Official n8n Recommendations) ---
+      - GENERIC_TIMEZONE=Europe/London
+      - TZ=Europe/London
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      
+      # --- Production Host Configuration ---
+      - WEBHOOK_URL=https://workflows.thehealthsuite.co.uk/
+      - N8N_HOST=workflows.thehealthsuite.co.uk
+      - N8N_PROTOCOL=https
+      - N8N_PORT=443
+      
+      # --- Database Configuration (SQLite default, consider PostgreSQL) ---
+      # For PostgreSQL, uncomment and configure these:
+      # - DB_TYPE=postgresdb
+      # - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      # - DB_POSTGRESDB_HOST=${POSTGRES_HOST}
+      # - DB_POSTGRESDB_PORT=${POSTGRES_PORT:-5432}
+      # - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      # - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      # - DB_POSTGRESDB_SCHEMA=${POSTGRES_SCHEMA:-n8n}
+      
+      # --- Community Packages ---
+      - N8N_COMMUNITY_PACKAGES_ENABLED=true
+      
+      # --- API Configuration ---
+      - N8N_API_ENABLED=true
+      - N8N_API_KEY=${N8N_PROD_API_KEY}
+      
+      # --- Security Configuration ---
+      - N8N_SECURE_COOKIE=true
+      - N8N_JWT_AUTH_HEADER=authorization
+      - N8N_JWT_AUTH_HEADER_VALUE_PREFIX=Bearer
+      
+      # --- Logging and Monitoring ---
+      - N8N_LOG_LEVEL=warn
+      - N8N_METRICS=true
+      - N8N_DIAGNOSTICS_ENABLED=false
+      
+      # --- Performance and Scaling ---
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=none
+      - EXECUTIONS_DATA_SAVE_ON_PROGRESS=false
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=false
+      
+      # --- Webhook Configuration ---
+      - N8N_PAYLOAD_SIZE_MAX=16777216
+      - N8N_DISABLE_UI=false
+      
+    volumes:
+      - n8n_data:/home/node/.n8n
+    
+    # Health check for proper container monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+      
+  # Uncomment this section if using PostgreSQL
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: n8n-postgres
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_DB=${POSTGRES_DB:-n8n}
+  #     - POSTGRES_USER=${POSTGRES_USER:-n8n}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+volumes:
+  n8n_data:
+    driver: local
+  # postgres_data:
+  #   driver: local
+
+networks:
+  default:
+    name: n8n-network
