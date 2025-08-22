@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-semble",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "n8n community node for Semble practice management system - automate bookings, patients, and product/service catalog management",
   "keywords": [
     "n8n-community-node-package",
