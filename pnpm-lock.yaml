@@ -11,13 +11,6 @@ overrides:
 importers:
 
   .:
-    dependencies:
-      axios:
-        specifier: ^1.11.0
-        version: 1.11.0
-      dotenv:
-        specifier: ^17.2.1
-        version: 17.2.1
     devDependencies:
       '@types/jest':
         specifier: ^29.5.14
